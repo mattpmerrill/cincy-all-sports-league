@@ -13,7 +13,11 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "deps": "depcruise src --config .dependency-cruiser.cjs",
-    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm deps && pnpm test"
+    "check": "pnpm lint && pnpm format:check && pnpm typecheck && pnpm deps && pnpm test",
+    "test:db": "supabase test db",
+    "db:types": "supabase gen types typescript --local > src/data/database.types.ts",
+    "db:seed:build": "tsx scripts/build-seed.ts",
+    "data:resolve": "tsx scripts/resolve-espn-ids.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -44,6 +48,7 @@
     "prettier": "^3.9.9",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "vitest": "^5.0.2"
   },

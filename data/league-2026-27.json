@@ -1,0 +1,2650 @@
+{
+  "season": {
+    "name": "2026-27",
+    "starts_on": "2026-08-27",
+    "ends_on": "2027-11-15",
+    "playoff_scoring_mode": "cumulative",
+    "is_active": true
+  },
+  "sports": [
+    {
+      "code": "mlb",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2027-03-24",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "World Series champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "World Series runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "lcs",
+          "label": "League Championship Series appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "division_series",
+          "label": "Division Series appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "wild_card",
+          "label": "Wild Card Series appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 0.3,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Houston Astros",
+          "short_name": "Astros",
+          "espn_id": "18",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/hou.png",
+          "primary_color": "#002d62"
+        },
+        {
+          "name": "Texas Rangers",
+          "short_name": "Rangers",
+          "espn_id": "13",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/tex.png",
+          "primary_color": "#003278"
+        },
+        {
+          "name": "San Diego Padres",
+          "short_name": "Padres",
+          "espn_id": "25",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/sd.png",
+          "primary_color": "#2f241d"
+        },
+        {
+          "name": "Seattle Mariners",
+          "short_name": "Mariners",
+          "espn_id": "12",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/sea.png",
+          "primary_color": "#005c5c"
+        },
+        {
+          "name": "Tampa Bay Rays",
+          "short_name": "Rays",
+          "espn_id": "30",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/tb.png",
+          "primary_color": "#092c5c"
+        },
+        {
+          "name": "Chicago White Sox",
+          "short_name": "White Sox",
+          "espn_id": "4",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/chw.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "Philadelphia Phillies",
+          "short_name": "Phillies",
+          "espn_id": "22",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/phi.png",
+          "primary_color": "#e81828"
+        },
+        {
+          "name": "Atlanta Braves",
+          "short_name": "Braves",
+          "espn_id": "15",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/atl.png",
+          "primary_color": "#0c2340"
+        },
+        {
+          "name": "Arizona Diamondbacks",
+          "short_name": "Diamondbacks",
+          "espn_id": "29",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/ari.png",
+          "primary_color": "#aa182c"
+        },
+        {
+          "name": "San Francisco Giants",
+          "short_name": "Giants",
+          "espn_id": "26",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/sf.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "Minnesota Twins",
+          "short_name": "Twins",
+          "espn_id": "9",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/min.png",
+          "primary_color": "#031f40"
+        },
+        {
+          "name": "Cleveland Guardians",
+          "short_name": "Guardians",
+          "espn_id": "5",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/cle.png",
+          "primary_color": "#002b5c"
+        },
+        {
+          "name": "Los Angeles Dodgers",
+          "short_name": "Dodgers",
+          "espn_id": "19",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/lad.png",
+          "primary_color": "#005a9c"
+        },
+        {
+          "name": "New York Mets",
+          "short_name": "Mets",
+          "espn_id": "21",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/nym.png",
+          "primary_color": "#002d72"
+        },
+        {
+          "name": "Detroit Tigers",
+          "short_name": "Tigers",
+          "espn_id": "6",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/det.png",
+          "primary_color": "#0a2240"
+        },
+        {
+          "name": "Boston Red Sox",
+          "short_name": "Red Sox",
+          "espn_id": "2",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/bos.png",
+          "primary_color": "#0d2b56"
+        },
+        {
+          "name": "Chicago Cubs",
+          "short_name": "Cubs",
+          "espn_id": "16",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/chc.png",
+          "primary_color": "#0e3386"
+        },
+        {
+          "name": "Milwaukee Brewers",
+          "short_name": "Brewers",
+          "espn_id": "8",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/mil.png",
+          "primary_color": "#13294b"
+        },
+        {
+          "name": "Toronto Blue Jays",
+          "short_name": "Blue Jays",
+          "espn_id": "14",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/tor.png",
+          "primary_color": "#134a8e"
+        },
+        {
+          "name": "New York Yankees",
+          "short_name": "Yankees",
+          "espn_id": "10",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/mlb/500/nyy.png",
+          "primary_color": "#132448"
+        }
+      ]
+    },
+    {
+      "code": "nba",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2026-10-20",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "NBA champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "NBA Finals runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "conference_finals",
+          "label": "Conference Finals appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "conference_semifinals",
+          "label": "Conference Semifinals appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "first_round",
+          "label": "First-round playoff appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 0.6,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "New York Knicks",
+          "short_name": "Knicks",
+          "espn_id": "18",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/ny.png",
+          "primary_color": "#1d428a"
+        },
+        {
+          "name": "Utah Jazz",
+          "short_name": "Jazz",
+          "espn_id": "26",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/utah.png",
+          "primary_color": "#4e008e"
+        },
+        {
+          "name": "Dallas Mavericks",
+          "short_name": "Mavericks",
+          "espn_id": "6",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/dal.png",
+          "primary_color": "#0064b1"
+        },
+        {
+          "name": "Orlando Magic",
+          "short_name": "Magic",
+          "espn_id": "19",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/orl.png",
+          "primary_color": "#0150b5"
+        },
+        {
+          "name": "Golden State Warriors",
+          "short_name": "Warriors",
+          "espn_id": "9",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/gs.png",
+          "primary_color": "#fdb927"
+        },
+        {
+          "name": "Oklahoma City Thunder",
+          "short_name": "Thunder",
+          "espn_id": "25",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/okc.png",
+          "primary_color": "#007ac1"
+        },
+        {
+          "name": "San Antonio Spurs",
+          "short_name": "Spurs",
+          "espn_id": "24",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/sa.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "Los Angeles Lakers",
+          "short_name": "Lakers",
+          "espn_id": "13",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png",
+          "primary_color": "#552583"
+        },
+        {
+          "name": "Houston Rockets",
+          "short_name": "Rockets",
+          "espn_id": "10",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/hou.png",
+          "primary_color": "#ce0e2d"
+        },
+        {
+          "name": "Phoenix Suns",
+          "short_name": "Suns",
+          "espn_id": "21",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/phx.png",
+          "primary_color": "#29127a"
+        },
+        {
+          "name": "Minnesota Timberwolves",
+          "short_name": "Timberwolves",
+          "espn_id": "16",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/min.png",
+          "primary_color": "#266092"
+        },
+        {
+          "name": "Miami Heat",
+          "short_name": "Heat",
+          "espn_id": "14",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/mia.png",
+          "primary_color": "#98002e"
+        },
+        {
+          "name": "Atlanta Hawks",
+          "short_name": "Hawks",
+          "espn_id": "1",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png",
+          "primary_color": "#c8102e"
+        },
+        {
+          "name": "Philadelphia 76ers",
+          "short_name": "76ers",
+          "espn_id": "20",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/phi.png",
+          "primary_color": "#1d428a"
+        },
+        {
+          "name": "Denver Nuggets",
+          "short_name": "Nuggets",
+          "espn_id": "7",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/den.png",
+          "primary_color": "#0e2240"
+        },
+        {
+          "name": "Indiana Pacers",
+          "short_name": "Pacers",
+          "espn_id": "11",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/ind.png",
+          "primary_color": "#0c2340"
+        },
+        {
+          "name": "Toronto Raptors",
+          "short_name": "Raptors",
+          "espn_id": "28",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/tor.png",
+          "primary_color": "#d91244"
+        },
+        {
+          "name": "Detroit Pistons",
+          "short_name": "Pistons",
+          "espn_id": "8",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/det.png",
+          "primary_color": "#1d428a"
+        },
+        {
+          "name": "Cleveland Cavaliers",
+          "short_name": "Cavaliers",
+          "espn_id": "5",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/cle.png",
+          "primary_color": "#860038"
+        },
+        {
+          "name": "Boston Celtics",
+          "short_name": "Celtics",
+          "espn_id": "2",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nba/500/bos.png",
+          "primary_color": "#008348"
+        }
+      ]
+    },
+    {
+      "code": "nhl",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2026-09-29",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "Stanley Cup champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "Stanley Cup runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "conference_final",
+          "label": "Conference Final appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "second_round",
+          "label": "Second Round appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "first_round",
+          "label": "First Round appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 0.6,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "New York Rangers",
+          "short_name": "Rangers",
+          "espn_id": "13",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/nyr.png",
+          "primary_color": "#0056ae"
+        },
+        {
+          "name": "Montreal Canadiens",
+          "short_name": "Canadiens",
+          "espn_id": "10",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/mtl.png",
+          "primary_color": "#c41230"
+        },
+        {
+          "name": "Carolina Hurricanes",
+          "short_name": "Hurricanes",
+          "espn_id": "7",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/car.png",
+          "primary_color": "#e30426"
+        },
+        {
+          "name": "Dallas Stars",
+          "short_name": "Stars",
+          "espn_id": "9",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/dal.png",
+          "primary_color": "#20864c"
+        },
+        {
+          "name": "Toronto Maple Leafs",
+          "short_name": "Maple Leafs",
+          "espn_id": "21",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/tor.png",
+          "primary_color": "#003e7e"
+        },
+        {
+          "name": "Tampa Bay Lightning",
+          "short_name": "Lightning",
+          "espn_id": "20",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/tb.png",
+          "primary_color": "#003e7e"
+        },
+        {
+          "name": "Vegas Golden Knights",
+          "short_name": "Golden Knights",
+          "espn_id": "37",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/vgk.png",
+          "primary_color": "#344043"
+        },
+        {
+          "name": "Buffalo Sabres",
+          "short_name": "Sabres",
+          "espn_id": "2",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/buf.png",
+          "primary_color": "#00468b"
+        },
+        {
+          "name": "Boston Bruins",
+          "short_name": "Bruins",
+          "espn_id": "1",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/bos.png",
+          "primary_color": "#231f20"
+        },
+        {
+          "name": "Utah Mammoth",
+          "short_name": "Mammoth",
+          "espn_id": "129764",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/utah.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "Minnesota Wild",
+          "short_name": "Wild",
+          "espn_id": "30",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/min.png",
+          "primary_color": "#124734"
+        },
+        {
+          "name": "Florida Panthers",
+          "short_name": "Panthers",
+          "espn_id": "26",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/fla.png",
+          "primary_color": "#e51937"
+        },
+        {
+          "name": "Anaheim Ducks",
+          "short_name": "Ducks",
+          "espn_id": "25",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/ana.png",
+          "primary_color": "#fc4c02"
+        },
+        {
+          "name": "Winnipeg Jets",
+          "short_name": "Jets",
+          "espn_id": "28",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/wpg.png",
+          "primary_color": "#002d62"
+        },
+        {
+          "name": "Los Angeles Kings",
+          "short_name": "Kings",
+          "espn_id": "8",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/la.png",
+          "primary_color": "#121212"
+        },
+        {
+          "name": "Ottawa Senators",
+          "short_name": "Senators",
+          "espn_id": "14",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/ott.png",
+          "primary_color": "#dd1a32"
+        },
+        {
+          "name": "Washington Capitals",
+          "short_name": "Capitals",
+          "espn_id": "23",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/wsh.png",
+          "primary_color": "#d71830"
+        },
+        {
+          "name": "Colorado Avalanche",
+          "short_name": "Avalanche",
+          "espn_id": "17",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/col.png",
+          "primary_color": "#860038"
+        },
+        {
+          "name": "Edmonton Oilers",
+          "short_name": "Oilers",
+          "espn_id": "6",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/edm.png",
+          "primary_color": "#00205b"
+        },
+        {
+          "name": "New Jersey Devils",
+          "short_name": "Devils",
+          "espn_id": "11",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nhl/500/nj.png",
+          "primary_color": "#e30b2b"
+        }
+      ]
+    },
+    {
+      "code": "ncaaf",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2026-08-27",
+        "espn_season": 2026,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "National champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "National Championship runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "cfp_semifinal",
+          "label": "CFP Semifinal appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "cfp_quarterfinal",
+          "label": "CFP Quarterfinal appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "cfp_first_round",
+          "label": "CFP First Round appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 4.1,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Michigan Wolverines",
+          "short_name": "Michigan",
+          "espn_id": "130",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
+          "primary_color": "#00274c"
+        },
+        {
+          "name": "Florida Gators",
+          "short_name": "Florida",
+          "espn_id": "57",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+          "primary_color": "#0021a5"
+        },
+        {
+          "name": "Ole Miss Rebels",
+          "short_name": "Ole Miss",
+          "espn_id": "145",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/145.png",
+          "primary_color": "#13294b"
+        },
+        {
+          "name": "Miami Hurricanes",
+          "short_name": "Miami",
+          "espn_id": "2390",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2390.png",
+          "primary_color": "#f47423"
+        },
+        {
+          "name": "Penn State Nittany Lions",
+          "short_name": "Penn State",
+          "espn_id": "213",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/213.png",
+          "primary_color": "#061440"
+        },
+        {
+          "name": "Texas Tech Red Raiders",
+          "short_name": "Texas Tech",
+          "espn_id": "2641",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png",
+          "primary_color": "#da291c"
+        },
+        {
+          "name": "Texas A&M Aggies",
+          "short_name": "Texas A&M",
+          "espn_id": "245",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png",
+          "primary_color": "#500000"
+        },
+        {
+          "name": "Georgia Bulldogs",
+          "short_name": "Georgia",
+          "espn_id": "61",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+          "primary_color": "#ba0c2f"
+        },
+        {
+          "name": "Alabama Crimson Tide",
+          "short_name": "Alabama",
+          "espn_id": "333",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+          "primary_color": "#9e1b32"
+        },
+        {
+          "name": "LSU Tigers",
+          "short_name": "LSU",
+          "espn_id": "99",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png",
+          "primary_color": "#461d76"
+        },
+        {
+          "name": "Oregon Ducks",
+          "short_name": "Oregon",
+          "espn_id": "2483",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2483.png",
+          "primary_color": "#00934b"
+        },
+        {
+          "name": "Notre Dame Fighting Irish",
+          "short_name": "Notre Dame",
+          "espn_id": "87",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/87.png",
+          "primary_color": "#062340"
+        },
+        {
+          "name": "Oklahoma Sooners",
+          "short_name": "Oklahoma",
+          "espn_id": "201",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png",
+          "primary_color": "#990000"
+        },
+        {
+          "name": "BYU Cougars",
+          "short_name": "BYU",
+          "espn_id": "252",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/252.png",
+          "primary_color": "#0047ba"
+        },
+        {
+          "name": "Texas Longhorns",
+          "short_name": "Texas",
+          "espn_id": "251",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+          "primary_color": "#af5c37"
+        },
+        {
+          "name": "Utah Utes",
+          "short_name": "Utah",
+          "espn_id": "254",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/254.png",
+          "primary_color": "#be0000"
+        },
+        {
+          "name": "Ohio State Buckeyes",
+          "short_name": "Ohio State",
+          "espn_id": "194",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/194.png",
+          "primary_color": "#ba0c2f"
+        },
+        {
+          "name": "Indiana Hoosiers",
+          "short_name": "Indiana",
+          "espn_id": "84",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/84.png",
+          "primary_color": "#970310"
+        },
+        {
+          "name": "Tennessee Volunteers",
+          "short_name": "Tennessee",
+          "espn_id": "2633",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+          "primary_color": "#ff8200"
+        },
+        {
+          "name": "USC Trojans",
+          "short_name": "USC",
+          "espn_id": "30",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/30.png",
+          "primary_color": "#9d2235"
+        }
+      ]
+    },
+    {
+      "code": "ncaab",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2026-11-01",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "National champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "National runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "final_four",
+          "label": "Final Four",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "elite_eight",
+          "label": "Elite Eight",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "sweet_16",
+          "label": "Sweet 16",
+          "kind": "playoff_milestone",
+          "points": 15,
+          "is_championship": false
+        },
+        {
+          "code": "round_of_32",
+          "label": "Round of 32 appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "first_round",
+          "label": "First Round appearance",
+          "kind": "playoff_milestone",
+          "points": 5,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season or conference-tournament win",
+          "kind": "per_win",
+          "points": 0.7,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Illinois Fighting Illini",
+          "short_name": "Illinois",
+          "espn_id": "356",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/356.png",
+          "primary_color": "#ff5f05"
+        },
+        {
+          "name": "Michigan Wolverines",
+          "short_name": "Michigan",
+          "espn_id": "130",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/130.png",
+          "primary_color": "#00274c"
+        },
+        {
+          "name": "Gonzaga Bulldogs",
+          "short_name": "Gonzaga",
+          "espn_id": "2250",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2250.png",
+          "primary_color": "#041e42"
+        },
+        {
+          "name": "Duke Blue Devils",
+          "short_name": "Duke",
+          "espn_id": "150",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png",
+          "primary_color": "#00539b"
+        },
+        {
+          "name": "Texas Tech Red Raiders",
+          "short_name": "Texas Tech",
+          "espn_id": "2641",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png",
+          "primary_color": "#da291c"
+        },
+        {
+          "name": "Tennessee Volunteers",
+          "short_name": "Tennessee",
+          "espn_id": "2633",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+          "primary_color": "#ff8200"
+        },
+        {
+          "name": "Michigan State Spartans",
+          "short_name": "Michigan State",
+          "espn_id": "127",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/127.png",
+          "primary_color": "#173f35"
+        },
+        {
+          "name": "UCLA Bruins",
+          "short_name": "UCLA",
+          "espn_id": "26",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+          "primary_color": "#2774ae"
+        },
+        {
+          "name": "UConn Huskies",
+          "short_name": "UConn",
+          "espn_id": "41",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/41.png",
+          "primary_color": "#0c2340"
+        },
+        {
+          "name": "Missouri Tigers",
+          "short_name": "Missouri",
+          "espn_id": "142",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/142.png",
+          "primary_color": "#f1b82d"
+        },
+        {
+          "name": "Kentucky Wildcats",
+          "short_name": "Kentucky",
+          "espn_id": "96",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/96.png",
+          "primary_color": "#0033a0"
+        },
+        {
+          "name": "Houston Cougars",
+          "short_name": "Houston",
+          "espn_id": "248",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/248.png",
+          "primary_color": "#c8102e"
+        },
+        {
+          "name": "Iowa State Cyclones",
+          "short_name": "Iowa State",
+          "espn_id": "66",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/66.png",
+          "primary_color": "#ae192d"
+        },
+        {
+          "name": "Florida Gators",
+          "short_name": "Florida",
+          "espn_id": "57",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+          "primary_color": "#0021a5"
+        },
+        {
+          "name": "Texas Longhorns",
+          "short_name": "Texas",
+          "espn_id": "251",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+          "primary_color": "#af5c37"
+        },
+        {
+          "name": "Arizona Wildcats",
+          "short_name": "Arizona",
+          "espn_id": "12",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/12.png",
+          "primary_color": "#cc0033"
+        },
+        {
+          "name": "St. John's Red Storm",
+          "short_name": "St. John's",
+          "espn_id": "2599",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2599.png",
+          "primary_color": "#d10000"
+        },
+        {
+          "name": "Louisville Cardinals",
+          "short_name": "Louisville",
+          "espn_id": "97",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/97.png",
+          "primary_color": "#c9001f"
+        },
+        {
+          "name": "Purdue Boilermakers",
+          "short_name": "Purdue",
+          "espn_id": "2509",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2509.png",
+          "primary_color": "#ceb888"
+        },
+        {
+          "name": "North Carolina Tar Heels",
+          "short_name": "North Carolina",
+          "espn_id": "153",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/153.png",
+          "primary_color": "#7bafd4"
+        }
+      ]
+    },
+    {
+      "code": "ncaasb",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2027-02-04",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "National champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "National runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "wcws_semifinal",
+          "label": "WCWS Semifinal",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "wcws_appearance",
+          "label": "WCWS appearance",
+          "kind": "playoff_milestone",
+          "points": 25,
+          "is_championship": false
+        },
+        {
+          "code": "super_regional",
+          "label": "Super Regional appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "regional_final",
+          "label": "Regional Final appearance",
+          "kind": "playoff_milestone",
+          "points": 15,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 1,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Nebraska Cornhuskers",
+          "short_name": "Nebraska",
+          "espn_id": "511",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/158.png",
+          "primary_color": "#fe0d04"
+        },
+        {
+          "name": "Alabama Crimson Tide",
+          "short_name": "Alabama",
+          "espn_id": "560",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+          "primary_color": "#a42d47"
+        },
+        {
+          "name": "Oklahoma Sooners",
+          "short_name": "Oklahoma",
+          "espn_id": "524",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/201.png",
+          "primary_color": "#7b0000"
+        },
+        {
+          "name": "Texas Tech Red Raiders",
+          "short_name": "Texas Tech",
+          "espn_id": "613",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2641.png",
+          "primary_color": "#d60039"
+        },
+        {
+          "name": "UCF Knights",
+          "short_name": "UCF",
+          "espn_id": "572",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2116.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "Georgia Bulldogs",
+          "short_name": "Georgia",
+          "espn_id": "490",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/61.png",
+          "primary_color": "#d60022"
+        },
+        {
+          "name": "Florida Gators",
+          "short_name": "Florida",
+          "espn_id": "487",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/57.png",
+          "primary_color": "#2a42ce"
+        },
+        {
+          "name": "Florida State Seminoles",
+          "short_name": "Florida State",
+          "espn_id": "484",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/52.png",
+          "primary_color": "#b72931"
+        },
+        {
+          "name": "Mississippi State Bulldogs",
+          "short_name": "Mississippi State",
+          "espn_id": "562",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/344.png",
+          "primary_color": "#531122"
+        },
+        {
+          "name": "UCLA Bruins",
+          "short_name": "UCLA",
+          "espn_id": "478",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/26.png",
+          "primary_color": "#005a94"
+        },
+        {
+          "name": "Arizona State Sun Devils",
+          "short_name": "Arizona State",
+          "espn_id": "471",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/9.png",
+          "primary_color": "#942139"
+        },
+        {
+          "name": "Oklahoma State Cowgirls",
+          "short_name": "Oklahoma State",
+          "espn_id": "522",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/197.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "Virginia Tech Hokies",
+          "short_name": "Virginia Tech",
+          "espn_id": "544",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/259.png",
+          "primary_color": "#7b2129"
+        },
+        {
+          "name": "Duke Blue Devils",
+          "short_name": "Duke",
+          "espn_id": "505",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/150.png",
+          "primary_color": "#004a7b"
+        },
+        {
+          "name": "Texas Longhorns",
+          "short_name": "Texas",
+          "espn_id": "538",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/251.png",
+          "primary_color": "#ef7321"
+        },
+        {
+          "name": "Arkansas Razorbacks",
+          "short_name": "Arkansas",
+          "espn_id": "470",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/8.png",
+          "primary_color": "#9c1831"
+        },
+        {
+          "name": "Texas A&M Aggies",
+          "short_name": "Texas A&M",
+          "espn_id": "535",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/245.png",
+          "primary_color": "#6a3333"
+        },
+        {
+          "name": "Tennessee Lady Volunteers",
+          "short_name": "Tennessee",
+          "espn_id": "611",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2633.png",
+          "primary_color": "#ee9627"
+        },
+        {
+          "name": "South Carolina Gamecocks",
+          "short_name": "South Carolina",
+          "espn_id": "605",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/2579.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "LSU Tigers",
+          "short_name": "LSU",
+          "espn_id": "497",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/ncaa/500/99.png",
+          "primary_color": "#2b0d57"
+        }
+      ]
+    },
+    {
+      "code": "wta",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2027-01-01",
+        "espn_season": 2027,
+        "major_points_cap": 50
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "Grand Slam champion",
+          "kind": "major_finish",
+          "points": 12.5,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "Grand Slam runner-up",
+          "kind": "major_finish",
+          "points": 8,
+          "is_championship": false
+        },
+        {
+          "code": "semifinal",
+          "label": "Grand Slam semifinal",
+          "kind": "major_finish",
+          "points": 5,
+          "is_championship": false
+        },
+        {
+          "code": "quarterfinal",
+          "label": "Grand Slam quarterfinal",
+          "kind": "major_finish",
+          "points": 3,
+          "is_championship": false
+        },
+        {
+          "code": "round_of_16",
+          "label": "Grand Slam round of 16",
+          "kind": "major_finish",
+          "points": 2,
+          "is_championship": false
+        },
+        {
+          "code": "round_of_32",
+          "label": "Grand Slam round of 32",
+          "kind": "major_finish",
+          "points": 1,
+          "is_championship": false
+        },
+        {
+          "code": "rank_1",
+          "label": "Year-end WTA rank #1",
+          "kind": "final_rank_band",
+          "points": 50,
+          "rank_from": 1,
+          "rank_to": 1,
+          "is_championship": false
+        },
+        {
+          "code": "rank_2",
+          "label": "Year-end WTA rank #2",
+          "kind": "final_rank_band",
+          "points": 45,
+          "rank_from": 2,
+          "rank_to": 2,
+          "is_championship": false
+        },
+        {
+          "code": "rank_3",
+          "label": "Year-end WTA rank #3",
+          "kind": "final_rank_band",
+          "points": 42,
+          "rank_from": 3,
+          "rank_to": 3,
+          "is_championship": false
+        },
+        {
+          "code": "rank_4",
+          "label": "Year-end WTA rank #4",
+          "kind": "final_rank_band",
+          "points": 39,
+          "rank_from": 4,
+          "rank_to": 4,
+          "is_championship": false
+        },
+        {
+          "code": "rank_5",
+          "label": "Year-end WTA rank #5",
+          "kind": "final_rank_band",
+          "points": 36,
+          "rank_from": 5,
+          "rank_to": 5,
+          "is_championship": false
+        },
+        {
+          "code": "rank_6_10",
+          "label": "Year-end WTA rank #6-10",
+          "kind": "final_rank_band",
+          "points": 30,
+          "rank_from": 6,
+          "rank_to": 10,
+          "is_championship": false
+        },
+        {
+          "code": "rank_11_20",
+          "label": "Year-end WTA rank #11-20",
+          "kind": "final_rank_band",
+          "points": 20,
+          "rank_from": 11,
+          "rank_to": 20,
+          "is_championship": false
+        },
+        {
+          "code": "rank_21_30",
+          "label": "Year-end WTA rank #21-30",
+          "kind": "final_rank_band",
+          "points": 15,
+          "rank_from": 21,
+          "rank_to": 30,
+          "is_championship": false
+        },
+        {
+          "code": "rank_31_50",
+          "label": "Year-end WTA rank #31-50",
+          "kind": "final_rank_band",
+          "points": 10,
+          "rank_from": 31,
+          "rank_to": 50,
+          "is_championship": false
+        },
+        {
+          "code": "rank_51_100",
+          "label": "Year-end WTA rank #51-100",
+          "kind": "final_rank_band",
+          "points": 5,
+          "rank_from": 51,
+          "rank_to": 100,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Coco Gauff",
+          "short_name": "Gauff",
+          "espn_id": "3626",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/3626.png",
+          "primary_color": null
+        },
+        {
+          "name": "Linda Noskova",
+          "short_name": "Noskova",
+          "espn_id": "6970",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Belinda Bencic",
+          "short_name": "Bencic",
+          "espn_id": "2183",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/2183.png",
+          "primary_color": null
+        },
+        {
+          "name": "Madison Keys",
+          "short_name": "Keys",
+          "espn_id": "1556",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/1556.png",
+          "primary_color": null
+        },
+        {
+          "name": "Jessica Pegula",
+          "short_name": "Pegula",
+          "espn_id": "2113",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/2113.png",
+          "primary_color": null
+        },
+        {
+          "name": "Elina Svitolina",
+          "short_name": "Svitolina",
+          "espn_id": "1797",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/1797.png",
+          "primary_color": null
+        },
+        {
+          "name": "Victoria Mboko",
+          "short_name": "Mboko",
+          "espn_id": "11219",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Amanda Anisimova",
+          "short_name": "Anisimova",
+          "espn_id": "3221",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/3221.png",
+          "primary_color": null
+        },
+        {
+          "name": "Naomi Osaka",
+          "short_name": "Osaka",
+          "espn_id": "2789",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/2789.png",
+          "primary_color": null
+        },
+        {
+          "name": "Karolina Muchova",
+          "short_name": "Muchova",
+          "espn_id": "3039",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Elise Mertens",
+          "short_name": "Mertens",
+          "espn_id": "2221",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/2221.png",
+          "primary_color": null
+        },
+        {
+          "name": "Iva Jovic",
+          "short_name": "Jovic",
+          "espn_id": "14311",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Aryna Sabalenka",
+          "short_name": "Sabalenka",
+          "espn_id": "3038",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/3038.png",
+          "primary_color": null
+        },
+        {
+          "name": "Iga Swiatek",
+          "short_name": "Swiatek",
+          "espn_id": "3730",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/3730.png",
+          "primary_color": null
+        },
+        {
+          "name": "Mirra Andreeva",
+          "short_name": "Andreeva",
+          "espn_id": "9820",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Sorana Cirstea",
+          "short_name": "Cirstea",
+          "espn_id": "1774",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/1774.png",
+          "primary_color": null
+        },
+        {
+          "name": "Diana Shnaider",
+          "short_name": "Shnaider",
+          "espn_id": "8017",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Marta Kostyuk",
+          "short_name": "Kostyuk",
+          "espn_id": "3382",
+          "logo_url": null,
+          "primary_color": null
+        },
+        {
+          "name": "Elena Rybakina",
+          "short_name": "Rybakina",
+          "espn_id": "3126",
+          "logo_url": "https://a.espncdn.com/i/headshots/tennis/players/full/3126.png",
+          "primary_color": null
+        },
+        {
+          "name": "Alexandra Eala",
+          "short_name": "Eala",
+          "espn_id": "7759",
+          "logo_url": null,
+          "primary_color": null
+        }
+      ]
+    },
+    {
+      "code": "mls",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2027-02-01",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "MLS Cup champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "MLS Cup runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "conference_final",
+          "label": "Conference Final appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "conference_semifinal",
+          "label": "Conference Semifinal appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "first_round",
+          "label": "First Round appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 0.7,
+          "is_championship": false
+        },
+        {
+          "code": "tie",
+          "label": "Regular-season draw (one-third of a win)",
+          "kind": "per_tie",
+          "points": 0.2333,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Vancouver Whitecaps FC",
+          "short_name": "Vancouver",
+          "espn_id": "9727",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/9727.png",
+          "primary_color": "#ffffff"
+        },
+        {
+          "name": "New England Revolution",
+          "short_name": "New England",
+          "espn_id": "189",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/189.png",
+          "primary_color": "#022166"
+        },
+        {
+          "name": "Portland Timbers",
+          "short_name": "Portland",
+          "espn_id": "9723",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/9723.png",
+          "primary_color": "#2c5234"
+        },
+        {
+          "name": "Seattle Sounders FC",
+          "short_name": "Seattle",
+          "espn_id": "9726",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/9726.png",
+          "primary_color": "#2dc84d"
+        },
+        {
+          "name": "Houston Dynamo FC",
+          "short_name": "Houston",
+          "espn_id": "6077",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/6077.png",
+          "primary_color": "#ff6b00"
+        },
+        {
+          "name": "Colorado Rapids",
+          "short_name": "Colorado",
+          "espn_id": "184",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/184.png",
+          "primary_color": "#8a2432"
+        },
+        {
+          "name": "Los Angeles FC",
+          "short_name": "LAFC",
+          "espn_id": "18966",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/18966.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "San Jose Earthquakes",
+          "short_name": "San Jose",
+          "espn_id": "191",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/191.png",
+          "primary_color": "#003da6"
+        },
+        {
+          "name": "Orlando City SC",
+          "short_name": "Orlando",
+          "espn_id": "12011",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/12011.png",
+          "primary_color": "#60269e"
+        },
+        {
+          "name": "New York Red Bulls",
+          "short_name": "Red Bull NY",
+          "espn_id": "190",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/190.png",
+          "primary_color": "#ba0c2f"
+        },
+        {
+          "name": "Minnesota United FC",
+          "short_name": "Minnesota",
+          "espn_id": "17362",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/17362.png",
+          "primary_color": "#000000"
+        },
+        {
+          "name": "FC Dallas",
+          "short_name": "Dallas",
+          "espn_id": "185",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/185.png",
+          "primary_color": "#c6093b"
+        },
+        {
+          "name": "Real Salt Lake",
+          "short_name": "Salt Lake",
+          "espn_id": "4771",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/4771.png",
+          "primary_color": "#a32035"
+        },
+        {
+          "name": "Inter Miami CF",
+          "short_name": "Miami",
+          "espn_id": "20232",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/20232.png",
+          "primary_color": "#231f20"
+        },
+        {
+          "name": "Philadelphia Union",
+          "short_name": "Philadelphia",
+          "espn_id": "10739",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/10739.png",
+          "primary_color": "#051f31"
+        },
+        {
+          "name": "St. Louis CITY SC",
+          "short_name": "St. Louis",
+          "espn_id": "21812",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/21812.png",
+          "primary_color": "#ec1458"
+        },
+        {
+          "name": "Nashville SC",
+          "short_name": "Nashville",
+          "espn_id": "18986",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/18986.png",
+          "primary_color": "#ece83a"
+        },
+        {
+          "name": "Chicago Fire FC",
+          "short_name": "Chicago",
+          "espn_id": "182",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/182.png",
+          "primary_color": "#7ccdef"
+        },
+        {
+          "name": "FC Cincinnati",
+          "short_name": "Cincinnati",
+          "espn_id": "18267",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/18267.png",
+          "primary_color": "#003087"
+        },
+        {
+          "name": "Charlotte FC",
+          "short_name": "Charlotte",
+          "espn_id": "21300",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/soccer/500/21300.png",
+          "primary_color": "#0085ca"
+        }
+      ]
+    },
+    {
+      "code": "pga",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2027-01-18",
+        "espn_season": 2027,
+        "major_points_cap": 50
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "Major champion",
+          "kind": "major_finish",
+          "points": 12.5,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "Major runner-up",
+          "kind": "major_finish",
+          "points": 8,
+          "is_championship": false
+        },
+        {
+          "code": "top_5",
+          "label": "Major 3rd-5th",
+          "kind": "major_finish",
+          "points": 5,
+          "is_championship": false
+        },
+        {
+          "code": "top_10",
+          "label": "Major 6th-10th",
+          "kind": "major_finish",
+          "points": 3,
+          "is_championship": false
+        },
+        {
+          "code": "top_20",
+          "label": "Major 11th-20th",
+          "kind": "major_finish",
+          "points": 2,
+          "is_championship": false
+        },
+        {
+          "code": "made_cut",
+          "label": "Major made cut",
+          "kind": "major_finish",
+          "points": 1,
+          "is_championship": false
+        },
+        {
+          "code": "rank_1",
+          "label": "FedExCup champion",
+          "kind": "final_rank_band",
+          "points": 50,
+          "rank_from": 1,
+          "rank_to": 1,
+          "is_championship": false
+        },
+        {
+          "code": "rank_2",
+          "label": "FedExCup runner-up",
+          "kind": "final_rank_band",
+          "points": 45,
+          "rank_from": 2,
+          "rank_to": 2,
+          "is_championship": false
+        },
+        {
+          "code": "rank_3",
+          "label": "FedExCup final rank #3",
+          "kind": "final_rank_band",
+          "points": 42,
+          "rank_from": 3,
+          "rank_to": 3,
+          "is_championship": false
+        },
+        {
+          "code": "rank_4",
+          "label": "FedExCup final rank #4",
+          "kind": "final_rank_band",
+          "points": 39,
+          "rank_from": 4,
+          "rank_to": 4,
+          "is_championship": false
+        },
+        {
+          "code": "rank_5",
+          "label": "FedExCup final rank #5",
+          "kind": "final_rank_band",
+          "points": 36,
+          "rank_from": 5,
+          "rank_to": 5,
+          "is_championship": false
+        },
+        {
+          "code": "rank_6_10",
+          "label": "FedExCup final rank #6-10",
+          "kind": "final_rank_band",
+          "points": 30,
+          "rank_from": 6,
+          "rank_to": 10,
+          "is_championship": false
+        },
+        {
+          "code": "rank_11_20",
+          "label": "FedExCup final rank #11-20",
+          "kind": "final_rank_band",
+          "points": 20,
+          "rank_from": 11,
+          "rank_to": 20,
+          "is_championship": false
+        },
+        {
+          "code": "rank_21_30",
+          "label": "FedExCup final rank #21-30",
+          "kind": "final_rank_band",
+          "points": 15,
+          "rank_from": 21,
+          "rank_to": 30,
+          "is_championship": false
+        },
+        {
+          "code": "rank_31_50",
+          "label": "FedExCup final rank #31-50",
+          "kind": "final_rank_band",
+          "points": 10,
+          "rank_from": 31,
+          "rank_to": 50,
+          "is_championship": false
+        },
+        {
+          "code": "rank_51_100",
+          "label": "FedExCup final rank #51-100",
+          "kind": "final_rank_band",
+          "points": 5,
+          "rank_from": 51,
+          "rank_to": 100,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Tommy Fleetwood",
+          "short_name": "Fleetwood",
+          "espn_id": "5539",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/5539.png",
+          "primary_color": null
+        },
+        {
+          "name": "Akshay Bhatia",
+          "short_name": "Bhatia",
+          "espn_id": "4419142",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/4419142.png",
+          "primary_color": null
+        },
+        {
+          "name": "J.J. Spaun",
+          "short_name": "Spaun",
+          "espn_id": "10166",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/10166.png",
+          "primary_color": null
+        },
+        {
+          "name": "Hideki Matsuyama",
+          "short_name": "Matsuyama",
+          "espn_id": "5860",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/5860.png",
+          "primary_color": null
+        },
+        {
+          "name": "Rory McIlroy",
+          "short_name": "McIlroy",
+          "espn_id": "3470",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/3470.png",
+          "primary_color": null
+        },
+        {
+          "name": "Viktor Hovland",
+          "short_name": "Hovland",
+          "espn_id": "4364873",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/4364873.png",
+          "primary_color": null
+        },
+        {
+          "name": "Matt Fitzpatrick",
+          "short_name": "Fitzpatrick",
+          "espn_id": "9037",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/9037.png",
+          "primary_color": null
+        },
+        {
+          "name": "Min Woo Lee",
+          "short_name": "Lee",
+          "espn_id": "4410932",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/4410932.png",
+          "primary_color": null
+        },
+        {
+          "name": "Cameron Young",
+          "short_name": "Young",
+          "espn_id": "4425906",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/4425906.png",
+          "primary_color": null
+        },
+        {
+          "name": "Russell Henley",
+          "short_name": "Henley",
+          "espn_id": "5409",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/5409.png",
+          "primary_color": null
+        },
+        {
+          "name": "Chris Gotterup",
+          "short_name": "Gotterup",
+          "espn_id": "4690755",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/4690755.png",
+          "primary_color": null
+        },
+        {
+          "name": "Justin Rose",
+          "short_name": "Rose",
+          "espn_id": "569",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/569.png",
+          "primary_color": null
+        },
+        {
+          "name": "Ludvig Åberg",
+          "short_name": "Åberg",
+          "espn_id": "4375972",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/4375972.png",
+          "primary_color": null
+        },
+        {
+          "name": "Scottie Scheffler",
+          "short_name": "Scheffler",
+          "espn_id": "9478",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/9478.png",
+          "primary_color": null
+        },
+        {
+          "name": "Sam Burns",
+          "short_name": "Burns",
+          "espn_id": "9938",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/9938.png",
+          "primary_color": null
+        },
+        {
+          "name": "Jackson Koivun",
+          "short_name": "Koivun",
+          "espn_id": "5215013",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/5215013.png",
+          "primary_color": null
+        },
+        {
+          "name": "Wyndham Clark",
+          "short_name": "Clark",
+          "espn_id": "11119",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/11119.png",
+          "primary_color": null
+        },
+        {
+          "name": "Si Woo Kim",
+          "short_name": "Kim",
+          "espn_id": "7081",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/7081.png",
+          "primary_color": null
+        },
+        {
+          "name": "Xander Schauffele",
+          "short_name": "Schauffele",
+          "espn_id": "10140",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/10140.png",
+          "primary_color": null
+        },
+        {
+          "name": "Collin Morikawa",
+          "short_name": "Morikawa",
+          "espn_id": "10592",
+          "logo_url": "https://a.espncdn.com/i/headshots/golf/players/full/10592.png",
+          "primary_color": null
+        }
+      ]
+    },
+    {
+      "code": "wnba",
+      "allows_duplicate_picks": true,
+      "season": {
+        "starts_on": "2027-05-01",
+        "espn_season": 2027,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "WNBA champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "WNBA Finals runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "semifinal",
+          "label": "Semifinal appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "second_round",
+          "label": "Second playoff round",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "first_round",
+          "label": "First playoff round",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 1,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "Minnesota Lynx",
+          "short_name": "Lynx",
+          "espn_id": "8",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/min.png",
+          "primary_color": "#266092"
+        },
+        {
+          "name": "Golden State Valkyries",
+          "short_name": "Valkyries",
+          "espn_id": "129689",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/gs.png",
+          "primary_color": "#b38fcf"
+        },
+        {
+          "name": "Atlanta Dream",
+          "short_name": "Dream",
+          "espn_id": "20",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/atl.png",
+          "primary_color": "#e31837"
+        },
+        {
+          "name": "Indiana Fever",
+          "short_name": "Fever",
+          "espn_id": "5",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/ind.png",
+          "primary_color": "#002d62"
+        },
+        {
+          "name": "Los Angeles Sparks",
+          "short_name": "Sparks",
+          "espn_id": "6",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/la.png",
+          "primary_color": "#552583"
+        },
+        {
+          "name": "Washington Mystics",
+          "short_name": "Mystics",
+          "espn_id": "16",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/wsh.png",
+          "primary_color": "#e03a3e"
+        },
+        {
+          "name": "New York Liberty",
+          "short_name": "Liberty",
+          "espn_id": "9",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/ny.png",
+          "primary_color": "#86cebc"
+        },
+        {
+          "name": "Dallas Wings",
+          "short_name": "Wings",
+          "espn_id": "3",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/dal.png",
+          "primary_color": "#002b5c"
+        },
+        {
+          "name": "Phoenix Mercury",
+          "short_name": "Mercury",
+          "espn_id": "11",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/phx.png",
+          "primary_color": "#3c286e"
+        },
+        {
+          "name": "Las Vegas Aces",
+          "short_name": "Aces",
+          "espn_id": "17",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/lv.png",
+          "primary_color": "#a7a8aa"
+        },
+        {
+          "name": "Chicago Sky",
+          "short_name": "Sky",
+          "espn_id": "19",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/wnba/500/chi.png",
+          "primary_color": "#5091cd"
+        }
+      ]
+    },
+    {
+      "code": "nfl",
+      "allows_duplicate_picks": false,
+      "season": {
+        "starts_on": "2026-09-07",
+        "espn_season": 2026,
+        "major_points_cap": null
+      },
+      "rules": [
+        {
+          "code": "champion",
+          "label": "Super Bowl champion",
+          "kind": "playoff_milestone",
+          "points": 50,
+          "is_championship": true
+        },
+        {
+          "code": "runner_up",
+          "label": "Super Bowl runner-up",
+          "kind": "playoff_milestone",
+          "points": 40,
+          "is_championship": false
+        },
+        {
+          "code": "conference_championship",
+          "label": "Conference Championship Game appearance",
+          "kind": "playoff_milestone",
+          "points": 30,
+          "is_championship": false
+        },
+        {
+          "code": "divisional",
+          "label": "Divisional Round appearance",
+          "kind": "playoff_milestone",
+          "points": 20,
+          "is_championship": false
+        },
+        {
+          "code": "wild_card",
+          "label": "Wild Card Round appearance",
+          "kind": "playoff_milestone",
+          "points": 10,
+          "is_championship": false
+        },
+        {
+          "code": "win",
+          "label": "Regular-season win",
+          "kind": "per_win",
+          "points": 3,
+          "is_championship": false
+        },
+        {
+          "code": "tie",
+          "label": "Regular-season tie (half a win)",
+          "kind": "per_tie",
+          "points": 1.5,
+          "is_championship": false
+        }
+      ],
+      "participants": [
+        {
+          "name": "New England Patriots",
+          "short_name": "Patriots",
+          "espn_id": "17",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/ne.png",
+          "primary_color": "#002a5c"
+        },
+        {
+          "name": "Washington Commanders",
+          "short_name": "Commanders",
+          "espn_id": "28",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/wsh.png",
+          "primary_color": "#5a1414"
+        },
+        {
+          "name": "Cincinnati Bengals",
+          "short_name": "Bengals",
+          "espn_id": "4",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/cin.png",
+          "primary_color": "#fb4f14"
+        },
+        {
+          "name": "Green Bay Packers",
+          "short_name": "Packers",
+          "espn_id": "9",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/gb.png",
+          "primary_color": "#204e32"
+        },
+        {
+          "name": "Los Angeles Rams",
+          "short_name": "Rams",
+          "espn_id": "14",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/lar.png",
+          "primary_color": "#003594"
+        },
+        {
+          "name": "Chicago Bears",
+          "short_name": "Bears",
+          "espn_id": "3",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/chi.png",
+          "primary_color": "#0b1c3a"
+        },
+        {
+          "name": "Seattle Seahawks",
+          "short_name": "Seahawks",
+          "espn_id": "26",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/sea.png",
+          "primary_color": "#002a5c"
+        },
+        {
+          "name": "Philadelphia Eagles",
+          "short_name": "Eagles",
+          "espn_id": "21",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/phi.png",
+          "primary_color": "#06424d"
+        },
+        {
+          "name": "Baltimore Ravens",
+          "short_name": "Ravens",
+          "espn_id": "33",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/bal.png",
+          "primary_color": "#29126f"
+        },
+        {
+          "name": "Houston Texans",
+          "short_name": "Texans",
+          "espn_id": "34",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/hou.png",
+          "primary_color": "#021018"
+        },
+        {
+          "name": "Minnesota Vikings",
+          "short_name": "Vikings",
+          "espn_id": "16",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/min.png",
+          "primary_color": "#4f2683"
+        },
+        {
+          "name": "Buffalo Bills",
+          "short_name": "Bills",
+          "espn_id": "2",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/buf.png",
+          "primary_color": "#00338d"
+        },
+        {
+          "name": "Detroit Lions",
+          "short_name": "Lions",
+          "espn_id": "8",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/det.png",
+          "primary_color": "#0076b6"
+        },
+        {
+          "name": "Dallas Cowboys",
+          "short_name": "Cowboys",
+          "espn_id": "6",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/dal.png",
+          "primary_color": "#002a5c"
+        },
+        {
+          "name": "Los Angeles Chargers",
+          "short_name": "Chargers",
+          "espn_id": "24",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/lac.png",
+          "primary_color": "#0080c6"
+        },
+        {
+          "name": "San Francisco 49ers",
+          "short_name": "49ers",
+          "espn_id": "25",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/sf.png",
+          "primary_color": "#aa0000"
+        },
+        {
+          "name": "Jacksonville Jaguars",
+          "short_name": "Jaguars",
+          "espn_id": "30",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/jax.png",
+          "primary_color": "#007487"
+        },
+        {
+          "name": "New Orleans Saints",
+          "short_name": "Saints",
+          "espn_id": "18",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/no.png",
+          "primary_color": "#d3bc8d"
+        },
+        {
+          "name": "Denver Broncos",
+          "short_name": "Broncos",
+          "espn_id": "7",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/den.png",
+          "primary_color": "#0a2343"
+        },
+        {
+          "name": "Kansas City Chiefs",
+          "short_name": "Chiefs",
+          "espn_id": "12",
+          "logo_url": "https://a.espncdn.com/i/teamlogos/nfl/500/kc.png",
+          "primary_color": "#e31837"
+        }
+      ]
+    }
+  ],
+  "teams": [
+    {
+      "name": "Bob Costas & The Sunshine State",
+      "slug": "bob-costas-the-sunshine-state",
+      "picks": {
+        "mlb": "Houston Astros",
+        "nba": "New York Knicks",
+        "nhl": "New York Rangers",
+        "ncaaf": "Michigan Wolverines",
+        "ncaab": "Illinois Fighting Illini",
+        "ncaasb": "Nebraska Cornhuskers",
+        "wta": "Coco Gauff",
+        "mls": "Vancouver Whitecaps FC",
+        "pga": "Tommy Fleetwood",
+        "wnba": "Minnesota Lynx",
+        "nfl": "New England Patriots"
+      }
+    },
+    {
+      "name": "Big Booty Brooksie",
+      "slug": "big-booty-brooksie",
+      "picks": {
+        "mlb": "Texas Rangers",
+        "nba": "Utah Jazz",
+        "nhl": "Montreal Canadiens",
+        "ncaaf": "Florida Gators",
+        "ncaab": "Michigan Wolverines",
+        "ncaasb": "Alabama Crimson Tide",
+        "wta": "Linda Noskova",
+        "mls": "New England Revolution",
+        "pga": "Akshay Bhatia",
+        "wnba": "Golden State Valkyries",
+        "nfl": "Washington Commanders"
+      }
+    },
+    {
+      "name": "MumMums",
+      "slug": "mummums",
+      "picks": {
+        "mlb": "San Diego Padres",
+        "nba": "Dallas Mavericks",
+        "nhl": "Carolina Hurricanes",
+        "ncaaf": "Ole Miss Rebels",
+        "ncaab": "Gonzaga Bulldogs",
+        "ncaasb": "Oklahoma Sooners",
+        "wta": "Belinda Bencic",
+        "mls": "Portland Timbers",
+        "pga": "J.J. Spaun",
+        "wnba": "Atlanta Dream",
+        "nfl": "Cincinnati Bengals"
+      }
+    },
+    {
+      "name": "Double Play",
+      "slug": "double-play",
+      "picks": {
+        "mlb": "Seattle Mariners",
+        "nba": "Orlando Magic",
+        "nhl": "Dallas Stars",
+        "ncaaf": "Miami Hurricanes",
+        "ncaab": "Duke Blue Devils",
+        "ncaasb": "Texas Tech Red Raiders",
+        "wta": "Madison Keys",
+        "mls": "Seattle Sounders FC",
+        "pga": "Hideki Matsuyama",
+        "wnba": "Indiana Fever",
+        "nfl": "Green Bay Packers"
+      }
+    },
+    {
+      "name": "Deuces Wild",
+      "slug": "deuces-wild",
+      "picks": {
+        "mlb": "Tampa Bay Rays",
+        "nba": "Golden State Warriors",
+        "nhl": "Toronto Maple Leafs",
+        "ncaaf": "Penn State Nittany Lions",
+        "ncaab": "Texas Tech Red Raiders",
+        "ncaasb": "UCF Knights",
+        "wta": "Jessica Pegula",
+        "mls": "Houston Dynamo FC",
+        "pga": "Rory McIlroy",
+        "wnba": "Los Angeles Sparks",
+        "nfl": "Los Angeles Rams"
+      }
+    },
+    {
+      "name": "Big Ohio Guy",
+      "slug": "big-ohio-guy",
+      "picks": {
+        "mlb": "Chicago White Sox",
+        "nba": "Oklahoma City Thunder",
+        "nhl": "Tampa Bay Lightning",
+        "ncaaf": "Texas Tech Red Raiders",
+        "ncaab": "Tennessee Volunteers",
+        "ncaasb": "Georgia Bulldogs",
+        "wta": "Elina Svitolina",
+        "mls": "Colorado Rapids",
+        "pga": "Viktor Hovland",
+        "wnba": "Atlanta Dream",
+        "nfl": "Chicago Bears"
+      }
+    },
+    {
+      "name": "Brady's Benchwarmers",
+      "slug": "bradys-benchwarmers",
+      "picks": {
+        "mlb": "Philadelphia Phillies",
+        "nba": "San Antonio Spurs",
+        "nhl": "Vegas Golden Knights",
+        "ncaaf": "Texas A&M Aggies",
+        "ncaab": "Michigan State Spartans",
+        "ncaasb": "Florida Gators",
+        "wta": "Victoria Mboko",
+        "mls": "Los Angeles FC",
+        "pga": "Matt Fitzpatrick",
+        "wnba": "Washington Mystics",
+        "nfl": "Seattle Seahawks"
+      }
+    },
+    {
+      "name": "Dirk's Sporting Goods",
+      "slug": "dirks-sporting-goods",
+      "picks": {
+        "mlb": "Atlanta Braves",
+        "nba": "Los Angeles Lakers",
+        "nhl": "Buffalo Sabres",
+        "ncaaf": "Georgia Bulldogs",
+        "ncaab": "UCLA Bruins",
+        "ncaasb": "Florida State Seminoles",
+        "wta": "Amanda Anisimova",
+        "mls": "San Jose Earthquakes",
+        "pga": "Min Woo Lee",
+        "wnba": "New York Liberty",
+        "nfl": "Philadelphia Eagles"
+      }
+    },
+    {
+      "name": "Frosty X Salmon",
+      "slug": "frosty-x-salmon",
+      "picks": {
+        "mlb": "Arizona Diamondbacks",
+        "nba": "Houston Rockets",
+        "nhl": "Boston Bruins",
+        "ncaaf": "Alabama Crimson Tide",
+        "ncaab": "UConn Huskies",
+        "ncaasb": "Mississippi State Bulldogs",
+        "wta": "Naomi Osaka",
+        "mls": "Orlando City SC",
+        "pga": "Cameron Young",
+        "wnba": "Dallas Wings",
+        "nfl": "Baltimore Ravens"
+      }
+    },
+    {
+      "name": "The Phippen Franchise",
+      "slug": "the-phippen-franchise",
+      "picks": {
+        "mlb": "San Francisco Giants",
+        "nba": "Phoenix Suns",
+        "nhl": "Utah Mammoth",
+        "ncaaf": "LSU Tigers",
+        "ncaab": "Missouri Tigers",
+        "ncaasb": "UCLA Bruins",
+        "wta": "Karolina Muchova",
+        "mls": "New York Red Bulls",
+        "pga": "Russell Henley",
+        "wnba": "Indiana Fever",
+        "nfl": "Houston Texans"
+      }
+    },
+    {
+      "name": "Minnesota's Golden 0-4's",
+      "slug": "minnesotas-golden-0-4s",
+      "picks": {
+        "mlb": "Minnesota Twins",
+        "nba": "Minnesota Timberwolves",
+        "nhl": "Minnesota Wild",
+        "ncaaf": "Oregon Ducks",
+        "ncaab": "Kentucky Wildcats",
+        "ncaasb": "Arizona State Sun Devils",
+        "wta": "Elise Mertens",
+        "mls": "Minnesota United FC",
+        "pga": "Chris Gotterup",
+        "wnba": "Minnesota Lynx",
+        "nfl": "Minnesota Vikings"
+      }
+    },
+    {
+      "name": "Coop Doggies",
+      "slug": "coop-doggies",
+      "picks": {
+        "mlb": "Cleveland Guardians",
+        "nba": "Miami Heat",
+        "nhl": "Florida Panthers",
+        "ncaaf": "Notre Dame Fighting Irish",
+        "ncaab": "Houston Cougars",
+        "ncaasb": "Oklahoma State Cowgirls",
+        "wta": "Iva Jovic",
+        "mls": "FC Dallas",
+        "pga": "Justin Rose",
+        "wnba": "Phoenix Mercury",
+        "nfl": "Buffalo Bills"
+      }
+    },
+    {
+      "name": "Team Love",
+      "slug": "team-love",
+      "picks": {
+        "mlb": "Los Angeles Dodgers",
+        "nba": "Atlanta Hawks",
+        "nhl": "Anaheim Ducks",
+        "ncaaf": "Oklahoma Sooners",
+        "ncaab": "Iowa State Cyclones",
+        "ncaasb": "Virginia Tech Hokies",
+        "wta": "Aryna Sabalenka",
+        "mls": "Real Salt Lake",
+        "pga": "Ludvig Åberg",
+        "wnba": "Las Vegas Aces",
+        "nfl": "Detroit Lions"
+      }
+    },
+    {
+      "name": "FoolioIglesias",
+      "slug": "foolioiglesias",
+      "picks": {
+        "mlb": "New York Mets",
+        "nba": "Philadelphia 76ers",
+        "nhl": "Winnipeg Jets",
+        "ncaaf": "BYU Cougars",
+        "ncaab": "Florida Gators",
+        "ncaasb": "Duke Blue Devils",
+        "wta": "Iga Swiatek",
+        "mls": "Inter Miami CF",
+        "pga": "Scottie Scheffler",
+        "wnba": "New York Liberty",
+        "nfl": "Dallas Cowboys"
+      }
+    },
+    {
+      "name": "Dancing Ivory",
+      "slug": "dancing-ivory",
+      "picks": {
+        "mlb": "Detroit Tigers",
+        "nba": "Denver Nuggets",
+        "nhl": "Los Angeles Kings",
+        "ncaaf": "Texas Longhorns",
+        "ncaab": "Texas Longhorns",
+        "ncaasb": "Texas Longhorns",
+        "wta": "Mirra Andreeva",
+        "mls": "Philadelphia Union",
+        "pga": "Sam Burns",
+        "wnba": "Dallas Wings",
+        "nfl": "Los Angeles Chargers"
+      }
+    },
+    {
+      "name": "Sher Bear",
+      "slug": "sher-bear",
+      "picks": {
+        "mlb": "Boston Red Sox",
+        "nba": "Indiana Pacers",
+        "nhl": "Ottawa Senators",
+        "ncaaf": "Utah Utes",
+        "ncaab": "Arizona Wildcats",
+        "ncaasb": "Arkansas Razorbacks",
+        "wta": "Sorana Cirstea",
+        "mls": "St. Louis CITY SC",
+        "pga": "Jackson Koivun",
+        "wnba": "Golden State Valkyries",
+        "nfl": "San Francisco 49ers"
+      }
+    },
+    {
+      "name": "JV Jibby",
+      "slug": "jv-jibby",
+      "picks": {
+        "mlb": "Chicago Cubs",
+        "nba": "Toronto Raptors",
+        "nhl": "Washington Capitals",
+        "ncaaf": "Ohio State Buckeyes",
+        "ncaab": "St. John's Red Storm",
+        "ncaasb": "Texas A&M Aggies",
+        "wta": "Diana Shnaider",
+        "mls": "Nashville SC",
+        "pga": "Wyndham Clark",
+        "wnba": "Chicago Sky",
+        "nfl": "Jacksonville Jaguars"
+      }
+    },
+    {
+      "name": "Philly Flyers",
+      "slug": "philly-flyers",
+      "picks": {
+        "mlb": "Milwaukee Brewers",
+        "nba": "Detroit Pistons",
+        "nhl": "Colorado Avalanche",
+        "ncaaf": "Indiana Hoosiers",
+        "ncaab": "Louisville Cardinals",
+        "ncaasb": "Tennessee Lady Volunteers",
+        "wta": "Marta Kostyuk",
+        "mls": "Chicago Fire FC",
+        "pga": "Si Woo Kim",
+        "wnba": "Las Vegas Aces",
+        "nfl": "New Orleans Saints"
+      }
+    },
+    {
+      "name": "Sweet Rolls",
+      "slug": "sweet-rolls",
+      "picks": {
+        "mlb": "Toronto Blue Jays",
+        "nba": "Cleveland Cavaliers",
+        "nhl": "Edmonton Oilers",
+        "ncaaf": "Tennessee Volunteers",
+        "ncaab": "Purdue Boilermakers",
+        "ncaasb": "South Carolina Gamecocks",
+        "wta": "Elena Rybakina",
+        "mls": "FC Cincinnati",
+        "pga": "Xander Schauffele",
+        "wnba": "Phoenix Mercury",
+        "nfl": "Denver Broncos"
+      }
+    },
+    {
+      "name": "Papie",
+      "slug": "papie",
+      "picks": {
+        "mlb": "New York Yankees",
+        "nba": "Boston Celtics",
+        "nhl": "New Jersey Devils",
+        "ncaaf": "USC Trojans",
+        "ncaab": "North Carolina Tar Heels",
+        "ncaasb": "LSU Tigers",
+        "wta": "Alexandra Eala",
+        "mls": "Charlotte FC",
+        "pga": "Collin Morikawa",
+        "wnba": "Washington Mystics",
+        "nfl": "Kansas City Chiefs"
+      }
+    }
+  ]
+}
