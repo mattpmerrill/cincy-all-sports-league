@@ -4,6 +4,7 @@
  *   pnpm announce:trades                      dry run: who would get it, nothing sent
  *   pnpm announce:trades --only you@x.com     send one test copy to that address
  *   pnpm announce:trades --send               send to everyone on the list
+ *   pnpm announce:trades --send --except a@x.com   ...minus people who already have it (a tester)
  *
  * Members who turned off the weekly email are skipped: they told the league not to email them.
  * Each send carries an idempotency key per member, so a re-run after a partial failure never
@@ -42,6 +43,9 @@ const args = process.argv.slice(2);
 const onlyIndex = args.indexOf("--only");
 const only = onlyIndex >= 0 ? z.email().parse(args[onlyIndex + 1]?.trim().toLowerCase()) : null;
 const send = args.includes("--send");
+const exceptIndex = args.indexOf("--except");
+const except =
+  exceptIndex >= 0 ? z.email().parse(args[exceptIndex + 1]?.trim().toLowerCase()) : null;
 if (only && send) throw new Error("Use --only for a test or --send for everyone, not both.");
 
 const siteUrl = env.NEXT_PUBLIC_SITE_URL.replace(/\/+$/, "");
@@ -67,7 +71,7 @@ async function main() {
     ownerIds(),
   ]);
   const optedOut = members.filter((m) => !m.optedIn);
-  const recipients = members.filter((m) => m.optedIn);
+  const recipients = members.filter((m) => m.optedIn && m.email.toLowerCase() !== except);
   console.log(
     `${members.length} confirmed accounts, ${optedOut.length} opted out of league email, ` +
       `${recipients.length} to send (${recipients.filter((m) => owners.has(m.userId)).length} own a team).`,
