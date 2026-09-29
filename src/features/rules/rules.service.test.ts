@@ -42,3 +42,17 @@ describe("trade rules", () => {
     expect(window?.body).toContain(`${TRADE_WINDOW_HOURS} hours`);
   });
 });
+
+describe("free-agent rules", () => {
+  it("explain the move rules on the rules page, in the league's vocabulary", async () => {
+    const notes = (await rules("cumulative", null))?.notes.freeAgents ?? [];
+    expect(notes.map((n) => n.title)).toEqual([
+      "Drop and add in one step",
+      "First come, first served",
+      "Earned points stay put",
+      "No moves after the season",
+      "Moves cancel trade listings",
+    ]);
+    expect(JSON.stringify(notes)).not.toMatch(/waiver/i);
+  });
+});
