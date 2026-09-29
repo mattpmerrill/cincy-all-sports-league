@@ -23,7 +23,14 @@ More: [team (desktop)](docs/screenshots/team-desktop.png),
 - Sport pages ranking all 20 picks
 - Sign in with Google or email; claim a team, approved by an admin
 - Scores sync from ESPN on a schedule; admins can correct and lock any result
-- Public read access; sign-in only for claiming a team and administration
+- A live league feed: trash talk, reactions, replies and automatic score posts
+- Trades: a trading block and direct offers with 24 hours of open bidding; points a player already
+  earned stay with the team that earned them
+- A weekly standings email and trade alerts, each with its own opt-out
+- Profile photos, uploaded and cropped in the browser
+- Public read access; sign-in only for claiming a team, posting, trading and administration
+
+Current state, local setup and open follow-ups: [docs/status.md](docs/status.md).
 
 ## Tech stack
 
