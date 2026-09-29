@@ -9,7 +9,7 @@ const MESSAGES: Record<AuthFailureCode, string> = {
   weak_password: "That password is too easy to guess. Try a longer or less common one.",
   same_password: "Choose a password different from your current one.",
   invalid_email: "That email address doesn't look right.",
-  rate_limited: "Too many attempts. Wait a few minutes and try again.",
+  rate_limited: "Too many attempts right now. Try again in a bit, or continue with Google.",
   invalid_link: "That link has expired or was already used. Request a new one and try again.",
   unauthenticated: "Your session has ended. Sign in again to continue.",
   unknown: "Something went wrong on our side. Please try again in a moment.",
