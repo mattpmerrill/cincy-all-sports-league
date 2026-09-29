@@ -5,6 +5,7 @@ import type { DigestRepository } from "@/data/digest.repository";
 import type { StandingsSnapshotsRepository } from "@/data/standings-snapshots.repository";
 import type { EmailSender } from "@/integrations/resend";
 import type { Logger } from "@/lib/logger";
+import { maskEmail } from "@/lib/mask-email";
 import { err, ok, type AppError, type Result } from "@/lib/result";
 import { easternDate } from "@/lib/time";
 import type { DigestEmailProps } from "./email/render";
@@ -47,12 +48,6 @@ export type DigestServiceDeps = {
 };
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-/** "sam@example.com" -> "s***@example.com": enough to correlate a log line, not to contact. */
-export function maskEmail(email: string): string {
-  const at = email.lastIndexOf("@");
-  return at <= 0 ? "***" : `${email[0]}***${email.slice(at)}`;
-}
 
 export type DigestService = ReturnType<typeof createDigestService>;
 

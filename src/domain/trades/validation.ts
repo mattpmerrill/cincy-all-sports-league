@@ -2,7 +2,7 @@ import type { PickData, SeasonStatus } from "@/domain/league";
 import { SPORT_CODES, SPORTS } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
 import { effectiveListingStatus } from "./status";
-import type { TradeCheck, TradeErrorCode, TradeListing, TradeTeamRef } from "./types";
+import type { TradeCheck, TradeErrorCode, TradeListing, TradeOffer, TradeTeamRef } from "./types";
 
 /**
  * Friendly pre-checks that mirror the SQL functions, so the UI can explain a problem before
@@ -170,4 +170,26 @@ export function validateOfferRequest(input: {
 
   const same = sports.find((s) => heldIn(team, s)?.participant.id === listed.get(s));
   return same ? fail("same_participant", `You both have the same ${sportName(same)} pick.`) : pass;
+}
+
+/**
+ * Accept an offer. SQL owns who may accept and re-checks status and window under locks; this adds
+ * what it cannot: a sport whose season is complete is locked, and the friendly reasons come first.
+ */
+export function validateAcceptRequest(input: {
+  listing: TradeListing;
+  offer: Pick<TradeOffer, "status" | "legs">;
+  sportStatuses: SportPhases;
+  now: Date;
+}): TradeCheck {
+  if (input.offer.status !== "pending") {
+    return fail("offer_not_pending", "That offer was already answered or withdrawn.");
+  }
+  if (effectiveListingStatus(input.listing, input.now) !== "open") {
+    return fail("listing_closed", "This listing is closed.");
+  }
+  return checkNotLocked(
+    input.offer.legs.map((l) => l.sport),
+    input.sportStatuses,
+  );
 }

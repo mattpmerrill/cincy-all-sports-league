@@ -218,6 +218,16 @@ export function createTradesRepository(db: DbClient) {
     return data?.id ?? null;
   }
 
+  async function getListing(id: string): Promise<TradeListing | null> {
+    const { data, error } = await db
+      .from("trade_listings")
+      .select(LISTING_SELECT)
+      .eq("id", id)
+      .maybeSingle<ListingRow>();
+    if (error) throw error;
+    return data ? toTradeListing(data) : null;
+  }
+
   return {
     // ----- reads (public read; any client) -----
 
@@ -241,14 +251,21 @@ export function createTradesRepository(db: DbClient) {
     },
 
     /** One listing with its items and every offer and leg, or null when the id matches nothing. */
-    async getListing(id: string): Promise<TradeListing | null> {
+    getListing,
+
+    /**
+     * The listing an offer was made on, with every offer on it, or null when the offer id matches
+     * nothing. The service needs the whole listing to answer an offer: who else is waiting, and
+     * what each side gives.
+     */
+    async getListingByOfferId(offerId: string): Promise<TradeListing | null> {
       const { data, error } = await db
-        .from("trade_listings")
-        .select(LISTING_SELECT)
-        .eq("id", id)
-        .maybeSingle<ListingRow>();
+        .from("trade_offers")
+        .select("listing_id")
+        .eq("id", offerId)
+        .maybeSingle();
       if (error) throw error;
-      return data ? toTradeListing(data) : null;
+      return data ? getListing(data.listing_id) : null;
     },
 
     /** A team's own listings in the active season, newest first, whatever their status. */

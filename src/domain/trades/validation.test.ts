@@ -4,6 +4,7 @@ import { AN_HOUR_AGO, NOW, item, listing, offer, phases, teamRef } from "./fixtu
 import type { TradeCheck, TradeItem } from "./types";
 import {
   tradeableSports,
+  validateAcceptRequest,
   validateDirectRequest,
   validateListingRequest,
   validateOfferRequest,
@@ -153,5 +154,33 @@ describe("validateOfferRequest", () => {
     expect(run(["nfl"], { sportStatuses: phases(["nfl"]) })).toBe("sport_locked");
     const same = picks(item("nfl", "Chicago Bears"));
     expect(run(["nfl"], { team: { ...mine, picks: same } })).toBe("same_participant");
+  });
+});
+
+describe("validateAcceptRequest", () => {
+  const pending = offer({
+    offeringTeam: teamRef("Papie"),
+    legs: [item("nfl", "Kansas City Chiefs")],
+  });
+  const run = (over: Partial<Parameters<typeof validateAcceptRequest>[0]> = {}) =>
+    code(
+      validateAcceptRequest({
+        listing: listing({ offers: [pending] }),
+        offer: pending,
+        sportStatuses: phases(),
+        now: NOW,
+        ...over,
+      }),
+    );
+
+  it("accepts a pending offer on an open listing", () => {
+    expect(run()).toBe("ok");
+  });
+
+  it("refuses an answered offer, a closed or expired listing and a completed sport", () => {
+    expect(run({ offer: { ...pending, status: "withdrawn" } })).toBe("offer_not_pending");
+    expect(run({ listing: listing({ status: "cancelled" }) })).toBe("listing_closed");
+    expect(run({ listing: listing({ closesAt: AN_HOUR_AGO }) })).toBe("listing_closed");
+    expect(run({ sportStatuses: phases(["nfl"]) })).toBe("sport_locked");
   });
 });

@@ -247,3 +247,26 @@ describe("mutations", () => {
     expect(direct.rpc.mock.calls[0]?.[1]).toMatchObject({ p_target_team_id: "t2", p_note: null });
   });
 });
+
+describe("getListingByOfferId", () => {
+  const dbReturning = (offer: { listing_id: string } | null, listing: ListingRow | null) => {
+    const single = (data: unknown) => ({
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data, error: null }) }) }),
+    });
+    return {
+      from: (table: string) => (table === "trade_offers" ? single(offer) : single(listing)),
+    } as unknown as DbClient;
+  };
+
+  it("finds the listing through the offer", async () => {
+    const repo = createTradesRepository(dbReturning({ listing_id: "l1" }, listingRow));
+    const found = await repo.getListingByOfferId("o1");
+    expect(found?.id).toBe("l1");
+    expect(found?.offers.map((o) => o.id)).toEqual(["o1", "o2"]);
+  });
+
+  it("is null for an unknown offer", async () => {
+    const repo = createTradesRepository(dbReturning(null, null));
+    expect(await repo.getListingByOfferId("nope")).toBeNull();
+  });
+});

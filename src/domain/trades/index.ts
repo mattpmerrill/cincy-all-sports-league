@@ -29,6 +29,7 @@ export type {
 } from "./types";
 export {
   tradeableSports,
+  validateAcceptRequest,
   validateDirectRequest,
   validateListingRequest,
   validateOfferRequest,

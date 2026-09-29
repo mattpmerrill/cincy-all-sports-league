@@ -4,7 +4,7 @@ import type { DigestMember, DigestSend } from "@/data/digest.repository";
 import type { EmailError, OutgoingEmail } from "@/integrations/resend";
 import { createLogger, type Logger } from "@/lib/logger";
 import { err, ok, type Result } from "@/lib/result";
-import { createDigestService, maskEmail } from "./digest.service";
+import { createDigestService } from "./digest.service";
 
 const USER_A = "6f1d2c1e-8a44-4f57-9a3b-0c1d2e3f4a5b";
 const USER_B = "0b9f6a52-1d3e-4c5b-8a7f-123456789abc";
@@ -254,12 +254,5 @@ describe("sendWeeklyDigest with only", () => {
     t.restore();
     expect(result).toMatchObject({ ok: false, error: { code: "recipient_not_found" } });
     expect(t.sent).toHaveLength(0);
-  });
-});
-
-describe("maskEmail", () => {
-  it("keeps the first letter and the domain", () => {
-    expect(maskEmail("sam@example.com")).toBe("s***@example.com");
-    expect(maskEmail("nonsense")).toBe("***");
   });
 });
