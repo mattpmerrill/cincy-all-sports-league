@@ -72,6 +72,11 @@ pg_cron (every 30 min) -> POST /api/cron/sync (bearer CRON_SECRET, constant-time
        revalidateLeague() ......... drops the cached public read model
 ```
 
+Free agents ride along: where ESPN's feed is league-wide (pro sports, WTA, PGA) the same fetch
+already covers the whole pool, so the 30-minute run scores free agents with no extra ESPN calls.
+College free agents (one ESPN call per team) are scored by the daily pool job instead, in chunks
+of 60. See "Free-agent pool" below.
+
 The admin "Sync now" button runs the same service for one sport. Admin overrides are locked rows that sync never overwrites
 ([ADR-002](decisions/ADR-002-espn-public-api-with-admin-overrides.md)).
 
@@ -96,6 +101,40 @@ alerts:   service hands alerts to Next's after(): emails go out after the respon
 
 Expiry is derived (`open` past `closes_at` reads as expired), so no job sweeps listings. Team totals
 use credited scores (live minus baseline plus banked), so a trade never moves the leaderboard.
+
+## Free-agent flow
+
+A move drops a team's pick in a sport and adds a free agent in one step, with no approval. Every
+move write is a `service_role`-only SQL function, and the domain owns the rules. See
+[ADR-004](decisions/ADR-004-free-agent-moves.md).
+
+```
+form -> Server Action (re-checks session) -> free-agents service
+  pre-check on the cached model (domain validateMove): junk requests cost no ESPN call
+  -> ESPN refresh of the two participants only (20 s deadline; no answer, no move)
+  -> fresh, uncached data, validated again
+  -> live scores of both participants from createParticipantScorer
+  -> repository rpc make_free_agent_move, one transaction:
+       locks listings, offers, the pick, the added participant (same order as trades)
+       banks the dropped participant's earned points, sets the added one's live score as baseline
+       swaps the pick, cancels the team's live listings for the sport,
+       voids its pending offers that give that pick, writes the "League" feed post
+  -> revalidateLeague() drops the cached model
+```
+
+Two teams racing for one free agent resolve to a single winner (`not_free_agent` for the loser).
+Browsing reads the 10-minute cached model, so a page can be a few minutes behind; the move itself
+never is. Like trades, a move never changes the leaderboard: earned points stay with the team.
+
+### Free-agent pool
+
+`participants` holds every team or top athlete ESPN lists for a sport, not just the drafted ones.
+A pg_cron job calls `/api/cron/free-agents?sport=<code>` once per sport at 09:15 UTC each day
+(bearer `CRON_SECRET`, one sport per request to stay inside the 60 second limit). The route runs
+`refreshFreeAgents`: the roster load (`features/sync/roster.ts`, insert-only, so it never renames
+or deletes a participant and a re-run inserts nothing) and then, for college sports, scoring of
+the free agents in chunks. Pro sports, WTA and PGA free agents are scored in the regular
+30-minute sync. Anyone no team holds is a free agent, derived per request (`domain/free-agents`).
 
 ## Conventions
 

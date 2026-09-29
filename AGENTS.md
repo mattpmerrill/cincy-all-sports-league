@@ -56,23 +56,25 @@ It doubles as a public portfolio project, so structure and tests should be exemp
 
 **File map**
 
-| Path                    | What it holds                                                                        |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `src/app`               | Routes only                                                                          |
-| `src/features/*`        | Vertical slices: standings, fantasy-teams, sports, auth, claims, results-admin, sync |
-| `src/domain`            | Pure rules: `scoring`, `standings`, `sports`                                         |
-| `src/data`              | Repositories and row-to-domain mappers                                               |
-| `src/integrations/espn` | The ESPN adapter                                                                     |
-| `src/lib`               | env, Supabase clients, logger, `Result`                                              |
-| `src/ui`                | shadcn/ui primitives and design-system components                                    |
-| `supabase/`             | Migrations, pgTAP tests, seed                                                        |
-| `docs/`                 | Architecture and ADRs                                                                |
+| Path                    | What it holds                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------- |
+| `src/app`               | Routes only                                                                                       |
+| `src/features/*`        | Vertical slices: standings, fantasy-teams, sports, auth, claims, results-admin, sync, free-agents |
+| `src/domain`            | Pure rules: `scoring`, `standings`, `sports`                                                      |
+| `src/data`              | Repositories and row-to-domain mappers                                                            |
+| `src/integrations/espn` | The ESPN adapter                                                                                  |
+| `src/lib`               | env, Supabase clients, logger, `Result`                                                           |
+| `src/ui`                | shadcn/ui primitives and design-system components                                                 |
+| `supabase/`             | Migrations, pgTAP tests, seed                                                                     |
+| `docs/`                 | Architecture and ADRs                                                                             |
 
 **Vocabulary.** Use these words in code, UI and docs.
 
 - **Fantasy team**: one of the 20 entries in the league, owned by a member.
 - **Pick**: a fantasy team's one choice in a sport.
 - **Participant**: the real team or athlete that a pick points at.
+- **Free agent**: a participant no team holds that a team can pick up in place of its current pick.
+- **Move**: one atomic drop-and-add in a sport.
 - **Result**: a recorded fact about a participant (wins, a round reached, a finish, a rank).
 - **Scoring rule**: how a kind of result converts to points for a sport in a season.
 - **Season**: one league year (for example 2026-27) with its own rules and playoff scoring mode.

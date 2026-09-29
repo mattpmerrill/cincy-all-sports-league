@@ -26,6 +26,8 @@ More: [team (desktop)](docs/screenshots/team-desktop.png),
 - A live league feed: trash talk, reactions, replies and automatic score posts
 - Trades: a trading block and direct offers with 24 hours of open bidding; points a player already
   earned stay with the team that earned them
+- Free agents: swap your pick in any sport for anyone no team holds, instantly, and keep the points
+  it already earned
 - A weekly standings email and trade alerts, each with its own opt-out
 - Profile photos, uploaded and cropped in the browser
 - Public read access; sign-in only for claiming a team, posting, trading and administration
