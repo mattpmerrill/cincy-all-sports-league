@@ -34,6 +34,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      digest_sends: {
+        Row: {
+          recipient_count: number
+          sent_at: string
+          status: string
+          week_start: string
+        }
+        Insert: {
+          recipient_count: number
+          sent_at?: string
+          status: string
+          week_start: string
+        }
+        Update: {
+          recipient_count?: number
+          sent_at?: string
+          status?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       fantasy_teams: {
         Row: {
           created_at: string
@@ -72,6 +93,100 @@ export type Database = {
           },
           {
             foreignKeyName: "fantasy_teams_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: Database["public"]["Enums"]["reaction_emoji"]
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: Database["public"]["Enums"]["reaction_emoji"]
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: Database["public"]["Enums"]["reaction_emoji"]
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "message_reactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          author_id: string | null
+          body: string
+          created_at: string
+          deleted_at: string | null
+          id: string
+          kind: Database["public"]["Enums"]["message_kind"]
+          parent_id: string | null
+          payload: Json
+          season_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          body: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["message_kind"]
+          parent_id?: string | null
+          payload?: Json
+          season_id: string
+        }
+        Update: {
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          deleted_at?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["message_kind"]
+          parent_id?: string | null
+          payload?: Json
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_season_id_fkey"
             columns: ["season_id"]
             isOneToOne: false
             referencedRelation: "seasons"
@@ -238,6 +353,7 @@ export type Database = {
           id: string
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
+          weekly_email_opt_in: boolean
         }
         Insert: {
           avatar_url?: string | null
@@ -246,6 +362,7 @@ export type Database = {
           id: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          weekly_email_opt_in?: boolean
         }
         Update: {
           avatar_url?: string | null
@@ -254,6 +371,7 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+          weekly_email_opt_in?: boolean
         }
         Relationships: []
       }
@@ -538,12 +656,15 @@ export type Database = {
     Functions: {
       approve_team_claim: { Args: { claim_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      owns_team: { Args: never; Returns: boolean }
       reject_team_claim: { Args: { claim_id: string }; Returns: undefined }
     }
     Enums: {
       claim_status: "pending" | "approved" | "rejected"
+      message_kind: "member" | "league"
       participant_kind: "team" | "athlete"
       playoff_scoring_mode: "cumulative" | "highest_only"
+      reaction_emoji: "fire" | "laugh" | "skull" | "clap" | "goat"
       result_source: "espn" | "manual"
       scoring_rule_kind:
         | "per_win"
@@ -684,8 +805,10 @@ export const Constants = {
   public: {
     Enums: {
       claim_status: ["pending", "approved", "rejected"],
+      message_kind: ["member", "league"],
       participant_kind: ["team", "athlete"],
       playoff_scoring_mode: ["cumulative", "highest_only"],
+      reaction_emoji: ["fire", "laugh", "skull", "clap", "goat"],
       result_source: ["espn", "manual"],
       scoring_rule_kind: [
         "per_win",
