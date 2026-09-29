@@ -1,0 +1,94 @@
+{
+  "sports": [
+    {
+      "id": "1",
+      "name": "Baseball",
+      "slug": "baseball",
+      "leagues": [
+        {
+          "id": "10",
+          "name": "Major League Baseball",
+          "abbreviation": "MLB",
+          "slug": "mlb",
+          "teams": [
+            {
+              "team": {
+                "id": "29",
+                "uid": "s:1~l:10~t:29",
+                "slug": "arizona-diamondbacks",
+                "abbreviation": "ARI",
+                "displayName": "Arizona Diamondbacks",
+                "shortDisplayName": "Diamondbacks",
+                "name": "Diamondbacks",
+                "nickname": "Arizona",
+                "location": "Arizona",
+                "color": "aa182c",
+                "alternateColor": "000000",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/mlb/500/ari.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "1",
+                "uid": "s:1~l:10~t:1",
+                "slug": "baltimore-orioles",
+                "abbreviation": "BAL",
+                "displayName": "Baltimore Orioles",
+                "shortDisplayName": "Orioles",
+                "name": "Orioles",
+                "nickname": "Baltimore",
+                "location": "Baltimore",
+                "color": "df4601",
+                "alternateColor": "000000",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/mlb/500/bal.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "17",
+                "uid": "s:1~l:10~t:17",
+                "slug": "cincinnati-reds",
+                "abbreviation": "CIN",
+                "displayName": "Cincinnati Reds",
+                "shortDisplayName": "Reds",
+                "name": "Reds",
+                "nickname": "Cincinnati",
+                "location": "Cincinnati",
+                "color": "c6011f",
+                "alternateColor": "ffffff",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/mlb/500/cin.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2026/athletes/9478?lang=en&region=us",
+  "id": "9478",
+  "uid": "s:1100~a:9478",
+  "firstName": "Scottie",
+  "lastName": "Scheffler",
+  "fullName": "Scottie Scheffler",
+  "displayName": "Scottie Scheffler",
+  "shortName": "S. Scheffler",
+  "amateur": false,
+  "headshot": {
+    "href": "https://a.espncdn.com/i/headshots/golf/players/full/9478.png",
+    "alt": "Scottie Scheffler"
+  }
+}
