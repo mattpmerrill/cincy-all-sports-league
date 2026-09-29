@@ -2,7 +2,7 @@ import type { SeasonStatus } from "@/domain/league";
 import { cn } from "cn";
 
 const TONE: Record<SeasonStatus["phase"], { text: string; dot: string }> = {
-  in_season: { text: "text-brand", dot: "bg-brand" },
+  in_season: { text: "text-brand-bright", dot: "bg-brand" },
   upcoming: { text: "text-text-muted", dot: "bg-text-muted" },
   complete: { text: "text-gold", dot: "bg-gold" },
 };

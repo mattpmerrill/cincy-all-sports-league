@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const link = "text-brand underline-offset-4 hover:underline";
+const link = "text-brand-bright underline-offset-4 hover:underline";
 
 /** Consent line shown under the sign-in and sign-up forms. */
 export function LegalConsent() {

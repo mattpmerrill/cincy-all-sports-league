@@ -38,7 +38,10 @@ export default async function MePage() {
           {isAdminRole(user.role) ? (
             <div className="flex items-center gap-2">
               <Badge>Admin</Badge>
-              <Link href="/admin" className="text-sm text-brand underline-offset-4 hover:underline">
+              <Link
+                href="/admin"
+                className="text-sm text-brand-bright underline-offset-4 hover:underline"
+              >
                 Open admin
               </Link>
             </div>

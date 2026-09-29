@@ -31,7 +31,7 @@ export function LeaderboardHero({
           aria-hidden="true"
           className={cn(
             "size-2 rounded-full",
-            board.updatedAt ? "animate-live bg-heat" : "bg-text-muted",
+            board.updatedAt ? "animate-live bg-brand" : "bg-text-muted",
           )}
         />
         {board.updatedAt

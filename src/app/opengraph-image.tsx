@@ -14,8 +14,8 @@ export default function OpenGraphImage() {
         flexDirection: "column",
         justifyContent: "space-between",
         padding: 72,
-        color: "#f2f5fb",
-        background: "linear-gradient(135deg, #0b0f1a 55%, #1d2b12)",
+        color: "#f5f5f6",
+        background: "linear-gradient(135deg, #0a0a0b 55%, #2a0a10)",
       }}
     >
       <div
@@ -23,8 +23,8 @@ export default function OpenGraphImage() {
           width: 96,
           height: 96,
           borderRadius: 24,
-          background: "#c6ff3d",
-          color: "#0b0f1a",
+          background: "#c6011f",
+          color: "#ffffff",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
@@ -38,7 +38,7 @@ export default function OpenGraphImage() {
         <div style={{ fontSize: 120, fontWeight: 800, lineHeight: 1, textTransform: "uppercase" }}>
           Cincy&apos;s All-Sports League
         </div>
-        <div style={{ marginTop: 28, fontSize: 40, color: "#8b96b3" }}>
+        <div style={{ marginTop: 28, fontSize: 40, color: "#9a9aa2" }}>
           20 teams. 11 sports. One leaderboard.
         </div>
       </div>

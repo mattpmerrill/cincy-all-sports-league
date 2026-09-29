@@ -14,7 +14,7 @@ export function MovementIndicator({
     "font-display inline-flex items-center gap-0.5 text-sm leading-none font-bold tabular";
   const up = movement.direction === "up";
   return (
-    <span className={cn(base, up ? "text-brand" : "text-heat", className)}>
+    <span className={cn(base, up ? "text-text" : "text-text-muted", className)}>
       <span aria-hidden="true">
         {up ? "▲" : "▼"}
         {movement.places}

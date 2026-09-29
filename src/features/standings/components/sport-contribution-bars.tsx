@@ -26,7 +26,9 @@ export function SportContributionBars({
       {sportPoints.map(({ sport, points }) => (
         <span
           key={sport}
-          className={points > 0 ? "w-1.5 rounded-xs bg-brand" : "h-0.5 w-1.5 rounded-full bg-line"}
+          className={
+            points > 0 ? "w-1.5 rounded-xs bg-brand-bright" : "h-0.5 w-1.5 rounded-full bg-line"
+          }
           style={
             points > 0 && max > 0 ? { height: `${Math.max(18, (points / max) * 100)}%` } : undefined
           }

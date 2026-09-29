@@ -10,7 +10,7 @@ export default function NotFound() {
       />
       <Link
         href="/"
-        className="self-start font-medium text-brand underline-offset-4 hover:underline"
+        className="self-start font-medium text-brand-bright underline-offset-4 hover:underline"
       >
         Back to standings
       </Link>

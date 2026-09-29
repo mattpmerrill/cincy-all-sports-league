@@ -22,7 +22,7 @@ export default async function UpdatePasswordPage() {
           </Alert>
           <Link
             href="/reset-password"
-            className="text-center text-sm text-brand underline-offset-4 hover:underline"
+            className="text-center text-sm text-brand-bright underline-offset-4 hover:underline"
           >
             Request a new link
           </Link>

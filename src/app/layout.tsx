@@ -31,7 +31,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   // Browser chrome can't read CSS variables, so this mirrors --canvas in globals.css.
-  themeColor: "#0b0f1a",
+  themeColor: "#0a0a0b",
   colorScheme: "dark",
   // Lets the header and tab bar extend under the notch and home indicator.
   viewportFit: "cover",

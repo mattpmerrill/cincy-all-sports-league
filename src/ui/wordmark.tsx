@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/** Logo lockup: lime tile plus the league name. */
+/** Logo lockup: brand-colored tile plus the league name. */
 export function Wordmark() {
   return (
     <Link

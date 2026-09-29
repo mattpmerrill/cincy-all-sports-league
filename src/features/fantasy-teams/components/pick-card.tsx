@@ -60,7 +60,9 @@ export function PickCard({ pick, index }: { pick: PickView; index: number }) {
           <ul className="flex flex-col gap-1.5 pt-2 pb-1 text-sm">
             {pick.lines.map((line, i) => (
               <li key={i} className="flex items-baseline justify-between gap-3">
-                <span className={line.isAdjustment ? "text-heat" : "text-text"}>{line.text}</span>
+                <span className={line.isAdjustment ? "text-brand-bright" : "text-text"}>
+                  {line.text}
+                </span>
                 <span className="tabular font-display text-lg font-bold">
                   {line.points < 0 ? "−" : ""}
                   {formatPoints(Math.abs(line.points))}

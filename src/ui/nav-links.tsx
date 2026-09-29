@@ -36,8 +36,8 @@ export function NavLinks({ variant }: { variant: "bar" | "top" }) {
                   : "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold",
                 current
                   ? variant === "bar"
-                    ? "text-brand"
-                    : "bg-surface-raised text-brand"
+                    ? "text-brand-bright"
+                    : "bg-surface-raised text-brand-bright"
                   : "text-text-muted hover:text-text",
               )}
             >

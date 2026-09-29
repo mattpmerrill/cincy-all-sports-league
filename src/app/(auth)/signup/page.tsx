@@ -27,7 +27,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
       footer={
         <>
           Already have an account?{" "}
-          <Link href={loginHref} className="text-brand underline-offset-4 hover:underline">
+          <Link href={loginHref} className="text-brand-bright underline-offset-4 hover:underline">
             Sign in
           </Link>
         </>

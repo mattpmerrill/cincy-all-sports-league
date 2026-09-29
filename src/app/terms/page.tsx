@@ -36,7 +36,7 @@ export default function TermsPage() {
         <p>
           Admins can remove accounts or team claims, for example if someone breaks these terms. You
           can ask an admin to delete your account at any time. See the{" "}
-          <a href="/privacy" className="text-brand underline-offset-4 hover:underline">
+          <a href="/privacy" className="text-brand-bright underline-offset-4 hover:underline">
             Privacy Policy
           </a>{" "}
           for details.

@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     // The manifest is read by the OS, outside CSS, so these mirror --canvas and --brand in globals.css.
-    background_color: "#0b0f1a",
-    theme_color: "#0b0f1a",
+    background_color: "#0a0a0b",
+    theme_color: "#0a0a0b",
     icons: [
       { src: "/icon", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/apple-icon", sizes: "180x180", type: "image/png" },

@@ -5,26 +5,31 @@
 /*
  * Design tokens for the dark "broadcast" theme. This file is the only place literal colors may
  * appear (enforced by ESLint for TS/TSX). Components use the semantic utilities generated below
- * (bg-surface, text-brand, text-gold, ...) and never a raw value. The app is dark-only.
+ * (bg-surface, text-brand-bright, text-gold, ...) and never a raw value. The app is dark-only.
  */
 :root {
   color-scheme: dark;
 
-  /* Surfaces, darkest to lightest */
-  --canvas: #0b0f1a;
-  --surface: #121829;
-  --surface-raised: #1a2136;
-  --surface-high: #232c45;
-  --line: #2a3450;
+  /* Surfaces, darkest to lightest: neutral charcoal steps, no color cast */
+  --canvas: #0a0a0b;
+  --surface: #131315;
+  --surface-raised: #1b1b1e;
+  --surface-high: #26262a;
+  --line: #2f2f34;
 
   /* Text */
-  --text: #f2f5fb;
-  --text-muted: #8b96b3;
+  --text: #f5f5f6;
+  --text-muted: #9a9aa2;
 
-  /* Accents: lime is the brand/primary action, heat marks movement and live state */
-  --brand: #c6ff3d;
-  --on-brand: #0b0f1a;
-  --heat: #ff6b2c;
+  /*
+   * Accents. --brand is the fill color (buttons, badges, bars, glows) and always carries white
+   * --on-brand text. It is too dark to read as text on the canvas, so red text and thin marks use
+   * the lighter --brand-bright. Red is the brand here, so movement never uses it: rank arrows are
+   * white (up) and gray (down). --danger shares the bright tint; errors are told apart by copy.
+   */
+  --brand: #c6011f;
+  --brand-bright: #ff4d5e;
+  --on-brand: #ffffff;
   --danger: #ff4d5e;
 
   /* Top-3 rank metals */
@@ -70,8 +75,8 @@
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
   --color-brand: var(--brand);
+  --color-brand-bright: var(--brand-bright);
   --color-on-brand: var(--on-brand);
-  --color-heat: var(--heat);
   --color-danger: var(--danger);
   --color-gold: var(--gold);
   --color-silver: var(--silver);
@@ -153,10 +158,10 @@
 @keyframes live {
   0%,
   100% {
-    box-shadow: 0 0 0 0 color-mix(in oklab, var(--heat) 60%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand) 60%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 5px color-mix(in oklab, var(--heat) 0%, transparent);
+    box-shadow: 0 0 0 5px color-mix(in oklab, var(--brand) 0%, transparent);
   }
 }
 
@@ -184,7 +189,7 @@
       linear-gradient(to bottom, var(--surface-raised), var(--surface));
   }
 
-  /* Broadcast backdrop behind page heroes: a lime bloom and a fine grid. */
+  /* Broadcast backdrop behind page heroes: a red bloom and a fine grid. */
   .hero-backdrop {
     background-image:
       radial-gradient(

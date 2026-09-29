@@ -12,7 +12,7 @@ export function SportRulesCard({ sport }: { sport: SportRules }) {
       className="scroll-mt-20 rounded-2xl border border-line bg-surface p-4 shadow-lift md:p-5"
     >
       <header className="flex items-center gap-3">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-raised text-brand ring-1 ring-line">
+        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-raised text-brand-bright ring-1 ring-line">
           <SportIcon sport={sport.code} className="size-5" />
         </span>
         <div className="flex flex-col gap-1">

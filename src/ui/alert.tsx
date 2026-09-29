@@ -6,7 +6,7 @@ const alertVariants = cva("rounded-lg border px-3 py-2 text-sm", {
   variants: {
     variant: {
       error: "border-danger/40 bg-danger/10 text-danger",
-      success: "border-brand/40 bg-brand/10 text-brand",
+      success: "border-brand/40 bg-brand/10 text-brand-bright",
       info: "border-line bg-surface-raised text-text-muted",
     },
   },
