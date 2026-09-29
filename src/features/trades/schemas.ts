@@ -53,3 +53,12 @@ export const listingParamSchema = z.uuid();
 
 /** Key in a failed `FormState.data` that carries the listing blocking an `already_listed` error. */
 export const BLOCKING_LISTING_KEY = "blockingListingId";
+
+export const TRADE_MODES = ["block", "direct"] as const;
+export type TradeMode = (typeof TRADE_MODES)[number];
+
+/** `/trades/new` search params. Anything unrecognised falls back to the block form. */
+export const newTradeSearchSchema = z.object({
+  mode: z.enum(TRADE_MODES).catch("block"),
+  team: z.uuid().optional().catch(undefined),
+});

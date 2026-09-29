@@ -112,7 +112,7 @@ export type ListingView = {
   timeLeft: string;
   role: ViewerRole;
   viewerTeam: TeamRef | null;
-  /** Every offer, oldest first, with what the viewer may do to each. */
+  /** Every offer with what the viewer may do to each: the viewer's own first, then oldest first. */
   offers: OfferView[];
   /** The viewer's own pending offer on this listing. */
   myOffer: OfferView | null;
@@ -333,7 +333,11 @@ export function buildListingView(input: {
         ? "owner"
         : "bidder";
   const status = effectiveListingStatus(listing, now);
-  const offers = listing.offers.map((o) => offerView(o, listing, teamId, now));
+  // Your own offers first, so a bidder finds theirs (and its Withdraw button) without hunting.
+  // toSorted is stable, so the rest keep the repository's oldest-first order.
+  const offers = listing.offers
+    .map((o) => offerView(o, listing, teamId, now))
+    .toSorted((a, b) => Number(b.isMine) - Number(a.isMine));
   return {
     listing,
     status,

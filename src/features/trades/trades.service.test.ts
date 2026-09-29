@@ -576,6 +576,20 @@ describe("getListingView", () => {
     expect(view?.offerBlockedReason).toMatch(/already have an offer/);
   });
 
+  it("puts the viewer's own offer first and keeps the rest oldest first", async () => {
+    const { service } = setup({
+      listings: [
+        listingOf({
+          offers: [offerOf("o-papie", "papie", ["nba"]), offerOf("o-me", "me", ["nfl"])],
+        }),
+      ],
+    });
+    const asBidder = await service.getListingView("l1", { id: "u-me" });
+    expect(asBidder?.offers.map((o) => o.offer.id)).toEqual(["o-me", "o-papie"]);
+    const asOwner = await service.getListingView("l1", { id: "u-coop" });
+    expect(asOwner?.offers.map((o) => o.offer.id)).toEqual(["o-papie", "o-me"]);
+  });
+
   it("lists a choice per listed sport with what you give and get, and why one is locked", async () => {
     const { service } = setup({
       listings: [listingOf()],
