@@ -1,11 +1,11 @@
-import { scoreParticipant } from "@/domain/scoring";
-import type { ParticipantScore, ScoreTotals, ScoringRule } from "@/domain/scoring";
+import type { ParticipantScore, ScoreTotals } from "@/domain/scoring";
 import { rankMovement, rankStandings, scoreFantasyTeam } from "@/domain/standings";
 import type { RankMovement, RankedTeam, TeamScore } from "@/domain/standings";
 import { SPORT_CODES } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
 import { creditPick } from "./credit-pick";
 import type { PickAdjustment } from "./credit-pick";
+import { createParticipantScorer } from "./participant-scorer";
 import { seasonStatus } from "./season-status";
 import type { SeasonStatus } from "./season-status";
 import type {
@@ -75,12 +75,9 @@ export function previousRanks(
  * data and every page derives its view from this one function.
  */
 export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
-  const rulesBySport = new Map<SportCode, ScoringRule[]>();
   const championshipRuleIds = new Set<string>();
-  for (const { sport, rule } of data.rules) {
-    rulesBySport.set(sport, [...(rulesBySport.get(sport) ?? []), rule]);
+  for (const { rule } of data.rules)
     if (rule.isChampionship && rule.kind === "playoff_milestone") championshipRuleIds.add(rule.id);
-  }
 
   const sportSeason = new Map(data.sports.map((s) => [s.code, s]));
   const sportOf = (code: SportCode) => {
@@ -108,30 +105,7 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
     }),
   ) as Record<SportCode, SportInfo>;
 
-  const resultsByParticipant = new Map<string, LeagueData["results"]>();
-  for (const r of data.results) {
-    resultsByParticipant.set(r.participantId, [
-      ...(resultsByParticipant.get(r.participantId) ?? []),
-      r,
-    ]);
-  }
-
-  const scoreCache = new Map<string, ParticipantScore>();
-  const scorePick = (sport: SportCode, participantId: string): ParticipantScore => {
-    const cached = scoreCache.get(participantId);
-    if (cached) return cached;
-    const score = scoreParticipant(
-      rulesBySport.get(sport) ?? [],
-      resultsByParticipant.get(participantId) ?? [],
-      {
-        sport,
-        playoffScoringMode: data.season.playoffScoringMode,
-        majorPointsCap: sportOf(sport).majorPointsCap,
-      },
-    );
-    scoreCache.set(participantId, score);
-    return score;
-  };
+  const scorePick = createParticipantScorer(data);
 
   const teams = data.teams.map((team) => {
     const picks: ScoredPick[] = team.picks.map((p) => {
