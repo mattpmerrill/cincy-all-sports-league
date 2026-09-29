@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { SportCode } from "@/domain/sports/sports";
 import { ok } from "@/lib/result";
 
 const adapter = vi.hoisted(() => ({
@@ -45,6 +46,14 @@ describe("createEspnResultsProvider", () => {
       2026,
       expect.objectContaining({ espnTeamIds: ["12"] }),
     );
+  });
+
+  it("only college sports cost one ESPN call per participant", () => {
+    const provider = createEspnResultsProvider();
+    const college: SportCode[] = ["ncaaf", "ncaab", "ncaasb"];
+    const leagueWide: SportCode[] = ["nfl", "mlb", "wnba", "wta", "pga"];
+    expect(college.map((s) => provider.fetchesPerParticipant(s))).toEqual([true, true, true]);
+    expect(leagueWide.every((s) => !provider.fetchesPerParticipant(s))).toBe(true);
   });
 
   it("returns the adapter's error unchanged so one failing feed fails the sport", async () => {

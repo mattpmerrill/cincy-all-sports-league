@@ -4,6 +4,7 @@ import {
   fetchPostseasonStages,
   fetchTeamRecords,
   fetchWtaRankings,
+  isPerTeamRecordsSport,
   isPostseasonSport,
   withImpliedEarlierStages,
   type EspnClientOptions,
@@ -18,6 +19,8 @@ import type { FactsRequest, ProviderError, ResultsProvider, SportFacts } from ".
  */
 export function createEspnResultsProvider(options: EspnClientOptions = {}): ResultsProvider {
   return {
+    fetchesPerParticipant: isPerTeamRecordsSport,
+
     async fetchFacts({ sport, season, externalIds }: FactsRequest) {
       if (sport === "wta") return wta(season, options);
       if (sport === "pga") return pga(season, options);

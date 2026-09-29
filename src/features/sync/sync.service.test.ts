@@ -4,9 +4,15 @@ import type { LeagueData } from "@/domain/league";
 import type { ParticipantResultRow, ResultUpsert } from "@/data/participant-results.repository";
 import type { SportTarget } from "@/data/sport-targets.repository";
 import type { SyncRunRow } from "@/data/sync-runs.repository";
+import type { NewParticipant, StoredParticipant } from "@/data/participants.repository";
 import { err, ok } from "@/lib/result";
 import { createLogger } from "@/lib/logger";
-import type { ResultsProvider, SportFacts } from "./results-provider";
+import type {
+  DirectoryProvider,
+  FactsRequest,
+  ResultsProvider,
+  SportFacts,
+} from "./results-provider";
 import { createSyncService, type SyncDeps } from "./sync.service";
 
 const NOW = new Date("2026-09-28T16:00:00Z"); // 12:00 in Cincinnati, still 2026-09-28
@@ -41,6 +47,7 @@ const target = (sport: SportTarget["sport"], over: Partial<SportTarget> = {}): S
     },
   ],
   participants: [{ id: `${sport}-p1`, name: "Team", shortName: "T", externalId: "1" }],
+  freeAgents: [],
   ...over,
 });
 
@@ -118,9 +125,14 @@ const league: LeagueData = {
   lastSyncAt: null,
 };
 
+/** College feeds cost one ESPN call per team, so they are fetched per participant. */
+const PER_TEAM_FEEDS: readonly string[] = ["ncaaf", "ncaab", "ncaasb"];
+
 function harness(opts: {
   targets: SportTarget[];
-  facts?: (sport: string) => ReturnType<ResultsProvider["fetchFacts"]>;
+  facts?: (sport: string, request: FactsRequest) => ReturnType<ResultsProvider["fetchFacts"]>;
+  directory?: DirectoryProvider["fetchDirectory"];
+  stored?: StoredParticipant[];
   latest?: Map<string, SyncRunRow>;
   applyChanges?: SyncDeps["results"]["applyChanges"];
   existing?: ParticipantResultRow[];
@@ -138,12 +150,30 @@ function harness(opts: {
   const snapshotWrites: unknown[] = [];
   const invalidate = vi.fn();
   const applied: { upserts: readonly ResultUpsert[] }[] = [];
+  const factsRequests: FactsRequest[] = [];
+  const insertedRows: NewParticipant[][] = [];
   const facts =
     opts.facts ??
     (() => Promise.resolve(ok<SportFacts>({ records: [{ externalId: "1", wins: 3, ties: 0 }] })));
 
   const deps: SyncDeps = {
-    provider: { fetchFacts: ({ sport }) => facts(sport) },
+    provider: {
+      fetchFacts: (request) => {
+        factsRequests.push(request);
+        return facts(request.sport, request);
+      },
+      fetchesPerParticipant: (sport) => PER_TEAM_FEEDS.includes(sport),
+    },
+    directory: {
+      fetchDirectory: opts.directory ?? (async () => ok({ entries: [], skipped: [] })),
+    },
+    participants: {
+      listForSport: async () => opts.stored ?? [],
+      insertMany: async (rows) => {
+        insertedRows.push([...rows]);
+        return rows.length;
+      },
+    },
     targets: {
       listSportTargets: async (only) => opts.targets.filter((t) => !only || only.includes(t.sport)),
     },
@@ -193,6 +223,8 @@ function harness(opts: {
     invalidate,
     applied,
     leaguePosts,
+    factsRequests,
+    insertedRows,
   };
 }
 
@@ -460,5 +492,340 @@ describe("league posts", () => {
     const report = await h.service.syncLeague({ now: NOW });
     expect(report).toMatchObject({ changed: true, snapshot: "written" });
     expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+});
+
+const freeAgent = (i: number) => ({
+  id: `fa${i}`,
+  name: `Free agent ${i}`,
+  shortName: `F${i}`,
+  externalId: `x${i}`,
+});
+const freeAgents = (count: number) => Array.from({ length: count }, (_, i) => freeAgent(i));
+/** Every requested team went 2-0. */
+const recordsFor = (request: FactsRequest) =>
+  Promise.resolve(
+    ok<SportFacts>({
+      records: request.externalIds.map((externalId) => ({ externalId, wins: 2, ties: 0 })),
+    }),
+  );
+
+describe("free agents in the regular run", () => {
+  it("scores them with the held participants where the feed is league-wide", async () => {
+    const h = harness({
+      targets: [
+        target("nfl", {
+          freeAgents: [{ id: "nfl-fa", name: "Free", shortName: "F", externalId: "99" }],
+        }),
+      ],
+      facts: (_sport, request) => recordsFor(request),
+    });
+    await h.service.syncLeague({ now: NOW });
+
+    expect(h.factsRequests).toHaveLength(1);
+    expect(h.factsRequests[0]?.externalIds).toEqual(["1", "99"]);
+    expect(h.applied[0]?.upserts.map((u) => u.participantId).sort()).toEqual(["nfl-fa", "nfl-p1"]);
+  });
+
+  it("leaves per-team feeds (college) to the free-agent run, so no extra ESPN calls", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(200) })],
+      facts: (_sport, request) => recordsFor(request),
+    });
+    await h.service.syncLeague({ now: NOW });
+
+    expect(h.factsRequests[0]?.externalIds).toEqual(["1"]);
+    expect(h.applied[0]?.upserts.map((u) => u.participantId)).toEqual(["ncaab-p1"]);
+  });
+
+  it("never posts a score update for a change that only touched a free agent", async () => {
+    const h = harness({
+      targets: [
+        target("nfl", {
+          freeAgents: [{ id: "nfl-fa", name: "Free", shortName: "F", externalId: "99" }],
+        }),
+      ],
+      // The held team's 3 wins are already stored, so only the free agent's row is new.
+      existing: [
+        {
+          id: "r1",
+          participantId: "nfl-p1",
+          ruleId: "win",
+          quantity: 3,
+          eventLabel: "",
+          source: "espn",
+          isLocked: false,
+          updatedAt: "2026-09-28T00:00:00Z",
+        },
+      ],
+      facts: () =>
+        Promise.resolve(
+          ok<SportFacts>({
+            records: [
+              { externalId: "1", wins: 3, ties: 0 },
+              { externalId: "99", wins: 5, ties: 0 },
+            ],
+          }),
+        ),
+    });
+    const report = await h.service.syncLeague({ now: NOW });
+
+    expect(report.changed).toBe(true);
+    expect(h.leaguePosts.filter((p) => p.payload.type === "score_update")).toEqual([]);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("syncFreeAgents", () => {
+  it("scores free agents in chunks of 60 and records one free_agents run", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(130) })],
+      facts: (_sport, request) => recordsFor(request),
+    });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(h.factsRequests.map((r) => r.externalIds.length)).toEqual([60, 60, 10]);
+    expect(report).toMatchObject({
+      sport: "ncaab",
+      changed: true,
+      facts: { status: "succeeded", upserted: 130, chunks: 3, failedChunks: 0 },
+    });
+    expect(h.runs.started).toEqual(["id-ncaab"]);
+    expect(h.runs.finished).toHaveLength(1);
+    expect(h.runs.finished[0]).toMatchObject({
+      status: "succeeded",
+      summary: { scope: "free_agents", freeAgents: 130, chunks: 3, correlationId: "corr-1" },
+    });
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+    // No standings snapshot, no feed posts: unheld participants cannot move the leaderboard.
+    expect(h.snapshotWrites).toEqual([]);
+    expect(h.leaguePosts).toEqual([]);
+  });
+
+  it("isolates a failing chunk: the others are still written and the run succeeds", async () => {
+    let call = 0;
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(130) })],
+      facts: (_sport, request) =>
+        call++ === 1
+          ? Promise.resolve(err("espn_timeout", "ESPN request failed (espn_timeout)"))
+          : recordsFor(request),
+    });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report.facts).toMatchObject({
+      status: "succeeded",
+      upserted: 70,
+      chunks: 3,
+      failedChunks: 1,
+    });
+    expect(h.runs.finished[0]).toMatchObject({
+      status: "succeeded",
+      summary: { failedChunks: 1, upserted: 70 },
+    });
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("treats a chunk that throws like one that fails, without leaking the error", async () => {
+    let call = 0;
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(70) })],
+      facts: (_sport, request) => {
+        if (call++ === 0) throw new Error("connect ECONNREFUSED password=hunter2");
+        return recordsFor(request);
+      },
+    });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report.facts).toMatchObject({ status: "succeeded", upserted: 10, failedChunks: 1 });
+    expect(JSON.stringify(h.runs.finished)).not.toContain("hunter2");
+  });
+
+  it("marks the run failed, and drops no cache, when every chunk fails", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(70) })],
+      facts: () => Promise.resolve(err("espn_timeout", "ESPN request failed (espn_timeout)")),
+    });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report).toMatchObject({
+      changed: false,
+      facts: { status: "failed", failedChunks: 2, code: "espn_timeout" },
+    });
+    expect(h.runs.finished[0]).toMatchObject({
+      status: "failed",
+      summary: { error: { code: "espn_timeout" } },
+    });
+    expect(h.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("does nothing for league-wide feeds, outside the season window, or with no pool", async () => {
+    const h = harness({
+      targets: [
+        target("nfl", { freeAgents: freeAgents(5) }),
+        target("ncaab", { startsOn: "2026-10-01", freeAgents: freeAgents(5) }),
+        target("ncaaf", { freeAgents: [] }),
+      ],
+    });
+    const codes = await Promise.all(
+      (["nfl", "ncaab", "ncaaf"] as const).map(
+        async (sport) => (await h.service.syncFreeAgents({ now: NOW, sport })).facts.code,
+      ),
+    );
+
+    expect(codes).toEqual(["league_wide_feed", "before_season_start", "no_free_agents"]);
+    expect(h.factsRequests).toEqual([]);
+    expect(h.runs.started).toEqual([]);
+    expect(h.runs.skipped).toEqual([]);
+  });
+
+  it("reports a sport that is not in the active season", async () => {
+    const h = harness({ targets: [target("nfl")] });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+    expect(report.facts).toMatchObject({ status: "skipped", code: "sport_not_in_season" });
+  });
+});
+
+describe("refreshParticipants", () => {
+  it("writes facts for exactly the named participants and nothing else", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(10) })],
+      facts: (_sport, request) => recordsFor(request),
+    });
+    const result = await h.service.refreshParticipants({
+      sport: "ncaab",
+      participantIds: ["ncaab-p1", "fa3", "not-a-participant"],
+      now: NOW,
+    });
+
+    expect(result).toEqual({ ok: true, value: null });
+    expect(h.factsRequests[0]?.externalIds).toEqual(["1", "x3"]);
+    expect(h.applied[0]?.upserts.map((u) => u.participantId).sort()).toEqual(["fa3", "ncaab-p1"]);
+    // A move refresh leaves no trace beyond the facts: the move's caller revalidates.
+    expect(h.runs.started).toEqual([]);
+    expect(h.runs.finished).toEqual([]);
+    expect(h.runs.skipped).toEqual([]);
+    expect(h.snapshotWrites).toEqual([]);
+    expect(h.leaguePosts).toEqual([]);
+    expect(h.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("returns the provider's error so the caller can refuse the move", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(2) })],
+      facts: () => Promise.resolve(err("espn_timeout", "ESPN request failed (espn_timeout)")),
+    });
+    const result = await h.service.refreshParticipants({
+      sport: "ncaab",
+      participantIds: ["fa0"],
+      now: NOW,
+    });
+    expect(result).toEqual({
+      ok: false,
+      error: { code: "espn_timeout", message: "ESPN request failed (espn_timeout)" },
+    });
+    expect(h.applied).toEqual([]);
+  });
+
+  it("succeeds without any ESPN call outside the season window", async () => {
+    const h = harness({
+      targets: [target("ncaab", { endsOn: "2026-09-27", freeAgents: freeAgents(2) })],
+    });
+    const result = await h.service.refreshParticipants({
+      sport: "ncaab",
+      participantIds: ["fa0"],
+      now: NOW,
+    });
+    expect(result).toEqual({ ok: true, value: null });
+    expect(h.factsRequests).toEqual([]);
+  });
+
+  it("skips participants with no vendor id and fails for a sport outside the season", async () => {
+    const h = harness({
+      targets: [
+        target("ncaab", {
+          freeAgents: [{ id: "amateur", name: "Amateur", shortName: "A", externalId: null }],
+        }),
+      ],
+    });
+    expect(
+      await h.service.refreshParticipants({
+        sport: "ncaab",
+        participantIds: ["amateur"],
+        now: NOW,
+      }),
+    ).toEqual({ ok: true, value: null });
+    expect(h.factsRequests).toEqual([]);
+
+    expect(
+      await h.service.refreshParticipants({ sport: "nba", participantIds: ["x"], now: NOW }),
+    ).toMatchObject({ ok: false, error: { code: "sport_not_in_season" } });
+  });
+});
+
+describe("refreshFreeAgents", () => {
+  const entry = (externalId: string, name: string) => ({
+    externalId,
+    name,
+    shortName: name,
+    logoUrl: null,
+    primaryColor: null,
+  });
+
+  it("loads new teams, scores the free agents and drops the cache once", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(3) })],
+      directory: async () => ok({ entries: [entry("e1", "Duke Blue Devils")], skipped: [] }),
+      facts: (_sport, request) => recordsFor(request),
+    });
+    const report = await h.service.refreshFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(h.insertedRows.flat()).toEqual([
+      expect.objectContaining({ sportId: "id-ncaab", espnId: "e1", name: "Duke Blue Devils" }),
+    ]);
+    expect(report).toMatchObject({
+      changed: true,
+      roster: { status: "succeeded", inserted: 1, skipped: 0 },
+      facts: { status: "succeeded", upserted: 3 },
+    });
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("drops the cache when only new participants were inserted (pro sports have no facts step)", async () => {
+    const h = harness({
+      targets: [target("nfl")],
+      directory: async () => ok({ entries: [entry("e1", "Chicago Bears")], skipped: [] }),
+    });
+    const report = await h.service.refreshFreeAgents({ now: NOW, sport: "nfl" });
+
+    expect(report).toMatchObject({ changed: true, facts: { code: "league_wide_feed" } });
+    expect(h.factsRequests).toEqual([]);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not drop the cache on a re-run that inserts and changes nothing", async () => {
+    const h = harness({
+      targets: [target("nfl")],
+      stored: [{ id: "p", name: "Chicago Bears", espnId: "e1" }],
+      directory: async () => ok({ entries: [entry("e1", "Chicago Bears")], skipped: [] }),
+    });
+    const report = await h.service.refreshFreeAgents({ now: NOW, sport: "nfl" });
+
+    expect(report.roster).toEqual({ status: "succeeded", inserted: 0, skipped: 0 });
+    expect(report.changed).toBe(false);
+    expect(h.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("still scores stored free agents when the directory call fails", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(2) })],
+      directory: async () => err("espn_timeout", "ESPN request failed (espn_timeout)"),
+      facts: (_sport, request) => recordsFor(request),
+    });
+    const report = await h.service.refreshFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report.roster).toEqual({ status: "failed", code: "espn_timeout" });
+    expect(report.facts).toMatchObject({ status: "succeeded", upserted: 2 });
+    expect(h.insertedRows).toEqual([]);
   });
 });
