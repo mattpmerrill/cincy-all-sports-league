@@ -7,8 +7,10 @@ import type { Json } from "@/data/database.types";
 import type { SyncRunRow } from "@/data/sync-runs.repository";
 import type { Logger } from "@/lib/logger";
 import { easternDate } from "@/lib/time";
+import { buildMoversPost, buildScoreUpdatePost, type LeaguePost } from "@/domain/feed";
 import { planSportSync, type SyncPlan } from "./plan";
 import type { ResultsProvider } from "./results-provider";
+import { computeScoreChanges, planChanges, type ParticipantChange } from "./score-changes";
 import { computeSnapshotRows } from "./snapshot";
 
 /** The persistence the service needs; `sync.server.ts` satisfies it with the secret-key client. */
@@ -35,6 +37,14 @@ export type SyncDeps = {
   };
   snapshots: {
     upsertDay(seasonId: string, date: string, rows: readonly SnapshotWrite[]): Promise<void>;
+    /** Ranks from the latest day before `date`, to spot movers. Empty without history. */
+    latestBefore(seasonId: string, date: string): Promise<{ teamId: string; rank: number }[]>;
+  };
+  /** Automatic feed posts. Injected so sync tests stay pure; production writes with the secret key. */
+  posts: {
+    write(seasonId: string, post: LeaguePost): Promise<void>;
+    /** Movers are a daily post: true when today's is already written. */
+    hasMoversPost(seasonId: string, date: string): Promise<boolean>;
   };
   league: { load(): Promise<LeagueData | null> };
   /** Drops the cached public read model (`revalidateLeague`). Injected so tests need no Next. */
@@ -76,6 +86,7 @@ export function createSyncService(deps: SyncDeps) {
     latest: SyncRunRow | undefined,
     correlationId: string,
     log: Logger,
+    changeSink: ParticipantChange[],
   ): Promise<SportOutcome> {
     const sport = target.sport;
     const outcome = (o: Omit<SportOutcome, "sport">): SportOutcome => ({ sport, ...o });
@@ -150,6 +161,9 @@ export function createSyncService(deps: SyncDeps) {
         plan.value.upserts,
         plan.value.deleteIds,
       );
+      if (applied.upserted + applied.deleted > 0) {
+        changeSink.push(...planChanges(sport, existing, plan.value.upserts, plan.value.deleteIds));
+      }
       log.info("sport synced", { sport, ...applied, unchanged: plan.value.unchanged });
       return await finish("succeeded", summaryOf(plan.value, applied), applied);
     } catch (error) {
@@ -168,19 +182,63 @@ export function createSyncService(deps: SyncDeps) {
     }
   }
 
+  async function loadLeague(log: Logger): Promise<LeagueData | null | "failed"> {
+    try {
+      return await deps.league.load();
+    } catch (error) {
+      log.error("league load failed", { error });
+      return "failed";
+    }
+  }
+
   async function writeSnapshot(
     seasonId: string,
     today: string,
+    data: LeagueData | null | "failed",
     log: Logger,
   ): Promise<SyncReport["snapshot"]> {
+    if (data === "failed") return "failed";
     try {
-      const data = await deps.league.load();
       if (!data) return "not_needed";
       await deps.snapshots.upsertDay(seasonId, today, computeSnapshotRows(data));
       return "written";
     } catch (error) {
       log.error("snapshot failed", { error });
       return "failed";
+    }
+  }
+
+  /**
+   * League posts are a courtesy: a failure here is logged and never fails the sync. At most one
+   * score update per run, and one movers post per day (a later same-day sync with more rank
+   * changes does not add another).
+   */
+  async function postLeagueUpdates(
+    seasonId: string,
+    today: string,
+    data: LeagueData,
+    changes: readonly ParticipantChange[],
+    log: Logger,
+  ): Promise<void> {
+    try {
+      const scorePost = buildScoreUpdatePost(computeScoreChanges(data, changes));
+      if (scorePost) await deps.posts.write(seasonId, scorePost);
+    } catch (error) {
+      log.error("score update post failed", { error });
+    }
+    try {
+      if (await deps.posts.hasMoversPost(seasonId, today)) return;
+      const prev = await deps.snapshots.latestBefore(seasonId, today);
+      const curr = computeSnapshotRows(data).flatMap((row) => {
+        const team = data.teams.find((t) => t.id === row.teamId);
+        return team
+          ? [{ teamId: row.teamId, teamSlug: team.slug, teamName: team.name, rank: row.rank }]
+          : [];
+      });
+      const moversPost = buildMoversPost(prev, curr, today);
+      if (moversPost) await deps.posts.write(seasonId, moversPost);
+    } catch (error) {
+      log.error("movers post failed", { error });
     }
   }
 
@@ -209,6 +267,7 @@ export function createSyncService(deps: SyncDeps) {
       await deps.runs.failStale(new Date(now.getTime() - STALE_RUN_MS), now);
       const latest = await deps.runs.latestForSports(targets.map((t) => t.sportId));
 
+      const changeSink: ParticipantChange[] = [];
       const outcomes = await mapPool(targets, CONCURRENCY, (target) =>
         syncSport(
           target,
@@ -217,13 +276,18 @@ export function createSyncService(deps: SyncDeps) {
           latest.get(target.sportId),
           correlationId,
           log.child({ sport: target.sport }),
+          changeSink,
         ),
       );
 
       const changed = outcomes.some((o) => o.upserted + o.deleted > 0);
       let snapshot: SyncReport["snapshot"] = "not_needed";
       if (changed) {
-        snapshot = await writeSnapshot(first.seasonId, today, log);
+        const data = await loadLeague(log);
+        snapshot = await writeSnapshot(first.seasonId, today, data, log);
+        if (data && data !== "failed") {
+          await postLeagueUpdates(first.seasonId, today, data, changeSink, log);
+        }
         deps.invalidate();
       }
       log.info("sync finished", { changed, snapshot, sports: outcomes.length });

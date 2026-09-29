@@ -10,4 +10,7 @@ export const PG = {
   checkViolation: "23514",
   insufficientPrivilege: "42501",
   noDataFound: "P0002",
+  foreignKeyViolation: "23503",
+  /** RAISE EXCEPTION with no explicit errcode: the feed's 'rate_limited' trigger uses it. */
+  raiseException: "P0001",
 } as const;

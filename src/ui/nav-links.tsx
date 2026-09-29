@@ -1,12 +1,13 @@
 "use client";
 
-import { BookOpenText, LayoutGrid, Trophy, UserRound } from "lucide-react";
+import { BookOpenText, LayoutGrid, MessageSquare, Trophy, UserRound } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "cn";
 
 const TABS = [
   { href: "/", label: "Standings", icon: Trophy, match: ["/", "/teams"] },
+  { href: "/feed", label: "Feed", icon: MessageSquare, match: ["/feed"] },
   { href: "/sports", label: "Sports", icon: LayoutGrid, match: ["/sports"] },
   { href: "/rules", label: "Rules", icon: BookOpenText, match: ["/rules"] },
   { href: "/me", label: "Me", icon: UserRound, match: ["/me", "/admin", "/login", "/signup"] },

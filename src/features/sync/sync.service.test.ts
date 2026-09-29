@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import type { LeaguePost } from "@/domain/feed";
 import type { LeagueData } from "@/domain/league";
 import type { ParticipantResultRow, ResultUpsert } from "@/data/participant-results.repository";
 import type { SportTarget } from "@/data/sport-targets.repository";
@@ -111,7 +112,12 @@ function harness(opts: {
   latest?: Map<string, SyncRunRow>;
   applyChanges?: SyncDeps["results"]["applyChanges"];
   existing?: ParticipantResultRow[];
+  previousRanks?: { teamId: string; rank: number }[];
+  moversAlreadyPosted?: boolean;
+  leagueData?: LeagueData;
+  failPosts?: boolean;
 }) {
+  const leaguePosts: LeaguePost[] = [];
   const runs = {
     started: [] as string[],
     finished: [] as { id: string; status: string; summary: unknown }[],
@@ -152,13 +158,30 @@ function harness(opts: {
       failStale: async () => 0,
       latestForSports: async () => opts.latest ?? new Map(),
     },
-    snapshots: { upsertDay: async (...args) => void snapshotWrites.push(args) },
-    league: { load: async () => league },
+    snapshots: {
+      upsertDay: async (...args) => void snapshotWrites.push(args),
+      latestBefore: async () => opts.previousRanks ?? [],
+    },
+    posts: {
+      write: async (_season, post) => {
+        if (opts.failPosts) throw new Error("db down");
+        leaguePosts.push(post);
+      },
+      hasMoversPost: async () => opts.moversAlreadyPosted ?? false,
+    },
+    league: { load: async () => opts.leagueData ?? league },
     invalidate,
     logger: createLogger({ test: true }),
     newCorrelationId: () => "corr-1",
   };
-  return { service: createSyncService(deps), runs, snapshotWrites, invalidate, applied };
+  return {
+    service: createSyncService(deps),
+    runs,
+    snapshotWrites,
+    invalidate,
+    applied,
+    leaguePosts,
+  };
 }
 
 describe("syncLeague", () => {
@@ -306,5 +329,104 @@ describe("syncLeague", () => {
     });
     await h.service.syncLeague({ now: NOW });
     expect(seen).toEqual(["ncaaf"]);
+  });
+});
+
+describe("league posts", () => {
+  const winsRow: ParticipantResultRow = {
+    id: "r1",
+    participantId: "nfl-p1",
+    ruleId: "win",
+    quantity: 3,
+    eventLabel: "",
+    source: "espn",
+    isLocked: false,
+    updatedAt: "2026-09-28T00:00:00Z",
+  };
+
+  it("writes one batched score update naming the team that gained the points", async () => {
+    const h = harness({ targets: [target("nfl")] });
+    await h.service.syncLeague({ now: NOW });
+    expect(h.leaguePosts).toHaveLength(1);
+    expect(h.leaguePosts[0]).toMatchObject({
+      body: "Scores update: Team +12 (A)",
+      payload: { type: "score_update", items: [{ teamSlug: "a", sport: "nfl", pointsDelta: 12 }] },
+    });
+  });
+
+  it("writes nothing on a second identical sync", async () => {
+    const h = harness({ targets: [target("nfl")], existing: [winsRow] });
+    const report = await h.service.syncLeague({ now: NOW });
+    expect(report.changed).toBe(false);
+    expect(h.leaguePosts).toEqual([]);
+  });
+
+  it("still writes a single score update when several sports change in one run", async () => {
+    const twoSports: LeagueData = {
+      ...league,
+      sports: [
+        ...league.sports,
+        { code: "nba", startsOn: "2026-09-07", majorPointsCap: null, allowsDuplicatePicks: false },
+      ],
+      rules: [
+        ...league.rules,
+        {
+          sport: "nba",
+          code: "win",
+          sortOrder: 1,
+          rule: { id: "win", label: "Win", points: 4, isChampionship: false, kind: "per_win" },
+        },
+      ],
+      teams: league.teams.map((t) =>
+        t.id === "t2"
+          ? {
+              ...t,
+              picks: [
+                {
+                  sport: "nba" as const,
+                  participant: {
+                    id: "nba-p1",
+                    name: "Hawks",
+                    shortName: "ATL",
+                    logoUrl: null,
+                    primaryColor: null,
+                  },
+                },
+              ],
+            }
+          : t,
+      ),
+    };
+    const h = harness({ targets: [target("nfl"), target("nba")], leagueData: twoSports });
+    await h.service.syncLeague({ now: NOW });
+    const scorePosts = h.leaguePosts.filter((p) => p.payload.type === "score_update");
+    expect(scorePosts).toHaveLength(1);
+    expect(scorePosts[0]?.payload.items).toHaveLength(2);
+  });
+
+  it("posts the daily movers once, from the previous snapshot", async () => {
+    const swapped = {
+      previousRanks: [
+        { teamId: "t1", rank: 2 },
+        { teamId: "t2", rank: 1 },
+      ],
+    };
+    const h = harness({ targets: [target("nfl")], ...swapped });
+    await h.service.syncLeague({ now: NOW });
+    expect(h.leaguePosts.map((p) => p.body)).toEqual([
+      "Scores update: Team +12 (A)",
+      "Movers: A ▲1 to 1, B ▼1 to 2",
+    ]);
+
+    const again = harness({ targets: [target("nfl")], ...swapped, moversAlreadyPosted: true });
+    await again.service.syncLeague({ now: NOW });
+    expect(again.leaguePosts.map((p) => p.payload.type)).toEqual(["score_update"]);
+  });
+
+  it("does not fail the sync when a league post cannot be written", async () => {
+    const h = harness({ targets: [target("nfl")], failPosts: true });
+    const report = await h.service.syncLeague({ now: NOW });
+    expect(report).toMatchObject({ changed: true, snapshot: "written" });
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
   });
 });

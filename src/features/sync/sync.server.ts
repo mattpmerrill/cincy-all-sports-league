@@ -1,4 +1,5 @@
 import "server-only";
+import { createMessagesRepository } from "@/data/messages.repository";
 import { createLeagueRepository } from "@/data/league.repository";
 import { createParticipantResultsRepository } from "@/data/participant-results.repository";
 import { createSportTargetsRepository } from "@/data/sport-targets.repository";
@@ -16,6 +17,7 @@ import { createSyncService } from "./sync.service";
  */
 export function getSyncService() {
   const db = createSupabaseAdminClient();
+  const messages = createMessagesRepository(db);
   return createSyncService({
     provider: createEspnResultsProvider(),
     targets: createSportTargetsRepository(db),
@@ -23,6 +25,10 @@ export function getSyncService() {
     runs: createSyncRunsRepository(db),
     snapshots: createStandingsSnapshotsRepository(db),
     league: createLeagueRepository(db),
+    posts: {
+      write: (seasonId, post) => messages.insertLeague(seasonId, post.body, post.payload),
+      hasMoversPost: (seasonId, date) => messages.hasLeaguePost(seasonId, "movers", date),
+    },
     invalidate: revalidateLeague,
     logger: logger.child({ scope: "sync" }),
     newCorrelationId,
