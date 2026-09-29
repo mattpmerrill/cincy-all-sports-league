@@ -75,9 +75,10 @@ export function previousRanks(
  * data and every page derives its view from this one function.
  */
 export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
-  const championshipRuleIds = new Set<string>();
-  for (const { rule } of data.rules)
-    if (rule.isChampionship && rule.kind === "playoff_milestone") championshipRuleIds.add(rule.id);
+  const championshipRuleSport = new Map<string, SportCode>();
+  for (const { sport, rule } of data.rules)
+    if (rule.isChampionship && rule.kind === "playoff_milestone")
+      championshipRuleSport.set(rule.id, sport);
 
   const sportSeason = new Map(data.sports.map((s) => [s.code, s]));
   const sportOf = (code: SportCode) => {
@@ -87,12 +88,10 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
   };
 
   const championSports = new Set<SportCode>();
-  const participantSport = new Map<string, SportCode>();
-  for (const team of data.teams)
-    for (const p of team.picks) participantSport.set(p.participant.id, p.sport);
+  // The rule knows its sport; going through picks would miss a champion nobody holds (a free agent).
   for (const r of data.results) {
-    const sport = participantSport.get(r.participantId);
-    if (sport && championshipRuleIds.has(r.ruleId)) championSports.add(sport);
+    const sport = championshipRuleSport.get(r.ruleId);
+    if (sport) championSports.add(sport);
   }
 
   const sports = Object.fromEntries(
