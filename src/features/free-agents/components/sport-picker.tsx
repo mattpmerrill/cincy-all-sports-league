@@ -30,8 +30,9 @@ function SportPickerTile({ sport, index }: { sport: HubSport; index: number }) {
             <StatusPill status={sport.status} />
           )}
           {sport.myPick ? (
-            <span className="truncate text-xs text-text-muted">
+            <span className="text-xs break-words text-text-muted">
               Your pick: {sport.myPick.participant.name}, {formatPoints(sport.myPick.points)} pts
+              for your team
             </span>
           ) : null}
         </span>
@@ -43,7 +44,7 @@ function SportPickerTile({ sport, index }: { sport: HubSport; index: number }) {
 /** The 11 sports as a grid of links to each sport's free agents. */
 export function SportPicker({ sports }: { sports: HubSport[] }) {
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {sports.map((sport, index) => (
         <SportPickerTile key={sport.sport} sport={sport} index={index} />
       ))}

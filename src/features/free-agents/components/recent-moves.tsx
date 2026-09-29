@@ -17,7 +17,7 @@ export function RecentMoves({ moves, now }: { moves: FreeAgentMove[]; now: Date 
     );
   }
   return (
-    <ul className="grid gap-3 md:grid-cols-2">
+    <ul className="grid grid-cols-1 gap-3 md:grid-cols-2">
       {moves.map((move, index) => (
         <li
           key={move.id}
@@ -28,7 +28,7 @@ export function RecentMoves({ moves, now }: { moves: FreeAgentMove[]; now: Date 
             <div className="flex items-center justify-between gap-3">
               <Link
                 href={`/teams/${move.team.slug}`}
-                className="min-w-0 rounded-sm font-semibold underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/60"
+                className="inline-flex min-h-11 min-w-0 items-center rounded-sm font-semibold underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/60"
               >
                 {move.team.name}
               </Link>

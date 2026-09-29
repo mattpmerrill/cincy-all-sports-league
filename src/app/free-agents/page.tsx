@@ -18,7 +18,7 @@ export default async function FreeAgentsPage() {
     <PageMain width="wide">
       <PageHeader
         title="Free agents"
-        description="Drop your pick in a sport and add anyone nobody holds. It happens right away."
+        description="Drop your pick in a sport and add a free agent. It happens right away."
       />
 
       <MovesSwitch current="free-agents" />

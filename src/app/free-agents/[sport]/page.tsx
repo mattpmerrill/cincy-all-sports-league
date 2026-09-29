@@ -33,7 +33,7 @@ export default async function SportFreeAgentsPage({ params }: PageProps<"/free-a
   const back = (
     <Link
       href="/free-agents"
-      className="inline-flex items-center gap-1 self-start rounded-md text-sm font-medium text-text-muted outline-none hover:text-text focus-visible:ring-3 focus-visible:ring-ring/60"
+      className="inline-flex min-h-11 items-center gap-1 self-start rounded-md text-sm font-medium text-text-muted outline-none hover:text-text focus-visible:ring-3 focus-visible:ring-ring/60"
     >
       <ChevronLeft aria-hidden="true" className="size-4" />
       All sports
@@ -64,7 +64,7 @@ export default async function SportFreeAgentsPage({ params }: PageProps<"/free-a
         description={
           board.canAct
             ? "Choose someone to swap for your pick. Their points so far don't count for you."
-            : "Everyone nobody holds, best first."
+            : "Free agents you can add, best first."
         }
       />
 
