@@ -48,6 +48,14 @@ const leaguePayloadSchema = z.discriminatedUnion("type", [
     note: z.string().nullable().default(null),
   }),
   z.object({
+    type: z.literal("free_agent_move"),
+    moveId: z.string(),
+    team: teamLink,
+    sport: z.enum(SPORT_CODES),
+    dropped: z.string(),
+    added: z.string(),
+  }),
+  z.object({
     type: z.literal("trade_completed"),
     listingId: z.string(),
     owner: teamLink,
