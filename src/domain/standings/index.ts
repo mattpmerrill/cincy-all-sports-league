@@ -1,3 +1,4 @@
+export { creditedScore } from "./credited-score";
 export { rankMovement, rankStandings } from "./rank-standings";
 export type { RankMovement, RankedTeam } from "./rank-standings";
 export { scoreFantasyTeam } from "./score-fantasy-team";

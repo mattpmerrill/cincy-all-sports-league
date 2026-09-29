@@ -36,3 +36,39 @@ describe("getTeamDetail", () => {
     expect(team?.teamCount).toBe(2);
   });
 });
+
+describe("getTeamDetail after a trade", () => {
+  // a and b swapped NFL picks: a-nfl had 3 wins (6) and b-nfl 1 win (2) when they did.
+  const traded = createFantasyTeamsService({
+    model: createLeagueModelSource({
+      loadData: async () =>
+        leagueData({
+          teams: [
+            {
+              id: "a",
+              sharedPicks: { nfl: "b-nfl" },
+              baselines: { nfl: { total: 2 } },
+              banked: [{ sport: "nfl", participantId: "a-nfl", total: 6 }],
+            },
+            { id: "b", sharedPicks: { nfl: "a-nfl" }, baselines: { nfl: { total: 6 } } },
+          ],
+          results: [wins("a-nfl", 4), wins("b-nfl", 1)],
+        }),
+      now: () => new Date("2026-09-28T16:00:00Z"),
+    }),
+  });
+
+  it("shows credited points and explains the adjustment in the breakdown", async () => {
+    const team = await traded.getTeamDetail("a");
+    const nfl = team?.picks.find((p) => p.sport === "nfl");
+    // Holds b-nfl (2 pts live, 2 already earned before arriving) plus the 6 it banked from a-nfl.
+    expect(nfl?.points).toBe(6);
+    expect(nfl?.lines.map((l) => l.text)).toEqual([
+      "1 win × 2",
+      "Earned 2 pts before joining this team (not counted)",
+      "Includes 6 pts from a-nfl before the trade",
+    ]);
+    expect(nfl?.lines.reduce((sum, l) => sum + l.points, 0)).toBe(nfl?.points);
+    expect(team?.total).toBe(6);
+  });
+});

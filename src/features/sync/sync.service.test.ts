@@ -85,8 +85,11 @@ const league: LeagueData = {
             logoUrl: null,
             primaryColor: null,
           },
+          baseline: { total: 0, championships: 0, postseasonPoints: 0 },
+          acquiredAt: null,
         },
       ],
+      banked: [],
     },
     {
       id: "t2",
@@ -103,8 +106,11 @@ const league: LeagueData = {
             logoUrl: null,
             primaryColor: null,
           },
+          baseline: { total: 0, championships: 0, postseasonPoints: 0 },
+          acquiredAt: null,
         },
       ],
+      banked: [],
     },
   ],
   results: [{ participantId: "nfl-p1", ruleId: "win", quantity: 3, eventLabel: "" }],
@@ -413,6 +419,8 @@ describe("league posts", () => {
                     logoUrl: null,
                     primaryColor: null,
                   },
+                  baseline: { total: 0, championships: 0, postseasonPoints: 0 },
+                  acquiredAt: null,
                 },
               ],
             }
@@ -421,9 +429,11 @@ describe("league posts", () => {
     };
     const h = harness({ targets: [target("nfl"), target("nba")], leagueData: twoSports });
     await h.service.syncLeague({ now: NOW });
-    const scorePosts = h.leaguePosts.filter((p) => p.payload.type === "score_update");
-    expect(scorePosts).toHaveLength(1);
-    expect(scorePosts[0]?.payload.items).toHaveLength(2);
+    const scorePayloads = h.leaguePosts.flatMap((p) =>
+      p.payload.type === "score_update" ? [p.payload] : [],
+    );
+    expect(scorePayloads).toHaveLength(1);
+    expect(scorePayloads[0]?.items).toHaveLength(2);
   });
 
   it("posts the daily movers once, from the previous snapshot", async () => {

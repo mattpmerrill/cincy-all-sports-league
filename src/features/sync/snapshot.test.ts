@@ -10,6 +10,8 @@ const participant = (id: string) => ({
   primaryColor: null,
 });
 
+const NO_BASELINE = { total: 0, championships: 0, postseasonPoints: 0 };
+
 const data: LeagueData = {
   season: {
     id: "s",
@@ -41,21 +43,30 @@ const data: LeagueData = {
       slug: "b",
       name: "Bravo",
       owner: null,
-      picks: [{ sport: "nfl", participant: participant("p2") }],
+      picks: [
+        { sport: "nfl", participant: participant("p2"), baseline: NO_BASELINE, acquiredAt: null },
+      ],
+      banked: [],
     },
     {
       id: "a",
       slug: "a",
       name: "Alpha",
       owner: null,
-      picks: [{ sport: "nfl", participant: participant("p1") }],
+      picks: [
+        { sport: "nfl", participant: participant("p1"), baseline: NO_BASELINE, acquiredAt: null },
+      ],
+      banked: [],
     },
     {
       id: "c",
       slug: "c",
       name: "Charlie",
       owner: null,
-      picks: [{ sport: "nfl", participant: participant("p3") }],
+      picks: [
+        { sport: "nfl", participant: participant("p3"), baseline: NO_BASELINE, acquiredAt: null },
+      ],
+      banked: [],
     },
   ],
   results: [
@@ -73,5 +84,47 @@ describe("computeSnapshotRows", () => {
     expect(by.a).toEqual({ teamId: "a", rank: 1, totalPoints: 16.4 });
     expect(by.b).toEqual({ teamId: "b", rank: 1, totalPoints: 16.4 });
     expect(by.c).toEqual({ teamId: "c", rank: 3, totalPoints: 0 });
+  });
+
+  it("does not move anyone when a trade happens with no new results (credited, not live, points)", () => {
+    // Alpha and Bravo swap their NFL picks. Live scores follow the participants, but each team's
+    // credited total must stay put: before the swap Alpha had p1 (16.4) and Bravo had p2 (4.1).
+    const traded: LeagueData = {
+      ...data,
+      results: [
+        { participantId: "p1", ruleId: "win", quantity: 4, eventLabel: "" },
+        { participantId: "p2", ruleId: "win", quantity: 1, eventLabel: "" },
+      ],
+    };
+    const before = computeSnapshotRows(traded);
+    const swapped: LeagueData = {
+      ...traded,
+      teams: traded.teams.map((t) => {
+        const other = t.id === "a" ? "p2" : t.id === "b" ? "p1" : null;
+        if (!other) return t;
+        const mine = t.picks[0]?.participant.id;
+        const liveOf = (id: string | undefined) => (id === "p1" ? 16.4 : id === "p2" ? 4.1 : 0);
+        return {
+          ...t,
+          picks: [
+            {
+              sport: "nfl" as const,
+              participant: participant(other),
+              baseline: { ...NO_BASELINE, total: liveOf(other) },
+              acquiredAt: "2026-09-20T12:00:00Z",
+            },
+          ],
+          banked: [
+            {
+              sport: "nfl" as const,
+              participant: participant(mine ?? ""),
+              ...NO_BASELINE,
+              total: liveOf(mine),
+            },
+          ],
+        };
+      }),
+    };
+    expect(computeSnapshotRows(swapped)).toEqual(before);
   });
 });

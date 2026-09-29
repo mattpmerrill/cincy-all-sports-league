@@ -24,7 +24,15 @@ export type {
   MessageAuthor,
   MessageKind,
   MoverItem,
+  MoversPayload,
   ScoreUpdateItem,
+  ScoreUpdatePayload,
   Thread,
+  TradeCompletedPayload,
+  TradeListedPayload,
+  TradeOfferPayload,
+  TradePayload,
+  TradePayloadDraft,
+  TradeTeamLink,
 } from "./types";
 export { parseLeaguePayload } from "./payload-schema";

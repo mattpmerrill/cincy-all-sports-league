@@ -1,41 +1,35 @@
-import type { OwnerData, ParticipantData, TeamData } from "@/domain/league";
-import { isSportCode } from "@/domain/sports/sports";
+import type { TeamData } from "@/domain/league";
 import type { DbClient } from "./db-client";
+import { PARTICIPANT_COLUMNS, toOwner, toParticipant, toSportCode } from "./mappers";
+import type { OwnerRow, ParticipantRow } from "./mappers";
 
 /** The minimum the claim flow needs to name a team. The league read services extend this file. */
 export type TeamRef = { id: string; name: string; slug: string };
 
 type PickRow = {
   sports: { code: string };
-  participants: {
-    id: string;
-    name: string;
-    short_name: string;
-    logo_url: string | null;
-    primary_color: string | null;
-  };
+  participants: ParticipantRow;
+  baseline_points: number;
+  baseline_championships: number;
+  baseline_postseason_points: number;
+  acquired_at: string | null;
+};
+
+type BankedRow = {
+  points: number;
+  championships: number;
+  postseason_points: number;
+  participants: ParticipantRow & { sports: { code: string } };
 };
 
 type TeamRow = {
   id: string;
   slug: string;
   name: string;
-  profiles: { id: string; display_name: string; avatar_url: string | null } | null;
+  profiles: OwnerRow | null;
   picks: PickRow[];
+  banked_scores: BankedRow[];
 };
-
-const toOwner = (profile: TeamRow["profiles"]): OwnerData | null =>
-  profile
-    ? { id: profile.id, displayName: profile.display_name, avatarUrl: profile.avatar_url }
-    : null;
-
-const toParticipant = (row: PickRow["participants"]): ParticipantData => ({
-  id: row.id,
-  name: row.name,
-  shortName: row.short_name,
-  logoUrl: row.logo_url,
-  primaryColor: row.primary_color,
-});
 
 /** Row to domain. An unknown sport code means the DB and the sport catalog have drifted: fail loudly. */
 export function toTeamData(row: TeamRow): TeamData {
@@ -44,11 +38,23 @@ export function toTeamData(row: TeamRow): TeamData {
     slug: row.slug,
     name: row.name,
     owner: toOwner(row.profiles),
-    picks: row.picks.map((pick) => {
-      if (!isSportCode(pick.sports.code))
-        throw new Error(`Unknown sport code "${pick.sports.code}"`);
-      return { sport: pick.sports.code, participant: toParticipant(pick.participants) };
-    }),
+    picks: row.picks.map((pick) => ({
+      sport: toSportCode(pick.sports.code),
+      participant: toParticipant(pick.participants),
+      baseline: {
+        total: pick.baseline_points,
+        championships: pick.baseline_championships,
+        postseasonPoints: pick.baseline_postseason_points,
+      },
+      acquiredAt: pick.acquired_at,
+    })),
+    banked: row.banked_scores.map((b) => ({
+      sport: toSportCode(b.participants.sports.code),
+      participant: toParticipant(b.participants),
+      total: b.points,
+      championships: b.championships,
+      postseasonPoints: b.postseason_points,
+    })),
   };
 }
 
@@ -56,12 +62,17 @@ export type FantasyTeamsRepository = ReturnType<typeof createFantasyTeamsReposit
 
 export function createFantasyTeamsRepository(db: DbClient) {
   return {
-    /** Every team in a season with its owner and picks (participants included), by name. */
+    /**
+     * Every team in a season with its owner, picks (participants and baselines included) and the
+     * points it banked from participants it traded away, by name.
+     */
     async listWithPicks(seasonId: string): Promise<TeamData[]> {
       const { data, error } = await db
         .from("fantasy_teams")
         .select(
-          "id, slug, name, profiles(id, display_name, avatar_url), picks(sports(code), participants(id, name, short_name, logo_url, primary_color))",
+          `id, slug, name, profiles(id, display_name, avatar_url),
+            picks(sports(code), participants(${PARTICIPANT_COLUMNS}), baseline_points, baseline_championships, baseline_postseason_points, acquired_at),
+            banked_scores(points, championships, postseason_points, participants(${PARTICIPANT_COLUMNS}, sports(code)))`,
         )
         .eq("season_id", seasonId)
         .order("name", { ascending: true });

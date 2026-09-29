@@ -28,9 +28,49 @@ export type MoverItem = {
   rankLabel: string;
 };
 
-export type LeaguePayload =
-  | { type: "score_update"; items: ScoreUpdateItem[] }
-  | { type: "movers"; date: string | null; items: MoverItem[] };
+export type TradeTeamLink = { name: string; slug: string };
+
+/** A trade post says which listing it is about, so the card can link to /trades/[listingId]. */
+export type TradeListedPayload = {
+  type: "trade_listed";
+  listingId: string;
+  team: TradeTeamLink;
+  items: { sport: SportCode; participantName: string }[];
+};
+
+export type TradeOfferPayload = {
+  type: "trade_offer";
+  listingId: string;
+  /** "competing" is an offer on a listing that already has one or is on the trading block. */
+  offerKind: "direct" | "competing";
+  from: TradeTeamLink;
+  to: TradeTeamLink;
+  /** Per sport: what the offerer gives and what it asks for. */
+  legs: { sport: SportCode; gives: string; gets: string }[];
+  note: string | null;
+};
+
+export type TradeCompletedPayload = {
+  type: "trade_completed";
+  listingId: string;
+  owner: TradeTeamLink;
+  offerer: TradeTeamLink;
+  legs: { sport: SportCode; ownerGave: string; offererGave: string }[];
+};
+
+export type TradePayload = TradeListedPayload | TradeOfferPayload | TradeCompletedPayload;
+
+/**
+ * What a trade post builder returns: the payload without `listingId`. The database function that
+ * creates the post injects it in the same transaction (the listing does not exist until then).
+ */
+type WithoutListing<P> = P extends unknown ? Omit<P, "listingId"> : never;
+export type TradePayloadDraft = WithoutListing<TradePayload>;
+
+export type ScoreUpdatePayload = { type: "score_update"; items: ScoreUpdateItem[] };
+export type MoversPayload = { type: "movers"; date: string | null; items: MoverItem[] };
+
+export type LeaguePayload = ScoreUpdatePayload | MoversPayload | TradePayload;
 
 export type Message = {
   id: string;

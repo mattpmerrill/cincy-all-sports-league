@@ -3,6 +3,7 @@ import type { ParticipantScore } from "@/domain/scoring";
 import { scoreParticipant } from "@/domain/scoring";
 import type { ScoringRule } from "@/domain/scoring";
 import type { SportCode } from "@/domain/sports/sports";
+import { creditedScore } from "./credited-score";
 import { rankMovement, rankStandings } from "./rank-standings";
 import { scoreFantasyTeam } from "./score-fantasy-team";
 import type { TeamScore } from "./score-fantasy-team";
@@ -24,6 +25,44 @@ describe("scoreFantasyTeam", () => {
     expect(t.postseasonPoints).toBe(50);
     expect(t.sportsWithPoints).toBe(2);
     expect(t.sportSubtotals).toContainEqual({ sport: "nfl", points: 9.3 });
+  });
+});
+
+describe("creditedScore", () => {
+  const totals = (total: number, championships = 0, postseasonPoints = 0) => ({
+    total,
+    championships,
+    postseasonPoints,
+  });
+  const none = totals(0);
+
+  it("equals the live score for a drafted pick", () => {
+    expect(creditedScore(totals(9.3, 1, 50), none, [])).toEqual(totals(9.3, 1, 50));
+  });
+
+  it("drops what was earned before the pick arrived and adds what was banked", () => {
+    const credited = creditedScore(totals(20, 1, 50), totals(8, 1, 30), [
+      totals(6, 0, 5),
+      totals(2.1, 1, 0),
+    ]);
+    expect(credited).toEqual(totals(20.1, 1, 25));
+  });
+
+  it("adds decimals exactly and lets a downward correction go negative instead of failing", () => {
+    expect(creditedScore(totals(4.1), none, [totals(4.1), totals(4.1)]).total).toBe(12.3);
+    expect(creditedScore(totals(0), none, [totals(-2)]).total).toBe(-2);
+  });
+
+  it("feeds team totals and every tiebreak input", () => {
+    // Trading away the champion: the team keeps its 60 pts, championship and 50 postseason pts,
+    // and the sport still counts as a sport with points.
+    const kept = creditedScore(totals(0), totals(0), [totals(60, 1, 50)]);
+    const t = team("a", ["nfl", { ...kept, lines: [] }], ["mlb", score(0)]);
+    expect(t.total).toBe(60);
+    expect(t.championships).toBe(1);
+    expect(t.postseasonPoints).toBe(50);
+    expect(t.sportsWithPoints).toBe(1);
+    expect(t.sportSubtotals).toContainEqual({ sport: "nfl", points: 60 });
   });
 });
 

@@ -1,3 +1,4 @@
+import { creditPick } from "@/domain/league";
 import type { LeagueData } from "@/domain/league";
 import { scoreParticipant, type ScoringRule } from "@/domain/scoring";
 import { rankStandings, scoreFantasyTeam } from "@/domain/standings";
@@ -7,7 +8,8 @@ export type SnapshotRow = { teamId: string; rank: number; totalPoints: number };
 
 /**
  * Today's rank and total for every fantasy team, from the same domain functions the public pages
- * use: scoreParticipant -> scoreFantasyTeam -> rankStandings. Pure.
+ * use: scoreParticipant -> creditPick -> scoreFantasyTeam -> rankStandings. Pure. Teams are scored
+ * on credited points, so a trade on its own never moves a total (and never fakes a "mover").
  */
 export function computeSnapshotRows(data: LeagueData): SnapshotRow[] {
   const rulesBySport = new Map<SportCode, ScoringRule[]>();
@@ -27,9 +29,9 @@ export function computeSnapshotRows(data: LeagueData): SnapshotRow[] {
     scoreFantasyTeam({
       id: team.id,
       name: team.name,
-      picks: team.picks.map(({ sport, participant }) => ({
-        sport,
-        score: scoreParticipant(
+      picks: team.picks.map((pick) => {
+        const { sport, participant } = pick;
+        const live = scoreParticipant(
           rulesBySport.get(sport) ?? [],
           resultsByParticipant.get(participant.id) ?? [],
           {
@@ -37,8 +39,9 @@ export function computeSnapshotRows(data: LeagueData): SnapshotRow[] {
             playoffScoringMode: data.season.playoffScoringMode,
             majorPointsCap: sportConfig.get(sport)?.majorPointsCap ?? null,
           },
-        ),
-      })),
+        );
+        return { sport, score: creditPick(team, pick, live).credited };
+      }),
     }),
   );
 

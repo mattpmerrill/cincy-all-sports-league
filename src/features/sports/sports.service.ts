@@ -1,6 +1,6 @@
 import type { LeagueModelSource } from "@/data/league-model";
 import type { OwnerData, ParticipantData, SeasonStatus } from "@/domain/league";
-import { describeBreakdownLine } from "@/domain/league";
+import { describePickBreakdown } from "@/domain/league";
 import type { BreakdownView } from "@/domain/league";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
 import type { ParticipantKind, SportCode } from "@/domain/sports/sports";
@@ -53,7 +53,7 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
         return summary(
           code,
           league.sports[code].status,
-          first && { name: first.participant.name, points: first.score.total },
+          first && { name: first.participant.name, points: first.credited.total },
         );
       });
     },
@@ -68,7 +68,7 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
         ...summary(
           code,
           league.sports[code].status,
-          first && { name: first.participant.name, points: first.score.total },
+          first && { name: first.participant.name, points: first.credited.total },
         ),
         picks: rows.map((row) => ({
           rank: row.rank,
@@ -82,8 +82,8 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
             logoUrl: row.participant.logoUrl,
             primaryColor: row.participant.primaryColor,
           },
-          points: row.score.total,
-          lines: row.score.lines.map(describeBreakdownLine),
+          points: row.credited.total,
+          lines: describePickBreakdown(row),
         })),
       };
     },

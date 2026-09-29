@@ -1,4 +1,4 @@
-import type { PlayoffScoringMode, ScoringRule } from "@/domain/scoring";
+import type { PlayoffScoringMode, ScoreTotals, ScoringRule } from "@/domain/scoring";
 import type { SportCode } from "@/domain/sports/sports";
 
 /**
@@ -40,7 +40,23 @@ export type ParticipantData = {
   primaryColor: string | null;
 };
 
-export type PickData = { sport: SportCode; participant: ParticipantData };
+export type PickData = {
+  sport: SportCode;
+  participant: ParticipantData;
+  /**
+   * The participant's live score when this team acquired the pick, which the team is not credited
+   * for. All zeros for a drafted pick.
+   */
+  baseline: ScoreTotals;
+  /** ISO time the pick arrived by trade; null when drafted. */
+  acquiredAt: string | null;
+};
+
+/**
+ * Points a team earned from a participant it has since traded away, frozen at trade time. The
+ * participant is here so the UI can say whose points they were.
+ */
+export type BankedScoreData = ScoreTotals & { sport: SportCode; participant: ParticipantData };
 
 export type TeamData = {
   id: string;
@@ -48,6 +64,8 @@ export type TeamData = {
   name: string;
   owner: OwnerData | null;
   picks: PickData[];
+  /** Empty until the team's first trade. */
+  banked: BankedScoreData[];
 };
 
 export type ResultData = {

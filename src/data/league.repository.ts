@@ -6,11 +6,10 @@ import type {
   SportSeasonData,
 } from "@/domain/league";
 import type { ScoringRule } from "@/domain/scoring";
-import { isSportCode } from "@/domain/sports/sports";
-import type { SportCode } from "@/domain/sports/sports";
 import type { DbClient } from "./db-client";
 import type { Tables } from "./database.types";
 import { createFantasyTeamsRepository } from "./fantasy-teams.repository";
+import { toSportCode as sportCode } from "./mappers";
 import { fetchAllRows } from "./paginate";
 
 type SeasonRow = Pick<
@@ -30,11 +29,6 @@ type RuleRow = Pick<
   | "sort_order"
   | "sport_id"
 >;
-
-const sportCode = (code: string): SportCode => {
-  if (!isSportCode(code)) throw new Error(`Unknown sport code "${code}"`);
-  return code;
-};
 
 export const toSeason = (row: SeasonRow): LeagueData["season"] => ({
   id: row.id,

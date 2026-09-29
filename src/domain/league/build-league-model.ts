@@ -1,9 +1,11 @@
 import { scoreParticipant } from "@/domain/scoring";
-import type { ParticipantScore, ScoringRule } from "@/domain/scoring";
+import type { ParticipantScore, ScoreTotals, ScoringRule } from "@/domain/scoring";
 import { rankMovement, rankStandings, scoreFantasyTeam } from "@/domain/standings";
 import type { RankMovement, RankedTeam, TeamScore } from "@/domain/standings";
 import { SPORT_CODES } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
+import { creditPick } from "./credit-pick";
+import type { PickAdjustment } from "./credit-pick";
 import { seasonStatus } from "./season-status";
 import type { SeasonStatus } from "./season-status";
 import type {
@@ -17,7 +19,11 @@ import type {
 export type ScoredPick = {
   sport: SportCode;
   participant: ParticipantData;
+  /** The participant's full live score: its breakdown lines explain where points came from. */
   score: ParticipantScore;
+  /** What the team is credited for this pick; team totals and rankings use this, never `score`. */
+  credited: ScoreTotals;
+  adjustment: PickAdjustment;
 };
 
 export type SportInfo = SportSeasonData & { status: SeasonStatus };
@@ -37,6 +43,9 @@ export type SportPickRow = {
   owner: OwnerData | null;
   participant: ParticipantData;
   score: ParticipantScore;
+  /** What the team is credited for; the rows are ranked by `credited.total`. */
+  credited: ScoreTotals;
+  adjustment: PickAdjustment;
 };
 
 export type LeagueModel = {
@@ -125,16 +134,20 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
   };
 
   const teams = data.teams.map((team) => {
-    const picks: ScoredPick[] = team.picks.map((p) => ({
-      sport: p.sport,
-      participant: p.participant,
-      score: scorePick(p.sport, p.participant.id),
-    }));
+    const picks: ScoredPick[] = team.picks.map((p) => {
+      const score = scorePick(p.sport, p.participant.id);
+      return {
+        sport: p.sport,
+        participant: p.participant,
+        score,
+        ...creditPick(team, p, score),
+      };
+    });
     return {
       ...scoreFantasyTeam({
         id: team.id,
         name: team.name,
-        picks: picks.map(({ sport, score }) => ({ sport, score })),
+        picks: picks.map(({ sport, credited }) => ({ sport, score: credited })),
       }),
       slug: team.slug,
       owner: team.owner,
@@ -160,6 +173,8 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
             owner: row.owner,
             participant: p.participant,
             score: p.score,
+            credited: p.credited,
+            adjustment: p.adjustment,
           })),
       );
       return [code, rankPicks(rows)];
@@ -175,18 +190,18 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
   };
 }
 
-/** Competition ranking (1, 1, 3) by points, ties listed by team name. */
+/** Competition ranking (1, 1, 3) by credited points, ties listed by team name. */
 export function rankPicks(
   rows: Omit<SportPickRow, "rank" | "rankLabel" | "isTied">[],
 ): SportPickRow[] {
   const sorted = [...rows].sort(
     (a, b) =>
-      b.score.total - a.score.total ||
+      b.credited.total - a.credited.total ||
       a.teamName.localeCompare(b.teamName, "en", { sensitivity: "base" }),
   );
   return sorted.map((row) => {
-    const rank = sorted.filter((r) => r.score.total > row.score.total).length + 1;
-    const isTied = sorted.filter((r) => r.score.total === row.score.total).length > 1;
+    const rank = sorted.filter((r) => r.credited.total > row.credited.total).length + 1;
+    const isTied = sorted.filter((r) => r.credited.total === row.credited.total).length > 1;
     return { ...row, rank, isTied, rankLabel: `${isTied ? "T" : ""}${rank}` };
   });
 }
