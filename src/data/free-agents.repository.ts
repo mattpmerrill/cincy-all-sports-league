@@ -68,9 +68,10 @@ export const toFreeAgentMove = (row: MoveRow): FreeAgentMove => ({
  * What a person sees for each code. Never the SQL token, message or detail: those stay in logs.
  * `sport_locked` and `facts_unavailable` are never raised by SQL (the service decides them) and
  * `busy` comes from SQLSTATEs, not tokens, but the record covers the whole union so a new code
- * cannot ship without a message.
+ * cannot ship without a message. Exported so the service words the codes it decides itself
+ * (`facts_unavailable`, `not_owner`) exactly as the codes SQL raises, from one place.
  */
-const MESSAGES: Record<FreeAgentErrorCode, string> = {
+export const FREE_AGENT_MESSAGES: Record<FreeAgentErrorCode, string> = {
   not_owner: "You need an approved team in this league to make moves.",
   invalid_sport: "That sport isn't part of this season.",
   not_found: "That player isn't in this sport.",
@@ -94,10 +95,10 @@ export function toFreeAgentError(
   error: Pick<PostgrestError, "code" | "message">,
 ): FreeAgentError | null {
   if (error.code === PG.deadlockDetected || error.code === PG.serializationFailure) {
-    return { code: "busy", message: MESSAGES.busy };
+    return { code: "busy", message: FREE_AGENT_MESSAGES.busy };
   }
   if (error.code !== PG.raiseException || !isFreeAgentErrorCode(error.message)) return null;
-  return { code: error.message, message: MESSAGES[error.message] };
+  return { code: error.message, message: FREE_AGENT_MESSAGES[error.message] };
 }
 
 // ===== repository =====
