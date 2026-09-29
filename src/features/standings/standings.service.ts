@@ -31,6 +31,8 @@ export type Leaderboard = {
   };
   /** Scale for the contribution bars: the biggest single-sport score anywhere on the board. */
   maxSportPoints: number;
+  /** Teams with an owner, for the "N of 20 claimed" nudge shown to visitors. */
+  claimedTeams: number;
   rows: LeaderboardRow[];
 };
 
@@ -68,6 +70,7 @@ export function createStandingsService({ model }: { model: LeagueModelSource }) 
           phases: statuses,
         },
         maxSportPoints: Math.max(0, ...rows.flatMap((r) => r.sportPoints.map((s) => s.points))),
+        claimedTeams: rows.filter((r) => r.owner !== null).length,
         rows,
       };
     },

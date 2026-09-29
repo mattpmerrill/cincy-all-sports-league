@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
+import { HeaderAuthLinks } from "@/features/auth/components/header-auth-links";
 import { publicEnv } from "@/lib/env";
 import { AppShell } from "@/ui/app-shell";
 import "./globals.css";
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${display.variable} dark h-full`}>
       <body className="flex min-h-full flex-col">
-        <AppShell>{children}</AppShell>
+        <AppShell headerAction={<HeaderAuthLinks />}>{children}</AppShell>
       </body>
     </html>
   );

@@ -3,8 +3,17 @@ import { NavLinks } from "./nav-links";
 import { SiteFooter } from "./site-footer";
 import { Wordmark } from "./wordmark";
 
-/** App chrome: sticky header with top nav from md up, bottom tab bar on phones (safe-area aware). */
-export function AppShell({ children }: { children: ReactNode }) {
+/**
+ * App chrome: sticky header with top nav from md up, bottom tab bar on phones (safe-area aware).
+ * `headerAction` is a slot at the header's right edge, filled by the layout (ui can't import features).
+ */
+export function AppShell({
+  children,
+  headerAction,
+}: {
+  children: ReactNode;
+  headerAction?: ReactNode;
+}) {
   return (
     <div className="flex min-h-dvh flex-col">
       <a
@@ -16,9 +25,12 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-line bg-canvas/85 pt-[env(safe-area-inset-top)] backdrop-blur-md">
         <div className="mx-auto flex h-14 w-full max-w-5xl items-center justify-between px-4">
           <Wordmark />
-          <nav aria-label="Main" className="hidden md:block">
-            <NavLinks variant="top" />
-          </nav>
+          <div className="flex items-center gap-3">
+            <nav aria-label="Main" className="hidden md:block">
+              <NavLinks variant="top" />
+            </nav>
+            {headerAction}
+          </div>
         </div>
       </header>
 

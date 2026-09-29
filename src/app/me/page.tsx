@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { signOutAction } from "@/features/auth/actions";
 import { requireUserOrRedirect } from "@/features/auth/guards";
+import { claimFormPath, preselectedTeamId } from "@/features/claims/claim-links";
 import { ClaimTeamPanel } from "@/features/claims/components/claim-team-panel";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { DisplayNameForm } from "@/features/profile/components/display-name-form";
@@ -16,8 +17,10 @@ import { claimTeamAction, setWeeklyEmailAction, updateDisplayNameAction } from "
 
 export const metadata: Metadata = { title: "Your profile" };
 
-export default async function MePage() {
-  const user = await requireUserOrRedirect("/me");
+export default async function MePage({ searchParams }: PageProps<"/me">) {
+  const { team } = await searchParams;
+  // Keep the picked team through sign-in, so a claim link from the leaderboard still lands on it.
+  const user = await requireUserOrRedirect(typeof team === "string" ? claimFormPath(team) : "/me");
   const [{ state, claimable }, weeklyEmail] = await Promise.all([
     getClaimsService().then((service) => service.getMyClaims(user.id)),
     getProfileService().then((service) => service.getWeeklyEmail(user)),
@@ -57,7 +60,12 @@ export default async function MePage() {
       </div>
 
       <PageSection title="Your team" description="Link your account to your fantasy team.">
-        <ClaimTeamPanel state={state} claimable={claimable} action={claimTeamAction} />
+        <ClaimTeamPanel
+          state={state}
+          claimable={claimable}
+          defaultTeamId={preselectedTeamId(claimable, team)}
+          action={claimTeamAction}
+        />
       </PageSection>
 
       <PageSection title="Profile">

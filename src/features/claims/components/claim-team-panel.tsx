@@ -13,12 +13,14 @@ import { ClaimStatusBadge } from "./claim-status-badge";
 type Props = {
   state: ClaimState;
   claimable: ClaimableTeam[];
+  /** Pre-picked when the member arrived from a team's claim link. */
+  defaultTeamId?: string;
   /** The claim Server Action, passed in by the route so features don't import each other. */
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
 };
 
 /** The member's claim status and, when they can still ask, the form to request a team. */
-export function ClaimTeamPanel({ state, claimable, action }: Props) {
+export function ClaimTeamPanel({ state, claimable, defaultTeamId, action }: Props) {
   const [result, formAction] = useActionState(action, idleFormState);
 
   if (state.status === "approved") {
@@ -65,7 +67,7 @@ export function ClaimTeamPanel({ state, claimable, action }: Props) {
               id="teamId"
               name="teamId"
               required
-              defaultValue=""
+              defaultValue={defaultTeamId ?? ""}
               aria-invalid={fieldErrors(result, "teamId") ? true : undefined}
               aria-describedby={fieldErrors(result, "teamId") ? "teamId-error" : undefined}
             >

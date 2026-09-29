@@ -13,25 +13,30 @@ const TOP_BORDER: Record<number, string> = {
   3: "border-bronze/40",
 };
 
-/** One team on the leaderboard: a single tap target that opens the team page. */
+/**
+ * One team on the leaderboard. The whole card opens the team page through a stretched link on the
+ * name, which leaves room for a second, separate link (claiming an unowned team) inside the card.
+ */
 export function LeaderboardRow({
   row,
   maxSportPoints,
   isMine,
   index,
+  claimHref,
 }: {
   row: Row;
   maxSportPoints: number;
   isMine: boolean;
   /** Position in the list, only used to stagger the entrance. */
   index: number;
+  /** Where to claim this team, or null when the viewer can't (it's owned, or they have one). */
+  claimHref: string | null;
 }) {
   return (
     <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
-      <Link
-        href={`/teams/${row.slug}`}
+      <div
         className={cn(
-          "group flex items-center gap-3 rounded-2xl border bg-surface px-3 py-3 shadow-lift transition-colors outline-none hover:bg-surface-raised focus-visible:ring-3 focus-visible:ring-ring/60 md:gap-4 md:px-4",
+          "relative flex items-center gap-3 rounded-2xl border bg-surface px-3 py-3 shadow-lift transition-colors hover:bg-surface-raised has-[[data-row-link]:focus-visible]:ring-3 has-[[data-row-link]:focus-visible]:ring-ring/60 md:gap-4 md:px-4",
           TOP_BORDER[row.rank] ?? "border-line",
           isMine && "border-brand/70 bg-linear-to-r from-brand/10 to-surface shadow-glow-brand",
         )}
@@ -43,9 +48,15 @@ export function LeaderboardRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="line-clamp-3 text-base leading-tight font-semibold break-words">
-              {row.name}
-            </span>
+            <Link
+              href={`/teams/${row.slug}`}
+              data-row-link
+              className="outline-none after:absolute after:inset-0 after:rounded-2xl"
+            >
+              <span className="line-clamp-3 text-base leading-tight font-semibold break-words">
+                {row.name}
+              </span>
+            </Link>
             {isMine ? (
               <span className="shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-[0.65rem] leading-none font-bold text-on-brand">
                 You
@@ -54,6 +65,14 @@ export function LeaderboardRow({
           </div>
           {row.owner ? (
             <span className="truncate text-xs text-text-muted">{row.owner.displayName}</span>
+          ) : claimHref ? (
+            // Sits above the stretched link so it gets its own tap, 24px tall for WCAG 2.2 AA.
+            <Link
+              href={claimHref}
+              className="relative z-10 inline-flex min-h-6 items-center gap-1 self-start rounded-full border border-brand/50 bg-brand/10 px-2 text-xs font-semibold text-brand-bright outline-none hover:bg-brand/20 focus-visible:ring-3 focus-visible:ring-ring/60"
+            >
+              Unclaimed · Claim it<span className="sr-only">: {row.name}</span>
+            </Link>
           ) : null}
           <SportContributionBars sportPoints={row.sportPoints} max={maxSportPoints} />
         </div>
@@ -80,7 +99,7 @@ export function LeaderboardRow({
           </span>
           <span className="mt-1 text-[0.7rem] font-medium text-text-muted">pts</span>
         </div>
-      </Link>
+      </div>
     </li>
   );
 }

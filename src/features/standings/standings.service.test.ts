@@ -34,4 +34,14 @@ describe("getLeaderboard", () => {
     expect(row?.sportPoints.find((s) => s.sport === "nfl")?.points).toBe(6);
     expect(row?.sportPoints.find((s) => s.sport === "mlb")?.points).toBe(0);
   });
+
+  it("counts only teams that have an owner as claimed", async () => {
+    const owner = { id: "u1", displayName: "Matt", avatarUrl: null };
+    const board = await service(
+      leagueData({ teams: [{ id: "a", owner }, { id: "b" }, { id: "c" }] }),
+    ).getLeaderboard();
+
+    expect(board?.claimedTeams).toBe(1);
+    expect(board?.rows).toHaveLength(3);
+  });
 });

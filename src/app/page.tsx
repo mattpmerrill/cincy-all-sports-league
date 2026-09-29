@@ -1,4 +1,6 @@
 import { getCurrentUser } from "@/features/auth/guards";
+import { claimTeamHref, viewerCanClaim } from "@/features/claims/claim-links";
+import { ClaimInvite } from "@/features/claims/components/claim-invite";
 import { LatestTrashTalk } from "@/features/feed/components/latest-trash-talk";
 import { LeaderboardHero } from "@/features/standings/components/leaderboard-hero";
 import { LeaderboardRow } from "@/features/standings/components/leaderboard-row";
@@ -19,6 +21,9 @@ export default async function LeaderboardPage() {
     );
   }
 
+  const canClaim = viewerCanClaim(board.rows, user?.id ?? null);
+  const hasOpenTeams = board.claimedTeams < board.rows.length;
+
   return (
     <PageMain
       width="wide"
@@ -26,6 +31,9 @@ export default async function LeaderboardPage() {
     >
       <LeaderboardHero board={board} now={new Date()} className="lg:sticky lg:top-20" />
       <div className="flex flex-col gap-4">
+        {!user && hasOpenTeams ? (
+          <ClaimInvite claimed={board.claimedTeams} total={board.rows.length} />
+        ) : null}
         <LatestTrashTalk />
         <ol aria-label="Standings" className="flex flex-col gap-2.5">
           {board.rows.map((row, index) => (
@@ -35,6 +43,7 @@ export default async function LeaderboardPage() {
               index={index}
               maxSportPoints={board.maxSportPoints}
               isMine={user !== null && row.owner?.id === user.id}
+              claimHref={canClaim && !row.owner ? claimTeamHref(row.slug, user !== null) : null}
             />
           ))}
         </ol>
