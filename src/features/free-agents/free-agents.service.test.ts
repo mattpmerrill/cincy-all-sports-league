@@ -451,7 +451,7 @@ describe("getSportBoard", () => {
       blockedReason: "Sign in to make moves.",
       myTeam: null,
       myPick: null,
-      sideEffects: { listings: 0, offers: 0 },
+      sideEffects: { listings: 0, offersReceived: 0, offersMade: 0 },
     });
     expect(result?.freeAgents.length).toBeGreaterThan(0);
     expect(openListings).not.toHaveBeenCalled();
@@ -482,7 +482,7 @@ describe("getSportBoard", () => {
   it("counts the listings and offers a move would cancel", async () => {
     const mine = teamRef("me");
     const open = [
-      // Live listing with the MLB pick and two pending offers: 1 listing, 2 offers.
+      // Live listing with the MLB pick and two pending offers from others: 1 listing, 2 received.
       listing({
         id: "l-mine",
         ownerTeam: mine,
@@ -502,7 +502,7 @@ describe("getSportBoard", () => {
         closesAt: AN_HOUR_AGO,
         offers: [offer({ id: "o3", offeringTeam: teamRef("coop") })],
       }),
-      // Someone else's listing where my pending offer gives the MLB pick: 1 offer.
+      // Someone else's listing where my pending offer gives the MLB pick: 1 made.
       listing({
         id: "l-coop",
         ownerTeam: teamRef("coop"),
@@ -513,7 +513,7 @@ describe("getSportBoard", () => {
     ];
     const { service, openListings } = setup({ open });
     const result = await service.getSportBoard({ id: "u-me" }, "mlb");
-    expect(result?.sideEffects).toEqual({ listings: 1, offers: 3 });
+    expect(result?.sideEffects).toEqual({ listings: 1, offersReceived: 2, offersMade: 1 });
     expect(openListings).toHaveBeenCalledWith(NOW);
   });
 });

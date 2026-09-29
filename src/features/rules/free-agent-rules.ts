@@ -8,7 +8,7 @@ export const FREE_AGENT_NOTES: RuleNote[] = [
   },
   {
     title: "First come, first served",
-    body: "A free agent is anyone no other team holds. If two teams go for the same one, the first to confirm gets them.",
+    body: "A free agent is anyone no other team holds, so if two teams go for the same one, the first to confirm gets them. The WNBA is the exception: teams can share a pick there.",
   },
   {
     title: "Earned points stay put",
@@ -20,6 +20,6 @@ export const FREE_AGENT_NOTES: RuleNote[] = [
   },
   {
     title: "Moves cancel trade listings",
-    body: "A move cancels your trade listings for the player you drop, and takes back your offers that include them.",
+    body: "A move cancels every trade listing of yours that includes the player you drop. That takes the whole listing, other players on it and the offers on it. It also withdraws your own offers that give that player.",
   },
 ];

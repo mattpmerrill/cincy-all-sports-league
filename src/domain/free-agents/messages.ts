@@ -1,6 +1,6 @@
 import { SPORTS } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
-import type { FreeAgentErrorCode } from "./types";
+import type { FreeAgentErrorCode, MoveSideEffects } from "./types";
 
 /**
  * What a person sees for each code, written once. Never the SQL token, message or detail: those
@@ -27,3 +27,31 @@ export const sportLockedMessage = (sport: SportCode): string =>
 
 /** Carried by `invalid_sport` when there is no season at all, as trades words it. */
 export const NO_ACTIVE_SEASON_MESSAGE = "There isn't an active season right now.";
+
+const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? "" : "s"}`;
+
+/**
+ * The confirm dialog's warning about the trades a move quietly undoes, or null when it touches
+ * none. Zero parts are left out, and verbs agree with what they count. The offers on a cancelled
+ * listing are other teams' (they go with the listing); the mover's own offers are withdrawn.
+ */
+export function moveWarning(
+  dropped: string,
+  { listings, offersReceived, offersMade }: MoveSideEffects,
+): string | null {
+  const acts: string[] = [];
+  if (listings > 0) {
+    const verb = listings === 1 ? "includes" : "include";
+    const onIt =
+      offersReceived > 0
+        ? ` (and the ${count(offersReceived, "offer")} on ${listings === 1 ? "it" : "them"})`
+        : "";
+    acts.push(`cancels ${count(listings, "trade listing")} that ${verb} ${dropped}${onIt}`);
+  }
+  if (offersMade > 0) {
+    acts.push(
+      `withdraws your ${count(offersMade, "offer")} that ${offersMade === 1 ? "gives" : "give"} ${dropped}`,
+    );
+  }
+  return acts.length === 0 ? null : `This also ${acts.join(" and ")}.`;
+}

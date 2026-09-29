@@ -42,3 +42,10 @@ export type FreeAgentMove = {
   added: ParticipantData;
   createdAt: string;
 };
+
+/**
+ * What a move quietly undoes, for the confirm dialog's warning. The two offer counts differ in
+ * whose they are: `offersReceived` were made by other teams on a listing the move cancels, while
+ * `offersMade` are the mover's own offers on other listings that give the dropped pick.
+ */
+export type MoveSideEffects = { listings: number; offersReceived: number; offersMade: number };

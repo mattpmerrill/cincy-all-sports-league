@@ -4,7 +4,7 @@ import type { SportCode } from "@/domain/sports/sports";
 import { effectiveListingStatus } from "@/domain/trades";
 import type { SportPhases, TradeListing } from "@/domain/trades";
 import { FREE_AGENT_MESSAGES, sportLockedMessage } from "./messages";
-import type { FreeAgentErrorCode, MoveCheck } from "./types";
+import type { FreeAgentErrorCode, MoveCheck, MoveSideEffects } from "./types";
 
 /**
  * Friendly pre-checks that mirror `make_free_agent_move`, so the page can explain a problem before
@@ -54,9 +54,6 @@ export function validateMove(input: {
   return pass;
 }
 
-/** What a move quietly undoes, for the confirm dialog's warning. */
-export type MoveSideEffects = { listings: number; offers: number };
-
 /**
  * Mirrors the SQL side effects: the team's live listings that include the sport are cancelled with
  * every pending offer on them, and the team's own pending offers elsewhere that give this sport's
@@ -71,19 +68,20 @@ export function moveSideEffects(input: {
 }): MoveSideEffects {
   const { teamId, sport, now } = input;
   let listings = 0;
-  let offers = 0;
+  let offersReceived = 0;
+  let offersMade = 0;
   for (const listing of input.openListings) {
     if (effectiveListingStatus(listing, now) !== "open") continue;
     const pending = listing.offers.filter((o) => o.status === "pending");
     if (listing.ownerTeam.id === teamId) {
       if (!listing.items.some((i) => i.sport === sport)) continue;
       listings += 1;
-      offers += pending.length;
+      offersReceived += pending.length;
     } else {
-      offers += pending.filter(
+      offersMade += pending.filter(
         (o) => o.offeringTeam.id === teamId && o.legs.some((l) => l.sport === sport),
       ).length;
     }
   }
-  return { listings, offers };
+  return { listings, offersReceived, offersMade };
 }

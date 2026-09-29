@@ -115,7 +115,7 @@ describe("moveSideEffects", () => {
       offer({ id: "o2", offeringTeam: teamRef("Third") }),
       offer({ id: "o3", offeringTeam: coop, status: "rejected" }),
     ];
-    expect(run([mine({ offers })])).toEqual({ listings: 1, offers: 2 });
+    expect(run([mine({ offers })])).toEqual({ listings: 1, offersReceived: 2, offersMade: 0 });
   });
 
   it("ignores listings in other sports, other teams' listings and expired ones", () => {
@@ -123,7 +123,11 @@ describe("moveSideEffects", () => {
     const theirs = listing({ ownerTeam: coop, items: [item("mlb", "Chicago Cubs")] });
     const expired = mine({ closesAt: AN_HOUR_AGO, offers: [offer({ offeringTeam: coop })] });
     const cancelled = mine({ status: "cancelled" });
-    expect(run([other, theirs, expired, cancelled])).toEqual({ listings: 0, offers: 0 });
+    expect(run([other, theirs, expired, cancelled])).toEqual({
+      listings: 0,
+      offersReceived: 0,
+      offersMade: 0,
+    });
   });
 
   it("counts the team's own pending offers elsewhere that give this sport's pick", () => {
@@ -145,7 +149,7 @@ describe("moveSideEffects", () => {
       items: [item("mlb", "Chicago Cubs"), item("nfl", "Chicago Bears")],
       offers: [giving, givingOther, withdrawn, someoneElses],
     });
-    expect(run([onCoops])).toEqual({ listings: 0, offers: 1 });
+    expect(run([onCoops])).toEqual({ listings: 0, offersReceived: 0, offersMade: 1 });
   });
 
   it("does not count offers on an expired listing", () => {
@@ -156,6 +160,6 @@ describe("moveSideEffects", () => {
       items: [item("mlb", "Chicago Cubs")],
       offers: [giving],
     });
-    expect(run([expired])).toEqual({ listings: 0, offers: 0 });
+    expect(run([expired])).toEqual({ listings: 0, offersReceived: 0, offersMade: 0 });
   });
 });

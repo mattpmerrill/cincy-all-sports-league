@@ -75,7 +75,7 @@ const RECENT_MOVES_LIMIT = 30;
 
 const SIGN_IN = "Sign in to make moves.";
 const NO_PICK = "You don't have a pick in this sport.";
-const NO_SIDE_EFFECTS: MoveSideEffects = { listings: 0, offers: 0 };
+const NO_SIDE_EFFECTS: MoveSideEffects = { listings: 0, offersReceived: 0, offersMade: 0 };
 
 const fail = (
   code: FreeAgentErrorCode,
