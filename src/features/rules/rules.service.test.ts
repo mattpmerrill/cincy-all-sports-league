@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createLeagueModelSource } from "@/data/league-model";
 import { leagueData } from "@/domain/league/fixtures";
+import { TRADE_WINDOW_HOURS } from "@/domain/trades";
 import { createRulesService } from "./rules.service";
 
 const rules = (mode: "cumulative" | "highest_only", pgaCap: number | null) => {
@@ -30,5 +31,14 @@ describe("getRules", () => {
       "regular_season",
       "playoffs",
     ]);
+  });
+});
+
+describe("trade rules", () => {
+  it("takes the offer window from the domain constant, so the copy cannot drift from the rule", async () => {
+    const trades = (await rules("cumulative", null))?.notes.trades ?? [];
+    const window = trades.find((n) => n.title.includes("to decide"));
+    expect(window?.title).toContain(String(TRADE_WINDOW_HOURS));
+    expect(window?.body).toContain(`${TRADE_WINDOW_HOURS} hours`);
   });
 });

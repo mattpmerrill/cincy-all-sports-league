@@ -25,6 +25,21 @@ const toProfile = (row: ProfileRow): Profile => ({
   createdAt: row.created_at,
 });
 
+/** The only profile columns an opt-in read or write may name: the two email preferences. */
+export const OPT_IN_COLUMNS = [
+  "weekly_email_opt_in",
+  "trade_emails",
+] as const satisfies readonly (keyof Tables<"profiles">)[];
+export type OptInColumn = (typeof OPT_IN_COLUMNS)[number];
+type OptInRow = Record<OptInColumn, boolean>;
+
+/** A computed key widens to a string index; this keeps the write typed to the two columns. */
+function optInPatch(column: OptInColumn, optIn: boolean): Partial<OptInRow> {
+  const patch: Partial<OptInRow> = {};
+  patch[column] = optIn;
+  return patch;
+}
+
 export type ProfilesRepository = ReturnType<typeof createProfilesRepository>;
 
 export function createProfilesRepository(db: DbClient) {
@@ -65,24 +80,25 @@ export function createProfilesRepository(db: DbClient) {
       return data ? toProfile(data) : null;
     },
 
-    async getWeeklyEmailOptIn(id: string): Promise<boolean | null> {
+    /** Null when the profile does not exist, so callers can tell "no row" from "opted out". */
+    async getOptIn(id: string, column: OptInColumn): Promise<boolean | null> {
       const { data, error } = await db
         .from("profiles")
-        .select("weekly_email_opt_in")
+        .select(column)
         .eq("id", id)
-        .maybeSingle();
+        .maybeSingle<OptInRow>();
       if (error) throw error;
-      return data ? data.weekly_email_opt_in : null;
+      return data ? data[column] : null;
     },
 
     /**
      * Touches only this one column of this one row. False when no row matched (missing profile,
      * or RLS refused because the caller is not that user).
      */
-    async setWeeklyEmailOptIn(id: string, optIn: boolean): Promise<boolean> {
+    async setOptIn(id: string, column: OptInColumn, optIn: boolean): Promise<boolean> {
       const { data, error } = await db
         .from("profiles")
-        .update({ weekly_email_opt_in: optIn })
+        .update(optInPatch(column, optIn))
         .eq("id", id)
         .select("id")
         .maybeSingle();

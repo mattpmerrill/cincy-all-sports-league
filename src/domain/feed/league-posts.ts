@@ -1,9 +1,16 @@
 import { formatPoints } from "@/domain/league/format";
 import { rankMovement } from "@/domain/standings";
 import { MESSAGE_MAX_LENGTH } from "./body";
-import type { MoverItem, ScoreUpdateItem, LeaguePayload } from "./types";
+import type {
+  LeaguePayload,
+  MoverItem,
+  MoversPayload,
+  ScoreUpdateItem,
+  ScoreUpdatePayload,
+} from "./types";
 
-export type LeaguePost = { body: string; payload: LeaguePayload };
+/** The builders return their own payload type, so callers can read it without narrowing. */
+export type LeaguePost<P extends LeaguePayload = LeaguePayload> = { body: string; payload: P };
 
 const EPSILON = 1e-9;
 const MAX_PAYLOAD_ITEMS = 40;
@@ -31,7 +38,9 @@ function joinWithinBudget(prefix: string, pieces: readonly string[]): string {
  * them, e.g. "Scores update: Utah Utes +4.1 (Sher Bear), San Francisco 49ers +3 (Sher Bear, Papie)".
  * Null when nothing moved, so an unchanged sync stays silent.
  */
-export function buildScoreUpdatePost(changes: readonly ScoreUpdateItem[]): LeaguePost | null {
+export function buildScoreUpdatePost(
+  changes: readonly ScoreUpdateItem[],
+): LeaguePost<ScoreUpdatePayload> | null {
   const items = changes.filter((c) => Math.abs(c.pointsDelta) > EPSILON);
   if (items.length === 0) return null;
 
@@ -73,7 +82,7 @@ export function buildMoversPost(
   prev: readonly RankedTeamRef[],
   curr: readonly CurrentRankedTeam[],
   date: string | null = null,
-): LeaguePost | null {
+): LeaguePost<MoversPayload> | null {
   const before = new Map(prev.map((t) => [t.teamId, t.rank]));
   const shared = (rank: number) => curr.filter((t) => t.rank === rank).length > 1;
 

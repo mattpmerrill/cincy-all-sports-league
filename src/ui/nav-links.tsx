@@ -1,17 +1,23 @@
 "use client";
 
-import { BookOpenText, LayoutGrid, MessageSquare, Trophy, UserRound } from "lucide-react";
+import { ArrowLeftRight, BookOpenText, LayoutGrid, MessageSquare, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { ReactNode } from "react";
 import { cn } from "cn";
 
 const TABS = [
   { href: "/", label: "Standings", icon: Trophy, match: ["/", "/teams"] },
   { href: "/feed", label: "Feed", icon: MessageSquare, match: ["/feed"] },
+  { href: "/trades", label: "Trades", icon: ArrowLeftRight, match: ["/trades"] },
   { href: "/sports", label: "Sports", icon: LayoutGrid, match: ["/sports"] },
   { href: "/rules", label: "Rules", icon: BookOpenText, match: ["/rules"] },
-  { href: "/me", label: "Me", icon: UserRound, match: ["/me", "/admin", "/login", "/signup"] },
 ] as const;
+
+export type TabHref = (typeof TABS)[number]["href"];
+
+/** Per-tab decoration (a count, a dot), filled by the layout because ui can't import features. */
+export type NavBadges = Partial<Record<TabHref, ReactNode>>;
 
 const isActive = (pathname: string, match: readonly string[]) =>
   match.some((m) =>
@@ -19,7 +25,7 @@ const isActive = (pathname: string, match: readonly string[]) =>
   );
 
 /** Main navigation: a bottom tab bar on phones, inline links from md up. */
-export function NavLinks({ variant }: { variant: "bar" | "top" }) {
+export function NavLinks({ variant, badges }: { variant: "bar" | "top"; badges?: NavBadges }) {
   const pathname = usePathname();
   return (
     <ul className={cn("flex", variant === "bar" ? "items-stretch justify-around" : "gap-1")}>
@@ -48,8 +54,14 @@ export function NavLinks({ variant }: { variant: "bar" | "top" }) {
                   className="absolute top-0 h-0.5 w-8 rounded-full bg-brand shadow-glow-brand"
                 />
               ) : null}
-              <Icon aria-hidden="true" className={variant === "bar" ? "size-5" : "size-4"} />
+              <span className="relative inline-flex">
+                <Icon aria-hidden="true" className={variant === "bar" ? "size-5" : "size-4"} />
+                {variant === "bar" && badges?.[href] ? (
+                  <span className="absolute -top-2 left-full -ml-2">{badges[href]}</span>
+                ) : null}
+              </span>
               {label}
+              {variant === "top" ? badges?.[href] : null}
             </Link>
           </li>
         );

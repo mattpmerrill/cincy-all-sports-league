@@ -1,5 +1,5 @@
 import type { LeagueModelSource } from "@/data/league-model";
-import { describeBreakdownLine } from "@/domain/league";
+import { describePickBreakdown } from "@/domain/league";
 import type { BreakdownView, OwnerData, SeasonStatus } from "@/domain/league";
 import type { RankMovement } from "@/domain/standings";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
@@ -53,8 +53,8 @@ export function createFantasyTeamsService({ model }: { model: LeagueModelSource 
             logoUrl: pick.participant.logoUrl,
             primaryColor: pick.participant.primaryColor,
             status: league.sports[pick.sport].status,
-            points: pick.score.total,
-            lines: pick.score.lines.map(describeBreakdownLine),
+            points: pick.credited.total,
+            lines: describePickBreakdown(pick),
           };
         })
         // Earning picks first so the page opens on what is moving the total.

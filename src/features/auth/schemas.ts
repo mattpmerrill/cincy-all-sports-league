@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { displayNameSchema } from "@/domain/membership/display-name";
+import { USER_ROLES } from "@/domain/membership/membership";
 
 /** Supabase hashes passwords with bcrypt, which ignores everything past 72 bytes. */
 const password = z
@@ -37,3 +38,10 @@ export const updatePasswordSchema = z
     path: ["confirmPassword"],
     message: "The passwords don't match.",
   });
+
+/** What the header reads about the signed-in member from the browser; checked because it crosses the network. */
+export const accountProfileSchema = z.object({
+  displayName: z.string().min(1),
+  avatarUrl: z.string().nullable(),
+  role: z.enum(USER_ROLES),
+});

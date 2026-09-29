@@ -43,3 +43,14 @@ test("unknown team and sport show a not-found page", async ({ page }) => {
   await page.goto("/sports/curling");
   await expect(page.getByRole("heading", { name: "Sport not found" })).toBeVisible();
 });
+
+test("trades page shows the trading block to signed-out visitors", async ({ page }) => {
+  await page.goto("/trades");
+  await expect(page.getByRole("heading", { level: 1, name: "Trades" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Trading block" })).toBeVisible();
+});
+
+test("new trade sends signed-out visitors to log in", async ({ page }) => {
+  await page.goto("/trades/new");
+  await expect(page).toHaveURL(/\/login\?next=%2Ftrades%2Fnew/);
+});

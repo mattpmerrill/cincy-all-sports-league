@@ -103,7 +103,7 @@ export default defineConfig([
       "src/app/apple-icon.tsx",
       "src/app/opengraph-image.tsx",
       // Email clients can't read CSS variables; the palette mirrors the tokens with literals.
-      "src/features/digest/email/palette.ts",
+      "src/ui/email/palette.ts",
     ],
     rules: {
       "no-restricted-syntax": [

@@ -1,7 +1,7 @@
 import type { LeagueModelSource } from "@/data/league-model";
 import type { OwnerData, ParticipantData, SeasonStatus } from "@/domain/league";
-import { describeBreakdownLine } from "@/domain/league";
-import type { BreakdownView } from "@/domain/league";
+import { describePickBreakdown } from "@/domain/league";
+import type { BreakdownView, SportPickRow } from "@/domain/league";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
 import type { ParticipantKind, SportCode } from "@/domain/sports/sports";
 
@@ -11,8 +11,12 @@ export type SportSummary = {
   shortLabel: string;
   participantKind: ParticipantKind;
   status: SeasonStatus;
-  /** The best pick so far, or null while nobody has scored. */
-  leader: { participantName: string; points: number } | null;
+  /**
+   * The best pick so far, or null while nobody has scored. The points belong to the team: when
+   * `traded`, they include what the team earned from players it traded away (or exclude what its
+   * current player earned elsewhere), so they are not the participant's own score.
+   */
+  leader: { teamName: string; participantName: string; points: number; traded: boolean } | null;
 };
 
 export type SportPickView = {
@@ -23,6 +27,8 @@ export type SportPickView = {
   teamSlug: string;
   owner: OwnerData | null;
   participant: Pick<ParticipantData, "name" | "logoUrl" | "primaryColor">;
+  /** True when `points` differ from the participant's own score because of a trade. */
+  traded: boolean;
   points: number;
   lines: BreakdownView[];
 };
@@ -33,15 +39,26 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
   const summary = (
     code: SportCode,
     status: SeasonStatus,
-    top: { name: string; points: number } | undefined,
+    top: { teamName: string; participantName: string; points: number; traded: boolean } | undefined,
   ): SportSummary => ({
     code,
     name: SPORTS[code].name,
     shortLabel: SPORTS[code].shortLabel,
     participantKind: SPORTS[code].participantKind,
     status,
-    leader: top && top.points > 0 ? { participantName: top.name, points: top.points } : null,
+    leader: top && top.points > 0 ? top : null,
   });
+
+  /** The credited number's owner is the team; the breakdown lines say when a trade moved it. */
+  const isTraded = (row: Parameters<typeof describePickBreakdown>[0]) =>
+    describePickBreakdown(row).some((line) => line.isAdjustment);
+  const leaderOf = (row: SportPickRow | undefined) =>
+    row && {
+      teamName: row.teamName,
+      participantName: row.participant.name,
+      points: row.credited.total,
+      traded: isTraded(row),
+    };
 
   return {
     async listSports(): Promise<SportSummary[]> {
@@ -50,11 +67,7 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
       return SPORT_CODES.map((code) => {
         // Picks arrive ranked, so the first row holds the sport's best score.
         const first = league.sportPicks[code][0];
-        return summary(
-          code,
-          league.sports[code].status,
-          first && { name: first.participant.name, points: first.score.total },
-        );
+        return summary(code, league.sports[code].status, leaderOf(first));
       });
     },
 
@@ -65,11 +78,7 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
       const rows = league.sportPicks[code];
       const first = rows[0];
       return {
-        ...summary(
-          code,
-          league.sports[code].status,
-          first && { name: first.participant.name, points: first.score.total },
-        ),
+        ...summary(code, league.sports[code].status, leaderOf(first)),
         picks: rows.map((row) => ({
           rank: row.rank,
           rankLabel: row.rankLabel,
@@ -82,8 +91,9 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
             logoUrl: row.participant.logoUrl,
             primaryColor: row.participant.primaryColor,
           },
-          points: row.score.total,
-          lines: row.score.lines.map(describeBreakdownLine),
+          traded: isTraded(row),
+          points: row.credited.total,
+          lines: describePickBreakdown(row),
         })),
       };
     },

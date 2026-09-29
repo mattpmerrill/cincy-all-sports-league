@@ -63,3 +63,6 @@ export type ParticipantScore = {
   championships: number;
   lines: BreakdownLine[];
 };
+
+/** The three numbers a team's standing is built from, without the line-by-line explanation. */
+export type ScoreTotals = Pick<ParticipantScore, "total" | "postseasonPoints" | "championships">;

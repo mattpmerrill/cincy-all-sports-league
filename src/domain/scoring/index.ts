@@ -7,6 +7,7 @@ export type {
   ParticipantScore,
   PlayoffScoringMode,
   ScoringRule,
+  ScoreTotals,
   ScoringRuleKind,
   SportScoringConfig,
 } from "./types";

@@ -1,8 +1,12 @@
-import type { ParticipantScore } from "@/domain/scoring";
+import type { ScoreTotals } from "@/domain/scoring";
 import { sumPoints } from "@/domain/scoring";
 import type { SportCode } from "@/domain/sports/sports";
 
-export type FantasyTeamPick = { sport: SportCode; score: ParticipantScore };
+/**
+ * `score` is what the team is credited for the pick (see `creditedScore`), not the participant's
+ * full live score; the two differ only after a trade.
+ */
+export type FantasyTeamPick = { sport: SportCode; score: ScoreTotals };
 
 export type FantasyTeamInput = {
   id: string;

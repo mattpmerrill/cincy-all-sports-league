@@ -1,18 +1,20 @@
 import type { ReactNode } from "react";
-import { NavLinks } from "./nav-links";
+import { NavLinks, type NavBadges } from "./nav-links";
 import { SiteFooter } from "./site-footer";
 import { Wordmark } from "./wordmark";
 
 /**
  * App chrome: sticky header with top nav from md up, bottom tab bar on phones (safe-area aware).
- * `headerAction` is a slot at the header's right edge, filled by the layout (ui can't import features).
+ * `headerAction` and `navBadges` are slots filled by the layout (ui can't import features).
  */
 export function AppShell({
   children,
   headerAction,
+  navBadges,
 }: {
   children: ReactNode;
   headerAction?: ReactNode;
+  navBadges?: NavBadges;
 }) {
   return (
     <div className="flex min-h-dvh flex-col">
@@ -27,7 +29,7 @@ export function AppShell({
           <Wordmark />
           <div className="flex items-center gap-3">
             <nav aria-label="Main" className="hidden md:block">
-              <NavLinks variant="top" />
+              <NavLinks variant="top" badges={navBadges} />
             </nav>
             {headerAction}
           </div>
@@ -43,7 +45,7 @@ export function AppShell({
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-canvas/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-md md:hidden"
       >
-        <NavLinks variant="bar" />
+        <NavLinks variant="bar" badges={navBadges} />
       </nav>
     </div>
   );

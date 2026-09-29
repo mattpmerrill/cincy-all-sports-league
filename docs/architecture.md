@@ -75,6 +75,28 @@ pg_cron (every 30 min) -> POST /api/cron/sync (bearer CRON_SECRET, constant-time
 The admin "Sync now" button runs the same service for one sport. Admin overrides are locked rows that sync never overwrites
 ([ADR-002](decisions/ADR-002-espn-public-api-with-admin-overrides.md)).
 
+## Trade flow
+
+Trades swap one pick for one pick within a sport. Every trade write is a `service_role`-only SQL
+function, and the domain owns the rules. See [ADR-003](decisions/ADR-003-trades.md).
+
+```
+listing:  form -> Server Action (re-checks session) -> trades service
+            fresh league model -> domain validation (tradeable sports, ownership)
+            -> repository rpc create_trade_listing / propose_direct_trade (+ feed post, one transaction)
+offer:    same path via make_trade_offer; at most one pending offer per team per listing
+accept:   Server Action -> service: fresh model -> domain validation
+            -> live scores of every participant passed to accept_trade_offer
+            -> SQL function locks rows, swaps the picks, banks each side's earned points,
+               rejects sibling offers, writes the "trade done" feed post
+            -> revalidateLeague() drops the cached model
+alerts:   service hands alerts to Next's after(): emails go out after the response,
+          so a failed email never fails a trade
+```
+
+Expiry is derived (`open` past `closes_at` reads as expired), so no job sweeps listings. Team totals
+use credited scores (live minus baseline plus banked), so a trade never moves the leaderboard.
+
 ## Conventions
 
 - Expected failures return `Result<T, AppError>` with a stable `code`; unexpected ones throw and

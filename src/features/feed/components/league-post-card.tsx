@@ -1,14 +1,54 @@
-import { Radio } from "lucide-react";
+import { ArrowLeftRight, Radio } from "lucide-react";
 import Link from "next/link";
-import { groupScoreUpdateItems, type Message } from "@/domain/feed";
+import { groupScoreUpdateItems, type Message, type TradeTeamLink } from "@/domain/feed";
 import { formatPoints } from "@/domain/league/format";
-import { SPORTS } from "@/domain/sports/sports";
+import { SPORTS, type SportCode } from "@/domain/sports/sports";
 import { SportIcon } from "@/ui/sport-icon";
 
 const MAX_ROWS = 5;
 
 const teamLink =
   "font-medium text-text underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/60";
+
+const cardTitle = "font-display text-lg leading-none font-bold tracking-tight uppercase";
+
+function TeamLink({ team }: { team: TradeTeamLink }) {
+  return (
+    <Link href={`/teams/${team.slug}`} className={teamLink}>
+      {team.name}
+    </Link>
+  );
+}
+
+function SportLabel({ sport }: { sport: SportCode }) {
+  return (
+    <>
+      <SportIcon sport={sport} className="size-4 shrink-0 text-text-muted" />
+      <span className="sr-only">{SPORTS[sport].name}:</span>
+    </>
+  );
+}
+
+/** One sport of a trade: what one side gives for what the other gives. */
+function TradeLegRow({ sport, left, right }: { sport: SportCode; left: string; right: string }) {
+  return (
+    <li className="flex flex-wrap items-center gap-x-2 gap-y-0.5 py-1.5 text-sm font-semibold">
+      <SportLabel sport={sport} />
+      <span className="min-w-0 break-words">{left}</span>
+      <ArrowLeftRight aria-hidden="true" className="size-3.5 shrink-0 text-text-muted" />
+      <span className="sr-only">for</span>
+      <span className="min-w-0 break-words">{right}</span>
+    </li>
+  );
+}
+
+function ViewTradeLink({ listingId }: { listingId: string }) {
+  return (
+    <Link href={`/trades/${listingId}`} className={`${teamLink} w-fit text-sm underline`}>
+      View trade
+    </Link>
+  );
+}
 
 /** The League badge that marks an automatic post. */
 export function LeagueBadge() {
@@ -109,6 +149,70 @@ export function LeaguePostContent({ message }: { message: Message }) {
         {payload.items.length > shown.length ? (
           <p className="text-xs text-text-muted">and {payload.items.length - shown.length} more</p>
         ) : null}
+      </div>
+    );
+  }
+
+  if (payload?.type === "trade_listed") {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className={cardTitle}>Trading block</p>
+        <p className="text-sm">
+          <TeamLink team={payload.team} /> put these players up for trade.
+        </p>
+        <ul className="flex flex-col divide-y divide-line/70">
+          {payload.items.map((item) => (
+            <li key={item.sport} className="flex items-center gap-2 py-1.5 text-sm font-semibold">
+              <SportLabel sport={item.sport} />
+              <span className="min-w-0 break-words">{item.participantName}</span>
+            </li>
+          ))}
+        </ul>
+        <ViewTradeLink listingId={payload.listingId} />
+      </div>
+    );
+  }
+
+  if (payload?.type === "trade_offer") {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className={cardTitle}>Trade offer</p>
+        <p className="text-sm">
+          <TeamLink team={payload.from} />{" "}
+          {payload.offerKind === "direct" ? "offered a trade to" : "made a competing offer to"}{" "}
+          <TeamLink team={payload.to} />.
+        </p>
+        <ul className="flex flex-col divide-y divide-line/70">
+          {payload.legs.map((leg) => (
+            <TradeLegRow key={leg.sport} sport={leg.sport} left={leg.gives} right={leg.gets} />
+          ))}
+        </ul>
+        {payload.note ? (
+          <p className="text-sm break-words text-text-muted italic">&ldquo;{payload.note}&rdquo;</p>
+        ) : null}
+        <ViewTradeLink listingId={payload.listingId} />
+      </div>
+    );
+  }
+
+  if (payload?.type === "trade_completed") {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className={cardTitle}>Trade done</p>
+        <p className="text-sm">
+          <TeamLink team={payload.owner} /> and <TeamLink team={payload.offerer} /> swapped players.
+        </p>
+        <ul className="flex flex-col divide-y divide-line/70">
+          {payload.legs.map((leg) => (
+            <TradeLegRow
+              key={leg.sport}
+              sport={leg.sport}
+              left={leg.ownerGave}
+              right={leg.offererGave}
+            />
+          ))}
+        </ul>
+        <ViewTradeLink listingId={payload.listingId} />
       </div>
     );
   }

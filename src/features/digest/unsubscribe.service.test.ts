@@ -9,7 +9,7 @@ function setup(existing: boolean | null = true) {
   const setOptIn = vi.fn(async () => existing !== null);
   const getOptIn = vi.fn(async () => existing);
   const service = createUnsubscribeService({
-    profiles: { setWeeklyEmailOptIn: setOptIn, getWeeklyEmailOptIn: getOptIn },
+    profiles: { setOptIn, getOptIn },
     secret: SECRET,
   });
   return { service, setOptIn, getOptIn };
@@ -20,7 +20,7 @@ describe("unsubscribe service", () => {
     const { service, setOptIn } = setup();
     const result = await service.unsubscribe(signUnsubscribeToken(USER, SECRET));
     expect(result).toEqual({ ok: true, value: { optedIn: false } });
-    expect(setOptIn).toHaveBeenCalledWith(USER, false);
+    expect(setOptIn).toHaveBeenCalledWith(USER, "weekly_email_opt_in", false);
   });
 
   it("resubscribes with the same token", async () => {
@@ -28,7 +28,7 @@ describe("unsubscribe service", () => {
     const token = signUnsubscribeToken(USER, SECRET);
     await service.unsubscribe(token);
     expect(await service.resubscribe(token)).toEqual({ ok: true, value: { optedIn: true } });
-    expect(setOptIn).toHaveBeenLastCalledWith(USER, true);
+    expect(setOptIn).toHaveBeenLastCalledWith(USER, "weekly_email_opt_in", true);
   });
 
   it.each([

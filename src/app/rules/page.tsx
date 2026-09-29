@@ -29,6 +29,7 @@ export default async function RulesPage() {
         <RuleNotes title="Game ties" notes={rules.notes.gameTies} />
         <RuleNotes title="Leaderboard ties" notes={rules.notes.leaderboardTies} />
       </div>
+      <RuleNotes title="Trades" notes={rules.notes.trades} spread />
       <div className="grid items-start gap-3 md:grid-cols-2">
         {rules.sports.map((sport) => (
           <SportRulesCard key={sport.code} sport={sport} />

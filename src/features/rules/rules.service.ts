@@ -6,6 +6,7 @@ import type { SportCode } from "@/domain/sports/sports";
 import { formatPoints } from "@/domain/league";
 import { GAME_TIE_NOTES, LEADERBOARD_TIE_NOTES, playoffNote } from "./tie-rules";
 import type { RuleNote } from "./tie-rules";
+import { TRADE_NOTES } from "./trade-rules";
 
 export type SportRules = {
   code: SportCode;
@@ -19,7 +20,12 @@ export type SportRules = {
 export type RulesView = {
   seasonName: string;
   sports: SportRules[];
-  notes: { playoffs: RuleNote; gameTies: RuleNote[]; leaderboardTies: RuleNote[] };
+  notes: {
+    playoffs: RuleNote;
+    gameTies: RuleNote[];
+    leaderboardTies: RuleNote[];
+    trades: RuleNote[];
+  };
 };
 
 export function createRulesService({
@@ -51,6 +57,7 @@ export function createRulesService({
           playoffs: playoffNote(data.season.playoffScoringMode),
           gameTies: GAME_TIE_NOTES,
           leaderboardTies: LEADERBOARD_TIE_NOTES,
+          trades: TRADE_NOTES,
         },
       };
     },

@@ -1,0 +1,47 @@
+import { describe, expect, it, vi } from "vitest";
+import type { DbClient } from "./db-client";
+import { createProfilesRepository } from "./profiles.repository";
+
+describe("email opt-ins", () => {
+  it("reads the named column, and null when there is no profile", async () => {
+    const select = vi.fn();
+    const chain = (data: unknown) => ({
+      select: (columns: string) => {
+        select(columns);
+        return { eq: () => ({ maybeSingle: async () => ({ data, error: null }) }) };
+      },
+    });
+    const has = createProfilesRepository({
+      from: () => chain({ trade_emails: false }),
+    } as unknown as DbClient);
+    expect(await has.getOptIn("u1", "trade_emails")).toBe(false);
+    expect(select).toHaveBeenCalledWith("trade_emails");
+
+    const missing = createProfilesRepository({ from: () => chain(null) } as unknown as DbClient);
+    expect(await missing.getOptIn("u1", "weekly_email_opt_in")).toBeNull();
+  });
+
+  it("writes only the named column, and reports whether a row matched", async () => {
+    const update = vi.fn();
+    const db = (data: unknown) =>
+      ({
+        from: () => ({
+          update: (values: unknown) => {
+            update(values);
+            return {
+              eq: () => ({ select: () => ({ maybeSingle: async () => ({ data, error: null }) }) }),
+            };
+          },
+        }),
+      }) as unknown as DbClient;
+
+    expect(
+      await createProfilesRepository(db({ id: "u1" })).setOptIn("u1", "weekly_email_opt_in", false),
+    ).toBe(true);
+    expect(update).toHaveBeenCalledWith({ weekly_email_opt_in: false });
+    expect(await createProfilesRepository(db(null)).setOptIn("u1", "trade_emails", true)).toBe(
+      false,
+    );
+    expect(update).toHaveBeenLastCalledWith({ trade_emails: true });
+  });
+});

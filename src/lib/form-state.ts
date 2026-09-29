@@ -13,6 +13,8 @@ export type FormState =
       fieldErrors?: Readonly<Record<string, readonly string[] | undefined>>;
       /** Non-secret inputs echoed back: React resets uncontrolled fields after every action. */
       values?: Readonly<Record<string, string>>;
+      /** Machine-readable extras for the UI (for example an id to link to), never shown as is. */
+      data?: Readonly<Record<string, string>>;
     };
 
 export const idleFormState: FormState = { status: "idle" };
@@ -23,7 +25,8 @@ export const formError = (
   message: string,
   fieldErrors?: Readonly<Record<string, readonly string[] | undefined>>,
   values?: Readonly<Record<string, string>>,
-): FormState => ({ status: "error", message, fieldErrors, values });
+  data?: Readonly<Record<string, string>>,
+): FormState => ({ status: "error", message, fieldErrors, values, data });
 
 /** Turns a failed Zod parse into per-field messages without leaking schema internals. */
 export function zodFormError(error: z.ZodError, values?: Record<string, string>): FormState {

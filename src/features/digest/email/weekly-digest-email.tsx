@@ -11,7 +11,7 @@ import {
 } from "@react-email/components";
 import type { CSSProperties, ReactNode } from "react";
 import type { DigestTeamRow, WeeklyDigest } from "@/domain/digest";
-import { fonts, palette } from "./palette";
+import { fonts, palette } from "@/ui/email/palette";
 import { formatPoints, movementShort, movementText, signedPoints } from "./format";
 
 export type DigestEmailProps = {

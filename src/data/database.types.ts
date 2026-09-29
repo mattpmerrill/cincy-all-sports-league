@@ -34,6 +34,64 @@ export type Database = {
   }
   public: {
     Tables: {
+      banked_scores: {
+        Row: {
+          championships: number
+          created_at: string
+          fantasy_team_id: string
+          id: string
+          participant_id: string
+          points: number
+          postseason_points: number
+          sport_id: string
+          trade_offer_id: string | null
+        }
+        Insert: {
+          championships: number
+          created_at?: string
+          fantasy_team_id: string
+          id?: string
+          participant_id: string
+          points: number
+          postseason_points: number
+          sport_id: string
+          trade_offer_id?: string | null
+        }
+        Update: {
+          championships?: number
+          created_at?: string
+          fantasy_team_id?: string
+          id?: string
+          participant_id?: string
+          points?: number
+          postseason_points?: number
+          sport_id?: string
+          trade_offer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "banked_scores_fantasy_team_id_fkey"
+            columns: ["fantasy_team_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banked_scores_participant_id_sport_id_fkey"
+            columns: ["participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+          {
+            foreignKeyName: "banked_scores_trade_offer_id_fkey"
+            columns: ["trade_offer_id"]
+            isOneToOne: false
+            referencedRelation: "trade_offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       digest_sends: {
         Row: {
           recipient_count: number
@@ -304,18 +362,30 @@ export type Database = {
       }
       picks: {
         Row: {
+          acquired_at: string | null
+          baseline_championships: number
+          baseline_points: number
+          baseline_postseason_points: number
           fantasy_team_id: string
           id: string
           participant_id: string
           sport_id: string
         }
         Insert: {
+          acquired_at?: string | null
+          baseline_championships?: number
+          baseline_points?: number
+          baseline_postseason_points?: number
           fantasy_team_id: string
           id?: string
           participant_id: string
           sport_id: string
         }
         Update: {
+          acquired_at?: string | null
+          baseline_championships?: number
+          baseline_points?: number
+          baseline_postseason_points?: number
           fantasy_team_id?: string
           id?: string
           participant_id?: string
@@ -352,6 +422,7 @@ export type Database = {
           display_name: string
           id: string
           role: Database["public"]["Enums"]["user_role"]
+          trade_emails: boolean
           updated_at: string
           weekly_email_opt_in: boolean
         }
@@ -361,6 +432,7 @@ export type Database = {
           display_name: string
           id: string
           role?: Database["public"]["Enums"]["user_role"]
+          trade_emails?: boolean
           updated_at?: string
           weekly_email_opt_in?: boolean
         }
@@ -370,6 +442,7 @@ export type Database = {
           display_name?: string
           id?: string
           role?: Database["public"]["Enums"]["user_role"]
+          trade_emails?: boolean
           updated_at?: string
           weekly_email_opt_in?: boolean
         }
@@ -652,15 +725,326 @@ export type Database = {
           },
         ]
       }
+      trade_listing_items: {
+        Row: {
+          listing_id: string
+          participant_id: string
+          sport_id: string
+        }
+        Insert: {
+          listing_id: string
+          participant_id: string
+          sport_id: string
+        }
+        Update: {
+          listing_id?: string
+          participant_id?: string
+          sport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_listing_items_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "trade_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_listing_items_participant_id_sport_id_fkey"
+            columns: ["participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+        ]
+      }
+      trade_listings: {
+        Row: {
+          accepted_offer_id: string | null
+          closes_at: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: Database["public"]["Enums"]["trade_listing_kind"]
+          owner_team_id: string
+          resolved_at: string | null
+          season_id: string
+          status: Database["public"]["Enums"]["trade_listing_status"]
+        }
+        Insert: {
+          accepted_offer_id?: string | null
+          closes_at: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["trade_listing_kind"]
+          owner_team_id: string
+          resolved_at?: string | null
+          season_id: string
+          status?: Database["public"]["Enums"]["trade_listing_status"]
+        }
+        Update: {
+          accepted_offer_id?: string | null
+          closes_at?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["trade_listing_kind"]
+          owner_team_id?: string
+          resolved_at?: string | null
+          season_id?: string
+          status?: Database["public"]["Enums"]["trade_listing_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_listings_accepted_offer_id_id_fkey"
+            columns: ["accepted_offer_id", "id"]
+            isOneToOne: false
+            referencedRelation: "trade_offers"
+            referencedColumns: ["id", "listing_id"]
+          },
+          {
+            foreignKeyName: "trade_listings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_listings_owner_team_id_season_id_fkey"
+            columns: ["owner_team_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id", "season_id"]
+          },
+        ]
+      }
+      trade_offer_legs: {
+        Row: {
+          listing_id: string
+          offer_id: string
+          participant_id: string
+          sport_id: string
+        }
+        Insert: {
+          listing_id: string
+          offer_id: string
+          participant_id: string
+          sport_id: string
+        }
+        Update: {
+          listing_id?: string
+          offer_id?: string
+          participant_id?: string
+          sport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_offer_legs_listing_id_sport_id_fkey"
+            columns: ["listing_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "trade_listing_items"
+            referencedColumns: ["listing_id", "sport_id"]
+          },
+          {
+            foreignKeyName: "trade_offer_legs_offer_id_listing_id_fkey"
+            columns: ["offer_id", "listing_id"]
+            isOneToOne: false
+            referencedRelation: "trade_offers"
+            referencedColumns: ["id", "listing_id"]
+          },
+          {
+            foreignKeyName: "trade_offer_legs_participant_id_sport_id_fkey"
+            columns: ["participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+        ]
+      }
+      trade_offers: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          listing_id: string
+          note: string | null
+          offering_team_id: string
+          resolved_at: string | null
+          status: Database["public"]["Enums"]["trade_offer_status"]
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          listing_id: string
+          note?: string | null
+          offering_team_id: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["trade_offer_status"]
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          listing_id?: string
+          note?: string | null
+          offering_team_id?: string
+          resolved_at?: string | null
+          status?: Database["public"]["Enums"]["trade_offer_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trade_offers_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_offers_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "trade_listings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trade_offers_offering_team_id_fkey"
+            columns: ["offering_team_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      accept_trade_offer: {
+        Args: {
+          p_actor: string
+          p_offer_id: string
+          p_post_body: string
+          p_post_payload: Json
+          p_scores: Json
+        }
+        Returns: undefined
+      }
       approve_team_claim: { Args: { claim_id: string }; Returns: undefined }
+      cancel_trade_listing: {
+        Args: { p_actor: string; p_listing_id: string }
+        Returns: undefined
+      }
+      create_trade_listing: {
+        Args: {
+          p_actor: string
+          p_post_body: string
+          p_post_payload: Json
+          p_sport_codes: string[]
+        }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
+      make_trade_offer: {
+        Args: {
+          p_actor: string
+          p_listing_id: string
+          p_note: string
+          p_post_body: string
+          p_post_payload: Json
+          p_sport_codes: string[]
+        }
+        Returns: string
+      }
       owns_team: { Args: never; Returns: boolean }
+      pending_trade_decisions: { Args: never; Returns: number }
+      propose_direct_trade: {
+        Args: {
+          p_actor: string
+          p_note: string
+          p_post_body: string
+          p_post_payload: Json
+          p_sport_codes: string[]
+          p_target_team_id: string
+        }
+        Returns: {
+          listing_id: string
+          offer_id: string
+        }[]
+      }
       reject_team_claim: { Args: { claim_id: string }; Returns: undefined }
+      reject_trade_offer: {
+        Args: { p_actor: string; p_offer_id: string }
+        Returns: undefined
+      }
+      trade_actor_team: {
+        Args: { p_actor: string }
+        Returns: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string | null
+          season_id: string
+          slug: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "fantasy_teams"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      trade_assert_unlisted: {
+        Args: { p_participant_ids: string[]; p_team_id: string }
+        Returns: undefined
+      }
+      trade_live_score: {
+        Args: { p_participant_id: string; p_scores: Json }
+        Returns: {
+          championships: number
+          points: number
+          postseason_points: number
+        }[]
+      }
+      trade_locked_picks: {
+        Args: { p_sport_ids: string[]; p_team_ids: string[] }
+        Returns: {
+          acquired_at: string | null
+          baseline_championships: number
+          baseline_points: number
+          baseline_postseason_points: number
+          fantasy_team_id: string
+          id: string
+          participant_id: string
+          sport_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "picks"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      trade_post: {
+        Args: {
+          p_body: string
+          p_listing_id: string
+          p_payload: Json
+          p_season_id: string
+        }
+        Returns: undefined
+      }
+      trade_resolve_sports: {
+        Args: { p_sport_codes: string[] }
+        Returns: string[]
+      }
+      withdraw_trade_offer: {
+        Args: { p_actor: string; p_offer_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       claim_status: "pending" | "approved" | "rejected"
@@ -676,6 +1060,14 @@ export type Database = {
         | "major_finish"
         | "final_rank_band"
       sync_status: "running" | "succeeded" | "failed" | "skipped"
+      trade_listing_kind: "block" | "direct"
+      trade_listing_status: "open" | "accepted" | "cancelled"
+      trade_offer_status:
+        | "pending"
+        | "accepted"
+        | "rejected"
+        | "withdrawn"
+        | "void"
       user_role: "member" | "admin"
     }
     CompositeTypes: {
@@ -821,6 +1213,15 @@ export const Constants = {
         "final_rank_band",
       ],
       sync_status: ["running", "succeeded", "failed", "skipped"],
+      trade_listing_kind: ["block", "direct"],
+      trade_listing_status: ["open", "accepted", "cancelled"],
+      trade_offer_status: [
+        "pending",
+        "accepted",
+        "rejected",
+        "withdrawn",
+        "void",
+      ],
       user_role: ["member", "admin"],
     },
   },
