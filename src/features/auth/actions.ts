@@ -31,7 +31,9 @@ export async function signUpAction(_prev: FormState, formData: FormData): Promis
   const result = await (await getAuthService()).signUp(parsed.data, await requestOrigin(), next);
   if (!result.ok) return formError(result.error.message, undefined, echo);
   if (result.value.needsConfirmation) {
-    return formSuccess("Almost there. Check your email for a link to confirm your account.");
+    return formSuccess(
+      "Almost there. We sent a link to confirm your account. It can take a minute, and it may land in your spam or junk folder, so check there too.",
+    );
   }
   redirect(next);
 }
@@ -79,7 +81,9 @@ export async function requestPasswordResetAction(
   ).requestPasswordReset(parsed.data.email, await requestOrigin());
   if (!result.ok) return formError(result.error.message, undefined, echo);
   // Same answer whether or not the address has an account, so this can't be used to probe.
-  return formSuccess("If that email has an account, a reset link is on its way.");
+  return formSuccess(
+    "If that email has an account, a reset link is on its way. Check your spam or junk folder if you don't see it.",
+  );
 }
 
 export async function updatePasswordAction(
