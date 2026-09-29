@@ -20,8 +20,10 @@ export async function createSupabaseServerClient() {
           try {
             toSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options));
           } catch {
-            // Called from a Server Component, where cookies are read-only. Session refresh is
-            // handled by the proxy, so ignoring this is safe.
+            // Called from a Server Component, where cookies are read-only. The proxy
+            // (src/proxy.ts) refreshes the session cookie on every request, so ignoring this is
+            // safe. The proxy only keeps the session fresh; it is not the authorization boundary,
+            // so every action, route and service still checks who is calling.
           }
         },
       },

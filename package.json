@@ -17,7 +17,8 @@
     "test:db": "supabase test db",
     "db:types": "supabase gen types typescript --local > src/data/database.types.ts",
     "db:seed:build": "tsx scripts/build-seed.ts",
-    "data:resolve": "tsx scripts/resolve-espn-ids.ts"
+    "data:resolve": "tsx scripts/resolve-espn-ids.ts",
+    "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

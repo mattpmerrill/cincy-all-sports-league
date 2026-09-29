@@ -52,6 +52,43 @@ Open http://localhost:3000.
 | `SUPABASE_SECRET_KEY`                  | server only | Secret key for the sync job; bypasses RLS          |
 | `CRON_SECRET`                          | server only | Shared secret guarding the sync route              |
 
+## Auth setup
+
+Sign-in is Supabase Auth: email and password, plus Google. Sessions live in cookies and are kept
+fresh by `src/proxy.ts`; that proxy is not the authorization boundary, so every Server Action,
+route handler and service re-checks who is calling, and RLS has the last word.
+
+**Google provider.** In Google Cloud Console, create an OAuth client (type: Web application) with
+the authorized redirect URI `https://<project-ref>.supabase.co/auth/v1/callback`. In Supabase,
+Authentication > Providers > Google, paste the client ID and secret and enable it. Email sign-in
+works without this step.
+
+**Redirect URLs.** In Supabase, Authentication > URL Configuration, set the Site URL to the
+production origin and add every origin the app runs on to Redirect URLs (the app sends users back
+to `/auth/callback`, so use a wildcard path):
+
+- `https://<production-domain>/**`
+- `https://*-<vercel-team-slug>.vercel.app/**` (preview deployments)
+- `http://localhost:3000/**` (local dev against a hosted project)
+
+Locally, `supabase/config.toml` already allows `http://127.0.0.1:3000`; browse the dev server at
+that address, not `localhost`, so cookies and redirects line up.
+
+**First admin.** Only admins can promote others, so the first one is set from the command line.
+Sign in to the app once (this creates the profile), then run this against the project whose keys
+are in `.env.local`:
+
+```sh
+pnpm make-admin you@example.com
+```
+
+The script prints the target project host, finds the auth user by email with the secret key, and
+sets `profiles.role = 'admin'`. After that, admins can promote and demote members under
+`/admin/members`. The last remaining admin can't be demoted.
+
+**Claiming a team.** After signing in, a member requests an unclaimed team on `/me`. An admin
+approves or rejects it under `/admin`; approval sets the team's owner in one database transaction.
+
 ## Scripts
 
 `pnpm dev`, `pnpm build`, `pnpm check` (lint, format, types, import graph, unit tests),
