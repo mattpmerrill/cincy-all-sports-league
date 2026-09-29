@@ -38,11 +38,8 @@ export type SportTarget = {
   rules: TargetRule[];
   /** Held only: the admin results editor lists exactly these, so free agents stay out of it. */
   participants: TargetParticipant[];
-  /**
-   * Every other participant in the sport (the free-agent pool). Always filled by this repository;
-   * optional in the type only so older hand-built targets (the results editor's tests) still fit.
-   */
-  freeAgents?: TargetParticipant[];
+  /** Every other participant in the sport (the free-agent pool). */
+  freeAgents: TargetParticipant[];
 };
 
 export type SportTargetsRepository = ReturnType<typeof createSportTargetsRepository>;

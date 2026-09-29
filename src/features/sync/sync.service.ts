@@ -208,7 +208,7 @@ export function createSyncService(deps: SyncDeps) {
       // feeds (college) would cost a call each: those free agents have their own daily run.
       const scored = deps.provider.fetchesPerParticipant(sport)
         ? target.participants
-        : [...target.participants, ...(target.freeAgents ?? [])];
+        : [...target.participants, ...target.freeAgents];
       const run = await applyFacts(target, scored);
       if (!run.ok) {
         const { code, message } = run.error;
@@ -335,7 +335,7 @@ export function createSyncService(deps: SyncDeps) {
     const outside = outsideWindow(target, easternDate(now));
     if (outside) return factsOutcome("skipped", { code: outside });
 
-    const pool = (target.freeAgents ?? []).filter((p) => p.externalId);
+    const pool = target.freeAgents.filter((p) => p.externalId);
     if (pool.length === 0) return factsOutcome("skipped", { code: "no_free_agents" });
 
     const startedAt = Date.now();
@@ -498,6 +498,9 @@ export function createSyncService(deps: SyncDeps) {
       if (!target) return notInSeason(correlationId, sport);
 
       let roster: RosterOutcome;
+      // A crash can land after a partial insert, so the inserted count is unknown and the cache
+      // must be dropped anyway.
+      let rosterCrashed = false;
       try {
         const loaded = await refreshRoster({ ...deps, logger: log }, target);
         roster = loaded.ok
@@ -507,6 +510,7 @@ export function createSyncService(deps: SyncDeps) {
       } catch (error) {
         log.error("roster refresh crashed", { error });
         roster = { status: "failed", code: "unexpected" };
+        rosterCrashed = true;
       }
 
       // Newly inserted free agents must be in the target the facts step reads.
@@ -514,7 +518,7 @@ export function createSyncService(deps: SyncDeps) {
       const current = inserted > 0 ? ((await targetFor(sport)) ?? target) : target;
 
       const outcome = await runFreeAgentFacts(current, now, correlationId, log);
-      const changed = inserted > 0 || outcome.upserted + outcome.deleted > 0;
+      const changed = inserted > 0 || rosterCrashed || outcome.upserted + outcome.deleted > 0;
       if (changed) deps.invalidate();
       return { correlationId, sport, roster, facts: outcome, changed };
     },
@@ -536,7 +540,7 @@ export function createSyncService(deps: SyncDeps) {
       if (outsideWindow(target, easternDate(now))) return ok(null);
 
       const wanted = new Set(participantIds);
-      const participants = [...target.participants, ...(target.freeAgents ?? [])].filter(
+      const participants = [...target.participants, ...target.freeAgents].filter(
         (p) => wanted.has(p.id) && p.externalId,
       );
       if (participants.length === 0) return ok(null);

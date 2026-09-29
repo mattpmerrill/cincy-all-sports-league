@@ -32,7 +32,8 @@ async function run(request: Request): Promise<Response> {
       sport: parsed.data.sport,
     });
     return NextResponse.json({
-      ok: true,
+      // A reported step failure is still a 200 (the run finished), but `ok` must not claim success.
+      ok: report.roster?.status !== "failed" && report.facts.status !== "failed",
       durationMs: Date.now() - startedAt,
       ...report,
     });

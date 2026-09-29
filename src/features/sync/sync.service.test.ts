@@ -218,6 +218,7 @@ function harness(opts: {
   };
   return {
     service: createSyncService(deps),
+    deps,
     runs,
     snapshotWrites,
     invalidate,
@@ -814,6 +815,27 @@ describe("refreshFreeAgents", () => {
     expect(report.roster).toEqual({ status: "succeeded", inserted: 0, skipped: 0 });
     expect(report.changed).toBe(false);
     expect(h.invalidate).not.toHaveBeenCalled();
+  });
+
+  it("drops the cache once when the roster step crashes after a partial insert", async () => {
+    const h = harness({
+      targets: [target("nfl")],
+      directory: async () => ok({ entries: [entry("e1", "Chicago Bears")], skipped: [] }),
+    });
+    const crashing = createSyncService({
+      ...h.deps,
+      participants: {
+        listForSport: async () => [],
+        insertMany: async () => {
+          throw new Error("connection lost after batch 1");
+        },
+      },
+    });
+    const report = await crashing.refreshFreeAgents({ now: NOW, sport: "nfl" });
+
+    expect(report.roster).toEqual({ status: "failed", code: "unexpected" });
+    expect(report.changed).toBe(true);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
   });
 
   it("still scores stored free agents when the directory call fails", async () => {

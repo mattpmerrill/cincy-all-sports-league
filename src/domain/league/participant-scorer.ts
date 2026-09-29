@@ -28,7 +28,10 @@ export function createParticipantScorer(
 
   const cache = new Map<string, ParticipantScore>();
   return (sport, participantId) => {
-    const cached = cache.get(participantId);
+    // Sport is part of the key: a participant scored first under a wrong sport must not poison a
+    // later correct call.
+    const key = `${sport}:${participantId}`;
+    const cached = cache.get(key);
     if (cached) return cached;
     const season = sportSeason.get(sport);
     if (!season) throw new Error(`Sport "${sport}" has no season_sports row`);
@@ -41,7 +44,7 @@ export function createParticipantScorer(
         majorPointsCap: season.majorPointsCap,
       },
     );
-    cache.set(participantId, score);
+    cache.set(key, score);
     return score;
   };
 }

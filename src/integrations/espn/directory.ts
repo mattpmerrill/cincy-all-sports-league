@@ -30,7 +30,10 @@ export type AthleteDirectoryOptions = {
 
 // ESPN's core groups for college football: 80 is FBS, 81 is FCS. The site teams endpoint ignores
 // its `groups` parameter and returns every level down to Division III, so these two lists are the
-// only Division I filter there is.
+// only Division I filter there is. Known gap: the intersection with the site teams list also drops
+// UT Rio Grande Valley (ESPN id 292), a real FCS team that the site list omits. Nothing reliable
+// tells it apart from the 12 all-star and placeholder ids that are missing from the same list, so
+// keeping it would mean either admitting those or hardcoding a single id.
 const CFB_DIVISION_ONE_GROUPS = [80, 81] as const;
 const ATHLETE_FETCH_CONCURRENCY = 6;
 
