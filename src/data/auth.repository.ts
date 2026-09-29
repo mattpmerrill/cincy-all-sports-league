@@ -80,6 +80,18 @@ export function createAuthRepository(db: DbClient) {
       return data.user ? { id: data.user.id } : null;
     },
 
+    /**
+     * The photo the sign-in provider (Google) gave this account, or null. Google refreshes it in
+     * the user's metadata on each sign-in, so it survives the member replacing it with an upload.
+     */
+    async getProviderAvatarUrl(): Promise<string | null> {
+      const { data, error } = await db.auth.getUser();
+      if (error || !data.user) return null;
+      const meta: Record<string, unknown> = data.user.user_metadata ?? {};
+      const url = meta.avatar_url ?? meta.picture;
+      return typeof url === "string" && url.startsWith("https://") ? url : null;
+    },
+
     async signUp(input: {
       email: string;
       password: string;

@@ -5,7 +5,12 @@ import { requireUser } from "@/features/auth/guards";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { claimTeamSchema } from "@/features/claims/schemas";
 import { getProfileService } from "@/features/profile/profile.server";
-import { emailOptInSchema, updateDisplayNameSchema } from "@/features/profile/schemas";
+import {
+  avatarUploadSchema,
+  emailOptInSchema,
+  updateDisplayNameSchema,
+} from "@/features/profile/schemas";
+import { revalidateLeague } from "@/lib/league-cache";
 import {
   echoFields,
   formError,
@@ -84,4 +89,35 @@ export async function setTradeEmailsAction(
   if (!result.ok) return formError(result.error.message);
   revalidatePath("/me");
   return formSuccess(optIn ? "Trade alerts are on." : "Trade alerts are off.");
+}
+
+/** A new photo shows everywhere the member appears (leaderboard, feed, trades), so the league cache goes too. */
+function revalidatePhoto() {
+  revalidatePath("/me");
+  revalidateLeague();
+}
+
+export async function updateAvatarAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const user = await requireUser();
+  if (!user.ok) return formError(user.error.message);
+
+  const parsed = avatarUploadSchema.safeParse({ avatar: formData.get("avatar") });
+  if (!parsed.success) return zodFormError(parsed.error);
+
+  const bytes = new Uint8Array(await parsed.data.avatar.arrayBuffer());
+  const result = await (await getProfileService()).updateAvatar(user.value, bytes);
+  if (!result.ok) return formError(result.error.message);
+  revalidatePhoto();
+  return formSuccess("Looking good! Your new photo is up.");
+}
+
+// Takes no form fields; the `(prev, formData)` shape is what useActionState passes.
+export async function removeAvatarAction(): Promise<FormState> {
+  const user = await requireUser();
+  if (!user.ok) return formError(user.error.message);
+
+  const result = await (await getProfileService()).removeAvatar(user.value);
+  if (!result.ok) return formError(result.error.message);
+  revalidatePhoto();
+  return formSuccess("Photo removed.");
 }

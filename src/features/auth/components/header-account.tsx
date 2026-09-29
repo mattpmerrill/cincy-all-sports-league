@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createProfilesRepository } from "@/data/profiles.repository";
 import { logger } from "@/lib/logger";
+import { PROFILE_UPDATED_EVENT } from "@/lib/profile-events";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   DropdownMenu,
@@ -39,6 +40,14 @@ export function HeaderAccount() {
   const [loaded, setLoaded] = useState<{ userId: string; account: AccountMenu } | null>(null);
   const userId = session.status === "in" ? session.userId : null;
   const account = loaded && loaded.userId === userId ? loaded.account : null;
+  // Bumped when the member edits their profile elsewhere on the page, so the photo here follows.
+  const [profileVersion, setProfileVersion] = useState(0);
+
+  useEffect(() => {
+    const bump = () => setProfileVersion((v) => v + 1);
+    window.addEventListener(PROFILE_UPDATED_EVENT, bump);
+    return () => window.removeEventListener(PROFILE_UPDATED_EVENT, bump);
+  }, []);
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -49,6 +58,28 @@ export function HeaderAccount() {
     );
     return () => data.subscription.unsubscribe();
   }, []);
+
+  // Signing in or out runs as a Server Action that sets the cookie and then navigates on the
+  // client, so the browser auth client never sees an event. Re-read the cookie on every route
+  // change to pick that up without a full reload.
+  useEffect(() => {
+    let active = true;
+    void createSupabaseBrowserClient()
+      .auth.getSession()
+      .then(({ data }) => {
+        if (!active) return;
+        const next = data.session;
+        setSession((prev) => {
+          if (!next) return prev.status === "out" ? prev : { status: "out" };
+          return prev.status === "in" && prev.userId === next.user.id
+            ? prev
+            : { status: "in", userId: next.user.id };
+        });
+      });
+    return () => {
+      active = false;
+    };
+  }, [pathname]);
 
   useEffect(() => {
     if (!userId) return;
@@ -67,7 +98,7 @@ export function HeaderAccount() {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, profileVersion]);
 
   if (session.status === "unknown") return null;
 

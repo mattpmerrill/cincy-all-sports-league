@@ -107,6 +107,18 @@ export function createProfilesRepository(db: DbClient) {
     },
 
     /** Returns null when nothing changed: the target is missing or RLS/the role trigger refused. */
+    /** Points the profile at a photo, or clears it (null). Null when no row matched. */
+    async setAvatarUrl(id: string, avatarUrl: string | null): Promise<Profile | null> {
+      const { data, error } = await db
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", id)
+        .select(COLUMNS)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? toProfile(data) : null;
+    },
+
     async setRole(id: string, role: UserRole): Promise<Profile | null> {
       const { data, error } = await db
         .from("profiles")

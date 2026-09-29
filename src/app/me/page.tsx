@@ -5,6 +5,7 @@ import { requireUserOrRedirect } from "@/features/auth/guards";
 import { claimFormPath, preselectedTeamId } from "@/features/claims/claim-links";
 import { ClaimTeamPanel } from "@/features/claims/components/claim-team-panel";
 import { getClaimsService } from "@/features/claims/claims.server";
+import { AvatarEditor } from "@/features/profile/components/avatar-editor";
 import { DisplayNameForm } from "@/features/profile/components/display-name-form";
 import { TradeEmailsForm } from "@/features/profile/components/trade-emails-form";
 import { WeeklyEmailForm } from "@/features/profile/components/weekly-email-form";
@@ -16,8 +17,10 @@ import { SubmitButton } from "@/ui/submit-button";
 import { UserAvatar } from "@/ui/user-avatar";
 import {
   claimTeamAction,
+  removeAvatarAction,
   setTradeEmailsAction,
   setWeeklyEmailAction,
+  updateAvatarAction,
   updateDisplayNameAction,
 } from "./actions";
 
@@ -76,7 +79,14 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
         />
       </PageSection>
 
-      <PageSection title="Profile">
+      <PageSection title="Profile" description="Your photo and name show up across the league.">
+        <AvatarEditor
+          displayName={user.displayName}
+          avatarUrl={user.avatarUrl}
+          source={profileService.avatarSource(user.avatarUrl)}
+          upload={updateAvatarAction}
+          remove={removeAvatarAction}
+        />
         <DisplayNameForm displayName={user.displayName} action={updateDisplayNameAction} />
       </PageSection>
 

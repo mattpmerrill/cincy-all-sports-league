@@ -144,5 +144,7 @@ export default defineConfig([
     "next-env.d.ts",
     "playwright-report/**",
     "test-results/**",
+    // Supabase CLI scratch space (edge runtime bundles, secrets); git-ignored, never our code.
+    "supabase/.temp/**",
   ]),
 ]);
