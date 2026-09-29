@@ -1,3 +1,4 @@
+import type { OfferKind } from "@/domain/feed";
 import { bySportOrder, joinList, possessive, tidyNote, withSport } from "./copy";
 import type { TradeLegPair } from "./posts";
 import { TRADE_WINDOW_HOURS } from "./types";
@@ -18,7 +19,7 @@ const gets = (legs: readonly TradeLegPair[]) =>
 
 /** To the listing owner: someone made an offer on their players. */
 export function newOfferEmail(
-  input: Legs & { offerKind: "direct" | "competing"; from: string; note?: string | null },
+  input: Legs & { offerKind: OfferKind; from: string; note?: string | null },
 ): TradeEmailContent {
   const note = tidyNote(input.note ?? null);
   return {

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { SPORT_CODES } from "@/domain/sports/sports";
+import { OFFER_KINDS } from "./types";
 import type { LeaguePayload } from "./types";
 
 const teamLink = z.object({ name: z.string(), slug: z.string() });
@@ -40,7 +41,7 @@ const leaguePayloadSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("trade_offer"),
     listingId: z.string(),
-    offerKind: z.enum(["direct", "competing"]),
+    offerKind: z.enum(OFFER_KINDS),
     from: teamLink,
     to: teamLink,
     legs: z.array(z.object({ sport: z.enum(SPORT_CODES), gives: z.string(), gets: z.string() })),

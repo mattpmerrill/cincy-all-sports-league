@@ -97,6 +97,8 @@ type World = {
   completed?: TradeListing[];
   mutationResult?: Result<unknown, TradeError>;
   notifyThrows?: boolean;
+  /** What getListing returns once acceptOffer has succeeded: the state SQL left behind. */
+  afterAccept?: TradeListing | "unreadable";
 };
 
 const asOffersWithListing = (rows: { offer: TradeOffer; listing: TradeListing }[]) =>
@@ -109,9 +111,12 @@ function setup(world: World = {}) {
   const mutationCalls: { name: string; input: Record<string, unknown> }[] = [];
   const alerts: TradeAlert[][] = [];
   const listings = world.listings ?? [];
+  let accepted = false;
   const mutate = (name: string, value: unknown) => async (input: Record<string, unknown>) => {
     mutationCalls.push({ name, input });
-    return world.mutationResult ?? ok(value);
+    const result = world.mutationResult ?? ok(value);
+    if (name === "acceptOffer" && result.ok) accepted = true;
+    return result;
   };
 
   const deps: TradesServiceDeps = {
@@ -120,7 +125,14 @@ function setup(world: World = {}) {
       listCompleted: async () => world.completed ?? [],
       listListingsOwnedBy: async () => world.mine ?? [],
       listOffersBy: async () => asOffersWithListing(world.offersBy ?? []) as never,
-      getListing: async (id) => listings.find((l) => l.id === id) ?? null,
+      getListing: async (id) => {
+        const after = world.afterAccept;
+        if (accepted && after) {
+          if (after === "unreadable") throw new Error("db down");
+          if (after.id === id) return after;
+        }
+        return listings.find((l) => l.id === id) ?? null;
+      },
       getListingByOfferId: async (offerId) =>
         listings.find((l) => l.offers.some((o) => o.id === offerId)) ?? null,
     },
@@ -416,14 +428,44 @@ describe("acceptOffer", () => {
     expect(input.post.body).toBe("Trade done: me send me-nfl (NFL) to coop for coop-nfl.");
   });
 
-  it("emails the winner, and everyone else who was still waiting that they lost", async () => {
-    const { service, sent } = setup({ listings: [listing()] });
+  const RESOLVED = "2026-09-29T12:00:00Z";
+  /** The listing as SQL leaves it: o1 accepted and o2 rejected in the same transaction. */
+  const settled = (o2: Partial<TradeOffer>) =>
+    listing({
+      status: "accepted",
+      acceptedOfferId: "o1",
+      resolvedAt: RESOLVED,
+      offers: [
+        offerOf("o1", "coop", ["nfl"], { status: "accepted", resolvedAt: RESOLVED }),
+        offerOf("o2", "papie", ["nfl"], { status: "rejected", resolvedAt: RESOLVED, ...o2 }),
+        offerOf("o3", "solo", ["nfl"], { status: "rejected", resolvedAt: AN_HOUR_AGO }),
+      ],
+    });
+
+  it("emails the winner, and everyone the accept itself rejected that they lost", async () => {
+    const { service, sent } = setup({ listings: [listing()], afterAccept: settled({}) });
     await service.acceptOffer(me, "o1");
     expect(sent().map((a) => [a.event, a.recipientId, a.offerId])).toEqual([
       ["accepted", "u-coop", "o1"],
       ["lost", "u-papie", "o2"],
     ]);
     expect(sent()[1]?.content.subject).toBe("me chose a different offer");
+  });
+
+  it("does not tell a bidder who withdrew after the page loaded that they lost", async () => {
+    // The page-load snapshot has o2 pending; by accept time it was withdrawn (an earlier resolved_at).
+    const { service, sent } = setup({
+      listings: [listing()],
+      afterAccept: settled({ status: "withdrawn", resolvedAt: "2026-09-29T11:59:00Z" }),
+    });
+    await service.acceptOffer(me, "o1");
+    expect(sent().map((a) => [a.event, a.offerId])).toEqual([["accepted", "o1"]]);
+  });
+
+  it("keeps the trade a success when the read-back fails, and drops only the lost emails", async () => {
+    const { service, sent } = setup({ listings: [listing()], afterAccept: "unreadable" });
+    expect((await service.acceptOffer(me, "o1")).ok).toBe(true);
+    expect(sent().map((a) => a.event)).toEqual(["accepted"]);
   });
 
   it("sends nothing when the repository refuses", async () => {

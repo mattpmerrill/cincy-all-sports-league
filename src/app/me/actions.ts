@@ -5,11 +5,7 @@ import { requireUser } from "@/features/auth/guards";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { claimTeamSchema } from "@/features/claims/schemas";
 import { getProfileService } from "@/features/profile/profile.server";
-import {
-  tradeEmailsSchema,
-  updateDisplayNameSchema,
-  weeklyEmailSchema,
-} from "@/features/profile/schemas";
+import { emailOptInSchema, updateDisplayNameSchema } from "@/features/profile/schemas";
 import {
   echoFields,
   formError,
@@ -63,7 +59,7 @@ export async function setWeeklyEmailAction(
   const user = await requireUser();
   if (!user.ok) return formError(user.error.message);
 
-  const parsed = weeklyEmailSchema.safeParse({ optIn: formText(formData, "optIn") });
+  const parsed = emailOptInSchema.safeParse({ optIn: formText(formData, "optIn") });
   if (!parsed.success) return zodFormError(parsed.error);
 
   const optIn = parsed.data.optIn === "true";
@@ -80,7 +76,7 @@ export async function setTradeEmailsAction(
   const user = await requireUser();
   if (!user.ok) return formError(user.error.message);
 
-  const parsed = tradeEmailsSchema.safeParse({ optIn: formText(formData, "optIn") });
+  const parsed = emailOptInSchema.safeParse({ optIn: formText(formData, "optIn") });
   if (!parsed.success) return zodFormError(parsed.error);
 
   const optIn = parsed.data.optIn === "true";

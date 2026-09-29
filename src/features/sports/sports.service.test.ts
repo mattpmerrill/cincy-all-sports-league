@@ -24,8 +24,10 @@ describe("sports service", () => {
     const sports = await service().listSports();
     expect(sports).toHaveLength(11);
     expect(sports.find((s) => s.code === "nfl")?.leader).toEqual({
+      teamName: "a",
       participantName: "a-nfl",
       points: 4,
+      traded: false,
     });
     expect(sports.find((s) => s.code === "mlb")?.leader).toBeNull();
   });
@@ -66,6 +68,20 @@ describe("sports service after a trade", () => {
       ["a", "b-nfl", 6],
       ["b", "a-nfl", 2],
     ]);
-    expect(nfl?.leader).toEqual({ participantName: "b-nfl", points: 6 });
+    // The 6 is team a's: all of it banked from a-nfl. It must not read as b-nfl's score.
+    expect(nfl?.leader).toEqual({
+      teamName: "a",
+      participantName: "b-nfl",
+      points: 6,
+      traded: true,
+    });
+    expect(nfl?.picks.map((p) => [p.teamName, p.traded])).toEqual([
+      ["a", true],
+      ["b", true],
+    ]);
+    expect((await traded.listSports()).find((s) => s.code === "nfl")?.leader).toMatchObject({
+      teamName: "a",
+      traded: true,
+    });
   });
 });

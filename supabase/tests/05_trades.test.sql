@@ -2,7 +2,7 @@
 -- its side effects), and read-only access for everyone else. Fixtures are self-contained.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(183);
+select plan(187);
 
 -- The seed may already have an active season; only one can be active at a time.
 update public.seasons set is_active = false;
@@ -724,6 +724,26 @@ select lives_ok(
 reset role;
 select is((select trade_emails from public.profiles where id = '00000000-0000-0000-0000-000000000001'), false, 'own trade_emails changed');
 select is((select trade_emails from public.profiles where id = '00000000-0000-0000-0000-000000000002'), true, 'another user''s trade_emails is untouched');
+
+-- ===== deleting a team that took part in an accepted trade =====
+-- Team Two owned the direct listing that Team One's offer won. Deleting Team Two cascades that
+-- listing and the accepted offer; Team One must keep the points it banked, and the delete must not
+-- fail on the reference from banked_scores.
+select set_config('t.t1_banked', (select count(*)::text from public.banked_scores where fantasy_team_id = '50000000-0000-0000-0000-000000000001'), true);
+select is(
+  (select count(*)::int from public.banked_scores where fantasy_team_id = '50000000-0000-0000-0000-000000000001' and trade_offer_id is not null),
+  (select count(*)::int from public.banked_scores where fantasy_team_id = '50000000-0000-0000-0000-000000000001'),
+  'before the delete, every banked row of Team One references its offer');
+select lives_ok(
+  $$delete from public.fantasy_teams where id = '50000000-0000-0000-0000-000000000002'$$,
+  'a team from an accepted trade can be deleted');
+select is(
+  (select count(*)::text from public.banked_scores where fantasy_team_id = '50000000-0000-0000-0000-000000000001'),
+  current_setting('t.t1_banked'),
+  'the counterparty keeps every banked row');
+select isnt(
+  (select count(*)::int from public.banked_scores where fantasy_team_id = '50000000-0000-0000-0000-000000000001' and trade_offer_id is null),
+  0, 'the rows that pointed at the deleted offer now have no offer reference');
 
 select * from finish();
 rollback;

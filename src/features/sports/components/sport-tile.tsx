@@ -22,7 +22,9 @@ export function SportTile({ sport, index }: { sport: SportSummary; index: number
           <StatusPill status={sport.status} />
           <span className="truncate text-xs text-text-muted">
             {sport.leader
-              ? `Ahead: ${sport.leader.participantName}, ${formatPoints(sport.leader.points)} pts`
+              ? sport.leader.traded
+                ? `Ahead: ${sport.leader.teamName}, ${formatPoints(sport.leader.points)} pts, now with ${sport.leader.participantName}`
+                : `Ahead: ${sport.leader.participantName}, ${formatPoints(sport.leader.points)} pts`
               : "No points yet"}
           </span>
         </span>

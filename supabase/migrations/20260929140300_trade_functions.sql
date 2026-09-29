@@ -7,7 +7,11 @@
 -- The server has already verified who the caller is and passes it as p_actor. The functions do
 -- not trust that beyond identity: each one re-checks ownership, derives participants from the
 -- CURRENT picks (never from client input), locks the rows it depends on so concurrent calls
--- serialize (order: listing, offer, picks, participants), and checks status and the 24h window.
+-- serialize, and checks status and the 24h window. Lock order, everywhere: listings (all taken in
+-- one statement, ordered by id), then offers (same), then picks (same), then participants.
+-- accept_trade_offer works out every listing and offer it will cancel or void up front, from ids
+-- that never change (owner and offerer teams, the offer's leg sports), so it can take all of its
+-- listing and offer locks before its first pick lock.
 --
 -- Failures are 'P0001' exceptions whose message is a stable token the repository maps to a typed
 -- Result: not_owner, not_found, listing_closed, offer_not_pending, own_listing, team_unowned,
@@ -494,17 +498,78 @@ declare
   v_offerer_pick public.picks;
   v_owner_live record;
   v_offerer_live record;
+  v_listing_ids uuid[];
   v_stale_listing_ids uuid[];
 begin
   v_team := public.trade_actor_team(p_actor);
 
+  -- Unlocked reads of columns that never change (owner, offerer, leg sports): enough to know
+  -- what to lock, and to turn away a non-owner before they can queue behind anyone's locks.
   select * into v_offer from public.trade_offers where id = p_offer_id;
   if not found then
     raise exception 'not_found' using errcode = 'P0001';
   end if;
+  select * into v_listing from public.trade_listings where id = v_offer.listing_id;
+  if v_listing.owner_team_id <> v_team.id then
+    raise exception 'not_owner' using errcode = 'P0001';
+  end if;
+  select array_agg(sport_id) into v_sport_ids from public.trade_offer_legs where offer_id = p_offer_id;
 
-  select * into v_listing from public.trade_listings where id = v_offer.listing_id for update;
-  select * into v_offer from public.trade_offers where id = p_offer_id for update;
+  -- 1. Listings: this one plus every other live listing of either team that offers one of the
+  -- traded sports (both teams' picks in those sports change, so those listings would describe
+  -- players they no longer hold). Matched by team and sport, not participant id: in the WNBA a
+  -- third team can hold the same participant untouched. Expired listings are left alone so they
+  -- still read as expired. One statement, ordered by id.
+  select array_agg(id) into v_listing_ids
+  from (
+    select l.id
+    from public.trade_listings l
+    where l.id = v_listing.id
+       or (
+         l.status = 'open'
+         and l.closes_at > now()
+         and l.owner_team_id in (v_listing.owner_team_id, v_offer.offering_team_id)
+         and exists (
+           select 1 from public.trade_listing_items i
+           where i.listing_id = l.id and i.sport_id = any(v_sport_ids)
+         )
+       )
+    order by l.id
+    for update of l
+  ) locked;
+  v_stale_listing_ids := array_remove(v_listing_ids, v_listing.id);
+
+  -- 2. Offers: this one, every pending offer on those listings, and any pending offer either team
+  -- made elsewhere that gives a player who is about to move. One statement, ordered by id.
+  perform 1
+  from (
+    select o.id
+    from public.trade_offers o
+    where o.id = p_offer_id
+       or (
+         o.status = 'pending'
+         and (
+           o.listing_id = any(v_listing_ids)
+           or (
+             o.offering_team_id in (v_listing.owner_team_id, v_offer.offering_team_id)
+             and exists (
+               select 1 from public.trade_offer_legs g
+               where g.offer_id = o.id and g.sport_id = any(v_sport_ids)
+             )
+             and exists (
+               select 1 from public.trade_listings l
+               where l.id = o.listing_id and l.status = 'open' and l.closes_at > now()
+             )
+           )
+         )
+       )
+    order by o.id
+    for update of o
+  ) locked;
+
+  -- Re-read under the locks: this is the state the checks below must judge.
+  select * into v_listing from public.trade_listings where id = v_offer.listing_id;
+  select * into v_offer from public.trade_offers where id = p_offer_id;
 
   if v_listing.owner_team_id <> v_team.id then
     raise exception 'not_owner' using errcode = 'P0001';
@@ -521,7 +586,7 @@ begin
     raise exception 'team_unowned' using errcode = 'P0001';
   end if;
 
-  select array_agg(sport_id) into v_sport_ids from public.trade_offer_legs where offer_id = p_offer_id;
+  -- 3. Picks, last.
   select array_agg(p) into v_picks
   from public.trade_locked_picks(array[v_listing.owner_team_id, v_offerer.id], v_sport_ids) p;
 
@@ -580,32 +645,13 @@ begin
   update public.trade_offers set status = 'rejected', resolved_at = now()
    where listing_id = v_listing.id and status = 'pending';
 
-  -- Both teams' picks in the traded sports changed, so any other live listing of theirs that
-  -- offers one of those sports now describes a player they no longer hold. Matched by team and
-  -- sport, not participant id: in the WNBA a third team can hold the same participant untouched.
-  -- Expired listings are left alone so they still read as expired.
-  select array_agg(id) into v_stale_listing_ids
-  from (
-    select l.id
-    from public.trade_listings l
-    where l.status = 'open'
-      and l.closes_at > now()
-      and l.id <> v_listing.id
-      and l.owner_team_id in (v_listing.owner_team_id, v_offerer.id)
-      and exists (
-        select 1 from public.trade_listing_items i
-        where i.listing_id = l.id and i.sport_id = any(v_sport_ids)
-      )
-    order by l.id
-    for update
-  ) stale;
-
+  -- Everything below was locked up front. Voided offers get no email (the service alerts only
+  -- rejected ones).
   update public.trade_offers set status = 'void', resolved_at = now()
    where status = 'pending' and listing_id = any(v_stale_listing_ids);
   update public.trade_listings set status = 'cancelled', resolved_at = now()
    where id = any(v_stale_listing_ids);
 
-  -- And any pending offer either team made elsewhere that gives a player who just moved.
   update public.trade_offers o set status = 'void', resolved_at = now()
    where o.status = 'pending'
      and o.offering_team_id in (v_listing.owner_team_id, v_offerer.id)

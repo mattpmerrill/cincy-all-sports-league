@@ -81,3 +81,8 @@ The domain builds the body and payload, so post wording stays out of SQL.
 - Listing exclusivity is per team and participant: a team cannot have the same pick on two live
   listings, but in the WNBA, where two teams can hold one participant, each can list it.
 - Adding a trade action means adding a function and its error tokens, not a new policy.
+- Completed trades are history. Deleting a whole season still cascades cleanly, and deleting the
+  listing owner's team keeps the other team's banked points (`trade_offer_id` goes null), but a
+  team whose offer was accepted cannot be deleted on its own mid-season: the accepted listing
+  still references that offer. Nothing in the app deletes single teams, so that is the intended
+  guard, not a gap.

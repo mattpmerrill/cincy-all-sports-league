@@ -68,9 +68,10 @@ export type EffectiveListingStatus = ListingStatus | "expired";
 export type EffectiveOfferStatus = OfferStatus | "expired";
 
 /**
- * Every failure a trade can return. The first group are the message tokens the SQL functions raise
- * (same spelling on purpose, so the repository maps them one to one); `sport_locked` is the one
- * rule SQL cannot check, because it depends on season status the domain derives (ADR-003).
+ * Every failure a trade can return. Most are the message tokens the SQL functions raise (same
+ * spelling on purpose, so the repository maps them one to one). `sport_locked` is the one rule SQL
+ * cannot check, because it depends on season status the domain derives (ADR-003). `busy` is the
+ * repository's answer to a deadlock or serialization failure: nothing was written, retrying is safe.
  */
 export const TRADE_ERROR_CODES = [
   "not_owner",
@@ -86,6 +87,7 @@ export const TRADE_ERROR_CODES = [
   "stale_pick",
   "missing_scores",
   "sport_locked",
+  "busy",
 ] as const;
 export type TradeErrorCode = (typeof TRADE_ERROR_CODES)[number];
 

@@ -90,8 +90,10 @@ create table public.trade_offer_legs (
   primary key (offer_id, sport_id),
   foreign key (offer_id, listing_id)
     references public.trade_offers (id, listing_id) on delete cascade,
+  -- Cascade: deleting a listing (via its team) deletes its items and offers in separate cascade
+  -- statements, and a plain reference would be checked before the offers' legs are gone.
   foreign key (listing_id, sport_id)
-    references public.trade_listing_items (listing_id, sport_id),
+    references public.trade_listing_items (listing_id, sport_id) on delete cascade,
   foreign key (participant_id, sport_id)
     references public.participants (id, sport_id) on delete restrict
 );
@@ -106,8 +108,10 @@ create table public.banked_scores (
   fantasy_team_id uuid not null references public.fantasy_teams (id) on delete cascade,
   sport_id uuid not null,
   participant_id uuid not null,
-  -- No cascade: deleting an offer must not silently erase the counterparty's earned points.
-  trade_offer_id uuid not null references public.trade_offers (id),
+  -- Provenance only. Set null, not cascade and not restrict: deleting a team cascades its offers,
+  -- and the counterparty must keep the points it earned (that is the point of banking) without
+  -- the delete failing on the reference.
+  trade_offer_id uuid references public.trade_offers (id) on delete set null,
   points numeric(9, 4) not null,
   championships integer not null,
   postseason_points numeric(9, 4) not null,

@@ -6,7 +6,7 @@ export type UnsubscribeErrorCode = "invalid_token" | "not_found";
 
 export type UnsubscribeService = ReturnType<typeof createUnsubscribeService>;
 
-type Repo = Pick<ProfilesRepository, "getWeeklyEmailOptIn" | "setWeeklyEmailOptIn">;
+type Repo = Pick<ProfilesRepository, "getOptIn" | "setOptIn">;
 
 /**
  * Opt-in changes from an emailed link. There is no session, so the signed token is the whole
@@ -22,7 +22,7 @@ export function createUnsubscribeService(deps: { profiles: Repo; secret: string 
   ): Promise<Result<{ optedIn: boolean }, AppError<UnsubscribeErrorCode>>> {
     const userId = userIdFor(token);
     if (!userId) return err("invalid_token", "This link is not valid.");
-    const updated = await deps.profiles.setWeeklyEmailOptIn(userId, optIn);
+    const updated = await deps.profiles.setOptIn(userId, "weekly_email_opt_in", optIn);
     return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find that account.");
   }
 
@@ -32,7 +32,7 @@ export function createUnsubscribeService(deps: { profiles: Repo; secret: string 
     ): Promise<Result<{ optedIn: boolean }, AppError<UnsubscribeErrorCode>>> {
       const userId = userIdFor(token);
       if (!userId) return err("invalid_token", "This link is not valid.");
-      const optedIn = await deps.profiles.getWeeklyEmailOptIn(userId);
+      const optedIn = await deps.profiles.getOptIn(userId, "weekly_email_opt_in");
       return optedIn === null
         ? err("not_found", "We couldn't find that account.")
         : ok({ optedIn });

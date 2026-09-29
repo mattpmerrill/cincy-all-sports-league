@@ -37,12 +37,15 @@ export function SportPickRow({
           size="sm"
         />
         <div className="flex min-w-0 flex-1 flex-col">
+          {/* The points belong to the team. After a trade the team leads the row and the current
+              player follows, so a number like 30 is never printed beside a player who earned 5. */}
           <span className="truncate text-sm leading-tight font-semibold">
-            {pick.participant.name}
+            {pick.traded ? pick.teamName : pick.participant.name}
+            {pick.traded && isMine ? " (you)" : ""}
           </span>
           <span className="truncate text-xs text-text-muted">
-            {pick.teamName}
-            {isMine ? " (you)" : ""}
+            {pick.traded ? `Now with ${pick.participant.name}` : pick.teamName}
+            {!pick.traded && isMine ? " (you)" : ""}
           </span>
           {detail ? <span className="truncate text-xs text-text-muted">{detail}</span> : null}
         </div>

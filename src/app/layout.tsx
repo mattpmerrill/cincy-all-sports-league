@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
 import { HeaderAccount } from "@/features/auth/components/header-account";
 import { TradesBadge } from "@/features/trades/components/trades-badge";
+import { TradesBadgeProvider } from "@/features/trades/components/trades-badge-provider";
 import { publicEnv } from "@/lib/env";
 import { AppShell } from "@/ui/app-shell";
 import "./globals.css";
@@ -43,9 +44,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${display.variable} dark h-full`}>
       <body className="flex min-h-full flex-col">
-        <AppShell headerAction={<HeaderAccount />} navBadges={{ "/trades": <TradesBadge /> }}>
-          {children}
-        </AppShell>
+        <TradesBadgeProvider>
+          <AppShell headerAction={<HeaderAccount />} navBadges={{ "/trades": <TradesBadge /> }}>
+            {children}
+          </AppShell>
+        </TradesBadgeProvider>
       </body>
     </html>
   );

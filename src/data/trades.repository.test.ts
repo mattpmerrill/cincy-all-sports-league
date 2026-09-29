@@ -159,6 +159,13 @@ describe("toTradeError", () => {
     expect(mapped).not.toHaveProperty("listingId");
   });
 
+  it.each(["40P01", "40001"])("maps SQLSTATE %s to busy instead of throwing", (code) => {
+    expect(toTradeError({ code, message: "deadlock detected", details: "" })).toEqual({
+      code: "busy",
+      message: "Someone else was trading at the same moment. Try again.",
+    });
+  });
+
   it("does not claim errors it does not own", () => {
     expect(toTradeError({ code: "42501", message: "not_owner", details: "" })).toBeNull();
     expect(toTradeError(raised("something else"))).toBeNull();
@@ -196,6 +203,17 @@ describe("mutations", () => {
       ok: false,
       error: { code: "listing_closed", message: "This listing is closed." },
     });
+  });
+
+  it("returns busy when accept hits a deadlock", async () => {
+    const { repo } = stub({ error: { code: "40P01", message: "deadlock detected", details: "" } });
+    const post = tradeCompletedPost({
+      owner: { name: "Coop", slug: "coop" },
+      offerer: { name: "Papie", slug: "papie" },
+      legs: [],
+    });
+    const result = await repo.acceptOffer({ actorId: "u1", offerId: "o1", scores: [], post });
+    expect(result).toMatchObject({ ok: false, error: { code: "busy" } });
   });
 
   it("throws anything it cannot map, so an outage is never a user error", async () => {
@@ -245,6 +263,30 @@ describe("mutations", () => {
     });
     expect(proposed).toEqual({ ok: true, value: { listingId: "l2", offerId: "o2" } });
     expect(direct.rpc.mock.calls[0]?.[1]).toMatchObject({ p_target_team_id: "t2", p_note: null });
+  });
+});
+
+describe("active season lookup", () => {
+  it("runs once per repository however many lists /trades asks for", async () => {
+    const seasonQuery = vi.fn(async () => ({ data: { id: "s1" }, error: null }));
+    // Any chain of filters ends in `returns`, which resolves to no rows.
+    const listings: object = new Proxy(
+      {},
+      {
+        get: (_target, method) =>
+          method === "returns" ? async () => ({ data: [], error: null }) : () => listings,
+      },
+    );
+    const db = {
+      from: (table: string) =>
+        table === "seasons"
+          ? { select: () => ({ eq: () => ({ maybeSingle: seasonQuery }) }) }
+          : listings,
+    } as unknown as DbClient;
+    const repo = createTradesRepository(db);
+    await Promise.all([repo.listOpenListings(new Date()), repo.listOpenListings(new Date())]);
+    await repo.listOpenListings(new Date());
+    expect(seasonQuery).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -1,5 +1,5 @@
 import { MESSAGE_MAX_LENGTH } from "@/domain/feed";
-import type { TradePayloadDraft, TradeTeamLink } from "@/domain/feed";
+import type { OfferKind, TradePayloadDraft, TradeTeamLink } from "@/domain/feed";
 import type { ParticipantData } from "@/domain/league";
 import type { SportCode } from "@/domain/sports/sports";
 import { bySportOrder, joinList, possessive, tidyNote, truncate, withSport } from "./copy";
@@ -57,7 +57,7 @@ export type TradeLegPair = {
  * extra offer on a listing that is already open.
  */
 export function tradeOfferPost(input: {
-  offerKind: "direct" | "competing";
+  offerKind: OfferKind;
   from: TradeTeamLink;
   to: TradeTeamLink;
   legs: readonly TradeLegPair[];

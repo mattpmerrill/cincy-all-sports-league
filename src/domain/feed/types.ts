@@ -38,11 +38,15 @@ export type TradeListedPayload = {
   items: { sport: SportCode; participantName: string }[];
 };
 
+/** How an offer came about; the feed owns payloads, so trades and emails reuse this. */
+export const OFFER_KINDS = ["direct", "competing"] as const;
+export type OfferKind = (typeof OFFER_KINDS)[number];
+
 export type TradeOfferPayload = {
   type: "trade_offer";
   listingId: string;
   /** "competing" is an offer on a listing that already has one or is on the trading block. */
-  offerKind: "direct" | "competing";
+  offerKind: OfferKind;
   from: TradeTeamLink;
   to: TradeTeamLink;
   /** Per sport: what the offerer gives and what it asks for. */

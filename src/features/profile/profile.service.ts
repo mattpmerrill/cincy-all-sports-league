@@ -1,19 +1,25 @@
-import type { Profile, ProfilesRepository } from "@/data/profiles.repository";
+import type { OptInColumn, Profile, ProfilesRepository } from "@/data/profiles.repository";
 import { err, ok, type AppError, type Result } from "@/lib/result";
 import type { Actor } from "@/domain/membership/membership";
 
 export type ProfileService = ReturnType<typeof createProfileService>;
 
 export function createProfileService(
-  profiles: Pick<
-    ProfilesRepository,
-    | "updateDisplayName"
-    | "getWeeklyEmailOptIn"
-    | "setWeeklyEmailOptIn"
-    | "getTradeEmailOptIn"
-    | "setTradeEmailOptIn"
-  >,
+  profiles: Pick<ProfilesRepository, "updateDisplayName" | "getOptIn" | "setOptIn">,
 ) {
+  /** A missing profile reads as opted in (the default); own row only, RLS refuses anything else. */
+  const getEmail = async (actor: Actor, column: OptInColumn): Promise<boolean> =>
+    (await profiles.getOptIn(actor.id, column)) ?? true;
+
+  const setEmail = async (
+    actor: Actor,
+    column: OptInColumn,
+    optIn: boolean,
+  ): Promise<Result<{ optedIn: boolean }, AppError<"not_found">>> => {
+    const updated = await profiles.setOptIn(actor.id, column, optIn);
+    return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find your profile.");
+  };
+
   return {
     /** A member edits only their own name; the actor's id is the target, never a parameter. */
     async updateDisplayName(
@@ -24,32 +30,14 @@ export function createProfileService(
       return updated ? ok(updated) : err("not_found", "We couldn't find your profile.");
     },
 
-    /** True when the member gets the Monday digest. A missing profile reads as opted in (the default). */
-    async getWeeklyEmail(actor: Actor): Promise<boolean> {
-      return (await profiles.getWeeklyEmailOptIn(actor.id)) ?? true;
-    },
+    /** True when the member gets the Monday digest. */
+    getWeeklyEmail: (actor: Actor) => getEmail(actor, "weekly_email_opt_in"),
 
-    /** Own row only: the actor's id is the target, and RLS refuses anything else. */
-    async setWeeklyEmail(
-      actor: Actor,
-      optIn: boolean,
-    ): Promise<Result<{ optedIn: boolean }, AppError<"not_found">>> {
-      const updated = await profiles.setWeeklyEmailOptIn(actor.id, optIn);
-      return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find your profile.");
-    },
+    setWeeklyEmail: (actor: Actor, optIn: boolean) => setEmail(actor, "weekly_email_opt_in", optIn),
 
-    /** True when the member gets trade alert emails. A missing profile reads as opted in (the default). */
-    async getTradeEmails(actor: Actor): Promise<boolean> {
-      return (await profiles.getTradeEmailOptIn(actor.id)) ?? true;
-    },
+    /** True when the member gets trade alert emails. */
+    getTradeEmails: (actor: Actor) => getEmail(actor, "trade_emails"),
 
-    /** Own row only: the actor's id is the target, and RLS refuses anything else. */
-    async setTradeEmails(
-      actor: Actor,
-      optIn: boolean,
-    ): Promise<Result<{ optedIn: boolean }, AppError<"not_found">>> {
-      const updated = await profiles.setTradeEmailOptIn(actor.id, optIn);
-      return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find your profile.");
-    },
+    setTradeEmails: (actor: Actor, optIn: boolean) => setEmail(actor, "trade_emails", optIn),
   };
 }

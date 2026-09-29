@@ -128,13 +128,31 @@ export function createTradesService(deps: TradesServiceDeps) {
     actor: Actor,
   ): Promise<TradeResult<{ now: Date; model: LeagueModel; me: StandingRow }>> {
     const now = deps.now();
-    const team = await deps.teams.getOwnedBy(actor.id);
+    // Independent reads, so they overlap; the league load is the slow one.
+    const [team, model] = await Promise.all([deps.teams.getOwnedBy(actor.id), freshModel(now)]);
     if (!team) return err("not_owner", NO_TEAM);
-    const model = await freshModel(now);
     if (!model) return err("not_found", NO_SEASON);
     const me = model.standings.find((r) => r.teamId === team.id);
     if (!me) return err("not_owner", NO_TEAM);
     return ok({ now, model, me });
+  }
+
+  /**
+   * The offers the accept just rejected. A failed re-read must not undo the trade, so it costs
+   * the lost-offer emails, not the result.
+   */
+  async function lostOffers(listingId: string, acceptedOfferId: string): Promise<TradeOffer[]> {
+    try {
+      const after = await deps.trades.getListing(listingId);
+      const accepted = after?.offers.find((o) => o.id === acceptedOfferId);
+      if (!after || !accepted?.resolvedAt) return [];
+      return after.offers.filter(
+        (o) => o.status === "rejected" && o.resolvedAt === accepted.resolvedAt,
+      );
+    } catch (error) {
+      deps.logger.error("could not read back a trade's lost offers", { error, listingId });
+      return [];
+    }
   }
 
   /**
@@ -456,8 +474,12 @@ export function createTradesService(deps: TradesServiceDeps) {
       });
       if (!result.ok) return result;
 
-      // Everyone else still waiting lost: SQL rejected their offers in the same transaction.
+      // Who lost is read back after the accept, not taken from the page-load snapshot: a bidder
+      // who withdrew in between must not be told they lost. SQL rejects the survivors in the same
+      // transaction as the accept, so they share its resolved_at. Voided offers (the sibling
+      // listings and offers the trade invalidates) get no email by design.
       const owner = listing.ownerTeam.name;
+      const lost = await lostOffers(listing.id, offerId);
       schedule([
         ...ownerAlert(offer.offeringTeam.owner, {
           event: "accepted",
@@ -465,16 +487,14 @@ export function createTradesService(deps: TradesServiceDeps) {
           offerId,
           content: offerAcceptedEmail({ owner, legs }),
         }),
-        ...listing.offers
-          .filter((o) => o.id !== offerId && o.status === "pending")
-          .flatMap((o) =>
-            ownerAlert(o.offeringTeam.owner, {
-              event: "lost",
-              listingId: listing.id,
-              offerId: o.id,
-              content: offerLostEmail({ owner, legs: offerPairs(listing, o) }),
-            }),
-          ),
+        ...lost.flatMap((o) =>
+          ownerAlert(o.offeringTeam.owner, {
+            event: "lost",
+            listingId: listing.id,
+            offerId: o.id,
+            content: offerLostEmail({ owner, legs: offerPairs(listing, o) }),
+          }),
+        ),
       ]);
       return result;
     },

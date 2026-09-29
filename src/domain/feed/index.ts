@@ -17,7 +17,7 @@ export {
 export { REACTIONS, REACTION_NAMES, isReactionName, summarizeReactions } from "./reactions";
 export type { ReactionName, ReactionRow, ReactionSummary } from "./reactions";
 export { assembleThreads } from "./thread";
-export { MESSAGE_KINDS } from "./types";
+export { MESSAGE_KINDS, OFFER_KINDS } from "./types";
 export type {
   LeaguePayload,
   Message,
@@ -25,6 +25,7 @@ export type {
   MessageKind,
   MoverItem,
   MoversPayload,
+  OfferKind,
   ScoreUpdateItem,
   ScoreUpdatePayload,
   Thread,

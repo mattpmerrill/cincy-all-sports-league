@@ -145,7 +145,8 @@ export const toOfferWithListing = (row: OfferWithListingRow): TradeOfferWithList
 
 /**
  * What a person sees for each code. Never the SQL token, message or detail: those stay in logs.
- * `sport_locked` is never raised by SQL (the service checks it) but the record covers the union.
+ * `sport_locked` is never raised by SQL (the service checks it) and `busy` comes from SQLSTATEs,
+ * not tokens, but the record covers the union.
  */
 const MESSAGES: Record<TradeErrorCode, string> = {
   not_owner: "Only the team that owns this can do that.",
@@ -161,18 +162,24 @@ const MESSAGES: Record<TradeErrorCode, string> = {
   stale_pick: "One of the players has changed teams since the offer was made.",
   missing_scores: "Something went wrong working out the points. Try again.",
   sport_locked: "That sport's season is over, so it can't be traded.",
+  busy: "Someone else was trading at the same moment. Try again.",
 };
 
 const listingId = z.uuid();
 
 /**
- * A `P0001` raised by a trade function carries a stable token as its message. Anything else
- * (permissions, constraints, network) returns null and the caller rethrows it. `already_listed`
+ * A `P0001` raised by a trade function carries a stable token as its message. A deadlock or
+ * serialization failure means Postgres rolled the whole call back, so it maps to `busy` and the
+ * person can simply retry. Anything else (permissions, constraints, network) returns null and the
+ * caller rethrows it. `already_listed`
  * also carries the blocking listing's id in `details`; it is validated before it leaves the layer.
  */
 export function toTradeError(
   error: Pick<PostgrestError, "code" | "message" | "details">,
 ): TradeError | null {
+  if (error.code === PG.deadlockDetected || error.code === PG.serializationFailure) {
+    return { code: "busy", message: MESSAGES.busy };
+  }
   if (error.code !== PG.raiseException || !isTradeErrorCode(error.message)) return null;
   const code = error.message;
   const blocking = code === "already_listed" ? listingId.safeParse(error.details?.trim()) : null;
@@ -208,14 +215,25 @@ const asJson = (payload: TradePayloadDraft): Json => payload as unknown as Json;
 export type TradesRepository = ReturnType<typeof createTradesRepository>;
 
 export function createTradesRepository(db: DbClient) {
-  async function activeSeasonId(): Promise<string | null> {
-    const { data, error } = await db
-      .from("seasons")
-      .select("id")
-      .eq("is_active", true)
-      .maybeSingle();
-    if (error) throw error;
-    return data?.id ?? null;
+  // A repository lives for one request, so the active season cannot change under it, and /trades
+  // asks three times. The promise is cached, not the value, so concurrent callers share one query;
+  // a failed lookup is dropped so a retry re-asks.
+  let activeSeason: Promise<string | null> | undefined;
+  function activeSeasonId(): Promise<string | null> {
+    activeSeason ??= (async () => {
+      const { data, error } = await db
+        .from("seasons")
+        .select("id")
+        .eq("is_active", true)
+        .maybeSingle();
+      if (error) throw error;
+      return data?.id ?? null;
+    })();
+    const pending = activeSeason;
+    pending.catch(() => {
+      if (activeSeason === pending) activeSeason = undefined;
+    });
+    return pending;
   }
 
   async function getListing(id: string): Promise<TradeListing | null> {

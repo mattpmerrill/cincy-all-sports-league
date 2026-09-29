@@ -11,6 +11,8 @@ export const PG = {
   insufficientPrivilege: "42501",
   noDataFound: "P0002",
   foreignKeyViolation: "23503",
+  serializationFailure: "40001",
+  deadlockDetected: "40P01",
   /** RAISE EXCEPTION with no explicit errcode: the feed's 'rate_limited' trigger uses it. */
   raiseException: "P0001",
 } as const;

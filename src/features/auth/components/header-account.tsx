@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { isAdminRole } from "@/domain/membership/membership";
 import { createProfilesRepository } from "@/data/profiles.repository";
 import { logger } from "@/lib/logger";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
@@ -17,12 +16,12 @@ import {
 } from "@/ui/dropdown-menu";
 import { UserAvatar } from "@/ui/user-avatar";
 import { signOutAction } from "../actions";
-import { accountProfileSchema } from "../schemas";
+import { FALLBACK_ACCOUNT_MENU, toAccountMenu } from "../account-menu";
+import type { AccountMenu } from "../account-menu";
 
 const AUTH_PAGES = ["/login", "/signup", "/reset-password"];
 
 type Session = { status: "unknown" } | { status: "out" } | { status: "in"; userId: string };
-type Account = ReturnType<typeof accountProfileSchema.parse>;
 
 const FOCUS_RING = "outline-none focus-visible:ring-3 focus-visible:ring-ring/60";
 
@@ -30,13 +29,14 @@ const FOCUS_RING = "outline-none focus-visible:ring-3 focus-visible:ring-ring/60
  * The header's account control: Sign in / Join for visitors, an avatar menu for members. The
  * session and the member's own profile are read in the browser so the root layout stays static;
  * asking the server would make every page dynamic. Nothing renders until the session (and, for
- * members, the profile) is known, so neither variant flashes.
+ * members, the profile) is known, so neither variant flashes. If the profile cannot be read, the
+ * menu still renders with a generic avatar: it is the only way to reach /me and Sign out.
  */
 export function HeaderAccount() {
   const pathname = usePathname();
   const [session, setSession] = useState<Session>({ status: "unknown" });
   // Keyed by user id so a stale profile never shows after an account switch or sign-out.
-  const [loaded, setLoaded] = useState<{ userId: string; account: Account } | null>(null);
+  const [loaded, setLoaded] = useState<{ userId: string; account: AccountMenu } | null>(null);
   const userId = session.status === "in" ? session.userId : null;
   const account = loaded && loaded.userId === userId ? loaded.account : null;
 
@@ -57,12 +57,12 @@ export function HeaderAccount() {
       .getById(userId)
       .then((profile) => {
         if (!active) return;
-        const parsed = accountProfileSchema.safeParse(profile);
-        if (parsed.success) setLoaded({ userId, account: parsed.data });
+        // A profile that does not parse falls back too, so the menu never vanishes.
+        setLoaded({ userId, account: toAccountMenu(profile) });
       })
       .catch((error: unknown) => {
-        // The header degrades to nothing rather than blocking the page; /me still works by URL.
         logger.warn("header_account_profile_failed", { error });
+        if (active) setLoaded({ userId, account: FALLBACK_ACCOUNT_MENU });
       });
     return () => {
       active = false;
@@ -97,7 +97,7 @@ export function HeaderAccount() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        aria-label={`Account menu for ${account.displayName}`}
+        aria-label={account.label}
         className={`inline-flex size-8 items-center justify-center rounded-full ${FOCUS_RING}`}
       >
         <UserAvatar displayName={account.displayName} avatarUrl={account.avatarUrl} />
@@ -108,7 +108,7 @@ export function HeaderAccount() {
         <DropdownMenuItem asChild>
           <Link href="/me">Your profile</Link>
         </DropdownMenuItem>
-        {isAdminRole(account.role) ? (
+        {account.isAdmin ? (
           <DropdownMenuItem asChild>
             <Link href="/admin">Admin</Link>
           </DropdownMenuItem>

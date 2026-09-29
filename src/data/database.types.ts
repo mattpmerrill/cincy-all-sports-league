@@ -44,7 +44,7 @@ export type Database = {
           points: number
           postseason_points: number
           sport_id: string
-          trade_offer_id: string
+          trade_offer_id: string | null
         }
         Insert: {
           championships: number
@@ -55,7 +55,7 @@ export type Database = {
           points: number
           postseason_points: number
           sport_id: string
-          trade_offer_id: string
+          trade_offer_id?: string | null
         }
         Update: {
           championships?: number
@@ -66,7 +66,7 @@ export type Database = {
           points?: number
           postseason_points?: number
           sport_id?: string
-          trade_offer_id?: string
+          trade_offer_id?: string | null
         }
         Relationships: [
           {

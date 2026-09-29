@@ -27,10 +27,11 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const { team } = await searchParams;
   // Keep the picked team through sign-in, so a claim link from the leaderboard still lands on it.
   const user = await requireUserOrRedirect(typeof team === "string" ? claimFormPath(team) : "/me");
+  const profileService = await getProfileService();
   const [{ state, claimable }, weeklyEmail, tradeEmails] = await Promise.all([
     getClaimsService().then((service) => service.getMyClaims(user.id)),
-    getProfileService().then((service) => service.getWeeklyEmail(user)),
-    getProfileService().then((service) => service.getTradeEmails(user)),
+    profileService.getWeeklyEmail(user),
+    profileService.getTradeEmails(user),
   ]);
 
   return (

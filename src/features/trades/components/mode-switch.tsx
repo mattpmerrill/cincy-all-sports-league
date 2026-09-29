@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { cn } from "cn";
-import type { TradeMode } from "../schemas";
+import type { ListingKind } from "@/domain/trades";
 
-const MODES: { mode: TradeMode; label: string; href: string }[] = [
+const MODES: { mode: ListingKind; label: string; href: string }[] = [
   { mode: "block", label: "Put players on the block", href: "/trades/new" },
   { mode: "direct", label: "Offer a team a trade", href: "/trades/new?mode=direct" },
 ];
@@ -11,7 +11,7 @@ const MODES: { mode: TradeMode; label: string; href: string }[] = [
  * A segmented control made of links, so the mode lives in the URL and the page stays server-driven.
  * `aria-current` marks the active one for assistive tech; the fill marks it for everyone else.
  */
-export function TradeModeSwitch({ mode }: { mode: TradeMode }) {
+export function TradeModeSwitch({ mode }: { mode: ListingKind }) {
   return (
     <nav aria-label="Type of trade">
       <ul className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-surface p-1">
