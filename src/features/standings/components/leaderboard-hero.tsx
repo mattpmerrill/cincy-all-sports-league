@@ -26,7 +26,7 @@ export function LeaderboardHero({
         className,
       )}
     >
-      <p className="inline-flex items-center gap-2 rounded-full border border-line bg-base/60 py-1 pr-3 pl-2.5 text-xs font-medium text-text-muted">
+      <p className="inline-flex items-center gap-2 rounded-full border border-line bg-canvas/60 py-1 pr-3 pl-2.5 text-xs font-medium text-text-muted">
         <span
           aria-hidden="true"
           className={cn(
@@ -39,7 +39,7 @@ export function LeaderboardHero({
           : "Waiting for the first score update"}
       </p>
 
-      <h1 className="mt-4 text-[2.5rem] leading-[0.92] font-extrabold md:text-6xl">
+      <h1 className="mt-4 text-[2.5rem] leading-[0.92] font-extrabold md:text-6xl lg:text-[2.25rem]">
         Cincy&apos;s <span className="block whitespace-nowrap">All-Sports League</span>
       </h1>
       <p className="mt-2 text-sm text-text-muted">{board.seasonName} season, 20 teams, 11 sports</p>

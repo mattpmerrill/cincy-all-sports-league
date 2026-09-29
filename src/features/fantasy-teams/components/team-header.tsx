@@ -25,7 +25,7 @@ export function TeamHeader({ team, isMine }: { team: TeamDetail; isMine: boolean
               <span className="text-sm font-medium text-text-muted">
                 {team.isTied ? "Tied for " : ""}place {team.rank} of {team.teamCount}
               </span>
-              <MovementIndicator movement={team.movement} className="text-[1rem]" />
+              <MovementIndicator movement={team.movement} className="text-base" />
             </div>
           </div>
           <h1 className="text-4xl leading-[0.95] font-extrabold break-words md:text-6xl">

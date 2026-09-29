@@ -27,7 +27,7 @@ export function PickCard({ pick, index }: { pick: PickView; index: number }) {
           size="md"
         />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <h3 className="font-sans text-[1rem] leading-tight font-semibold tracking-normal normal-case">
+          <h3 className="font-sans text-base leading-tight font-semibold tracking-normal normal-case">
             {pick.participantName}
           </h3>
           <p className="flex items-center gap-1.5 text-xs font-medium text-text-muted">

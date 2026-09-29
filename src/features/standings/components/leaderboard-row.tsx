@@ -43,7 +43,7 @@ export function LeaderboardRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="truncate text-[1rem] leading-tight font-semibold">{row.name}</span>
+            <span className="truncate text-base leading-tight font-semibold">{row.name}</span>
             {isMine ? (
               <span className="shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-[0.65rem] leading-none font-bold text-on-brand">
                 You

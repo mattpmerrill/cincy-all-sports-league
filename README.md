@@ -53,12 +53,13 @@ Open http://localhost:3000.
 
 ### Environment variables
 
-| Name                                   | Scope       | Purpose                                            |
-| -------------------------------------- | ----------- | -------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | public      | Supabase project URL                               |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public      | Supabase publishable (anon-level) key; RLS applies |
-| `SUPABASE_SECRET_KEY`                  | server only | Secret key for the sync job; bypasses RLS          |
-| `CRON_SECRET`                          | server only | Shared secret guarding the sync route              |
+| Name                                   | Scope       | Purpose                                                                                                                  |
+| -------------------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_SUPABASE_URL`             | public      | Supabase project URL                                                                                                     |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public      | Supabase publishable (anon-level) key; RLS applies                                                                       |
+| `NEXT_PUBLIC_SITE_URL`                 | public      | Canonical origin for metadata (default `http://localhost:3000`; production `https://cincy-all-sports-league.vercel.app`) |
+| `SUPABASE_SECRET_KEY`                  | server only | Secret key for the sync job; bypasses RLS                                                                                |
+| `CRON_SECRET`                          | server only | Shared secret guarding the sync route                                                                                    |
 
 ## Auth setup
 

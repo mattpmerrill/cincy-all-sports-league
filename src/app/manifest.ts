@@ -8,7 +8,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
-    // The manifest is read by the OS, outside CSS, so these mirror --base and --brand in globals.css.
+    // The manifest is read by the OS, outside CSS, so these mirror --canvas and --brand in globals.css.
     background_color: "#0b0f1a",
     theme_color: "#0b0f1a",
     icons: [

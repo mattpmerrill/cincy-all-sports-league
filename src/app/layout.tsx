@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
+import { publicEnv } from "@/lib/env";
 import { AppShell } from "@/ui/app-shell";
 import "./globals.css";
 
@@ -13,6 +14,7 @@ const display = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(publicEnv().NEXT_PUBLIC_SITE_URL),
   title: { default: "Cincy's All-Sports League", template: "%s | Cincy's All-Sports League" },
   applicationName: "Cincy's All-Sports League",
   appleWebApp: { capable: true, title: "Cincy's League", statusBarStyle: "black-translucent" },
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Browser chrome can't read CSS variables, so this mirrors --base in globals.css.
+  // Browser chrome can't read CSS variables, so this mirrors --canvas in globals.css.
   themeColor: "#0b0f1a",
   colorScheme: "dark",
   // Lets the header and tab bar extend under the notch and home indicator.

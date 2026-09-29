@@ -8,7 +8,14 @@ const valid = {
 
 describe("parsePublicEnv", () => {
   it("accepts a complete environment", () => {
-    expect(parsePublicEnv(valid)).toEqual(valid);
+    expect(parsePublicEnv({ ...valid, NEXT_PUBLIC_SITE_URL: "https://example.com" })).toEqual({
+      ...valid,
+      NEXT_PUBLIC_SITE_URL: "https://example.com",
+    });
+  });
+
+  it("falls back to localhost when the site URL is unset", () => {
+    expect(parsePublicEnv(valid).NEXT_PUBLIC_SITE_URL).toBe("http://localhost:3000");
   });
 
   it("names the bad variables without echoing their values", () => {
