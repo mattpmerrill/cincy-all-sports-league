@@ -9,11 +9,12 @@ import {
 } from "@/features/trades/components/listing-cards";
 import { OfferCard } from "@/features/trades/components/offer-card";
 import { CelebrateTrade } from "@/features/trades/components/trade-celebration";
-import { TradeFlash } from "@/features/trades/components/trade-flash";
 import { TradesJoinPrompt } from "@/features/trades/components/trades-join-prompt";
 import { KIND_LABEL } from "@/features/trades/components/trade-parts";
 import { getTradesService } from "@/features/trades/trades.server";
 import { buttonVariants } from "@/ui/button";
+import { FlashSlot } from "@/ui/flash-slot";
+import { MovesSwitch } from "@/ui/moves-switch";
 import { EmptyState, PageHeader, PageMain, PageSection } from "@/ui/page";
 import { cn } from "cn";
 import { acceptOfferAction, rejectOfferAction, withdrawOfferAction } from "./actions";
@@ -51,6 +52,8 @@ export default async function TradesPage() {
         }
       />
 
+      <MovesSwitch current="trades" />
+
       {myTeam ? null : <TradesJoinPrompt signedIn={user !== null} />}
 
       {myTeam ? (
@@ -61,7 +64,7 @@ export default async function TradesPage() {
           >
             {/* The flash wraps both states: answering the last offer empties the list, and the
                 outcome message has to outlive it. */}
-            <TradeFlash>
+            <FlashSlot>
               {area.waitingOnYou.length === 0 ? (
                 <EmptyState
                   title="Nothing waiting"
@@ -101,7 +104,7 @@ export default async function TradesPage() {
                   ))}
                 </div>
               )}
-            </TradeFlash>
+            </FlashSlot>
           </PageSection>
 
           <PageSection

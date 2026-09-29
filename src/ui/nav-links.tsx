@@ -9,7 +9,7 @@ import { cn } from "cn";
 const TABS = [
   { href: "/", label: "Standings", icon: Trophy, match: ["/", "/teams"] },
   { href: "/feed", label: "Feed", icon: MessageSquare, match: ["/feed"] },
-  { href: "/trades", label: "Trades", icon: ArrowLeftRight, match: ["/trades"] },
+  { href: "/trades", label: "Trades", icon: ArrowLeftRight, match: ["/trades", "/free-agents"] },
   { href: "/sports", label: "Sports", icon: LayoutGrid, match: ["/sports"] },
   { href: "/rules", label: "Rules", icon: BookOpenText, match: ["/rules"] },
 ] as const;
