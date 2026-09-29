@@ -6,6 +6,7 @@ import { claimFormPath, preselectedTeamId } from "@/features/claims/claim-links"
 import { ClaimTeamPanel } from "@/features/claims/components/claim-team-panel";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { DisplayNameForm } from "@/features/profile/components/display-name-form";
+import { TradeEmailsForm } from "@/features/profile/components/trade-emails-form";
 import { WeeklyEmailForm } from "@/features/profile/components/weekly-email-form";
 import { getProfileService } from "@/features/profile/profile.server";
 import { isAdminRole } from "@/domain/membership/membership";
@@ -13,7 +14,12 @@ import { Badge } from "@/ui/badge";
 import { PageHeader, PageMain, PageSection } from "@/ui/page";
 import { SubmitButton } from "@/ui/submit-button";
 import { UserAvatar } from "@/ui/user-avatar";
-import { claimTeamAction, setWeeklyEmailAction, updateDisplayNameAction } from "./actions";
+import {
+  claimTeamAction,
+  setTradeEmailsAction,
+  setWeeklyEmailAction,
+  updateDisplayNameAction,
+} from "./actions";
 
 export const metadata: Metadata = { title: "Your profile" };
 
@@ -21,9 +27,10 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   const { team } = await searchParams;
   // Keep the picked team through sign-in, so a claim link from the leaderboard still lands on it.
   const user = await requireUserOrRedirect(typeof team === "string" ? claimFormPath(team) : "/me");
-  const [{ state, claimable }, weeklyEmail] = await Promise.all([
+  const [{ state, claimable }, weeklyEmail, tradeEmails] = await Promise.all([
     getClaimsService().then((service) => service.getMyClaims(user.id)),
     getProfileService().then((service) => service.getWeeklyEmail(user)),
+    getProfileService().then((service) => service.getTradeEmails(user)),
   ]);
 
   return (
@@ -77,6 +84,13 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
         description="Standings and the biggest movers, every Monday morning."
       >
         <WeeklyEmailForm optedIn={weeklyEmail} action={setWeeklyEmailAction} />
+      </PageSection>
+
+      <PageSection
+        title="Trade alerts"
+        description="An email when someone makes an offer on your players, and when your offers are answered."
+      >
+        <TradeEmailsForm optedIn={tradeEmails} action={setTradeEmailsAction} />
       </PageSection>
     </PageMain>
   );

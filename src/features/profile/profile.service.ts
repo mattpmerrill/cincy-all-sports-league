@@ -7,7 +7,11 @@ export type ProfileService = ReturnType<typeof createProfileService>;
 export function createProfileService(
   profiles: Pick<
     ProfilesRepository,
-    "updateDisplayName" | "getWeeklyEmailOptIn" | "setWeeklyEmailOptIn"
+    | "updateDisplayName"
+    | "getWeeklyEmailOptIn"
+    | "setWeeklyEmailOptIn"
+    | "getTradeEmailOptIn"
+    | "setTradeEmailOptIn"
   >,
 ) {
   return {
@@ -31,6 +35,20 @@ export function createProfileService(
       optIn: boolean,
     ): Promise<Result<{ optedIn: boolean }, AppError<"not_found">>> {
       const updated = await profiles.setWeeklyEmailOptIn(actor.id, optIn);
+      return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find your profile.");
+    },
+
+    /** True when the member gets trade alert emails. A missing profile reads as opted in (the default). */
+    async getTradeEmails(actor: Actor): Promise<boolean> {
+      return (await profiles.getTradeEmailOptIn(actor.id)) ?? true;
+    },
+
+    /** Own row only: the actor's id is the target, and RLS refuses anything else. */
+    async setTradeEmails(
+      actor: Actor,
+      optIn: boolean,
+    ): Promise<Result<{ optedIn: boolean }, AppError<"not_found">>> {
+      const updated = await profiles.setTradeEmailOptIn(actor.id, optIn);
       return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find your profile.");
     },
   };

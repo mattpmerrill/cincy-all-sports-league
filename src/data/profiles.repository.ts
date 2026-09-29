@@ -90,6 +90,28 @@ export function createProfilesRepository(db: DbClient) {
       return data !== null;
     },
 
+    async getTradeEmailOptIn(id: string): Promise<boolean | null> {
+      const { data, error } = await db
+        .from("profiles")
+        .select("trade_emails")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? data.trade_emails : null;
+    },
+
+    /** Same contract as `setWeeklyEmailOptIn`: one column of one row, false when nothing matched. */
+    async setTradeEmailOptIn(id: string, optIn: boolean): Promise<boolean> {
+      const { data, error } = await db
+        .from("profiles")
+        .update({ trade_emails: optIn })
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      return data !== null;
+    },
+
     /** Returns null when nothing changed: the target is missing or RLS/the role trigger refused. */
     async setRole(id: string, role: UserRole): Promise<Profile | null> {
       const { data, error } = await db

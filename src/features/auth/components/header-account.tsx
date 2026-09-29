@@ -1,0 +1,127 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { isAdminRole } from "@/domain/membership/membership";
+import { createProfilesRepository } from "@/data/profiles.repository";
+import { logger } from "@/lib/logger";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/ui/dropdown-menu";
+import { UserAvatar } from "@/ui/user-avatar";
+import { signOutAction } from "../actions";
+import { accountProfileSchema } from "../schemas";
+
+const AUTH_PAGES = ["/login", "/signup", "/reset-password"];
+
+type Session = { status: "unknown" } | { status: "out" } | { status: "in"; userId: string };
+type Account = ReturnType<typeof accountProfileSchema.parse>;
+
+const FOCUS_RING = "outline-none focus-visible:ring-3 focus-visible:ring-ring/60";
+
+/**
+ * The header's account control: Sign in / Join for visitors, an avatar menu for members. The
+ * session and the member's own profile are read in the browser so the root layout stays static;
+ * asking the server would make every page dynamic. Nothing renders until the session (and, for
+ * members, the profile) is known, so neither variant flashes.
+ */
+export function HeaderAccount() {
+  const pathname = usePathname();
+  const [session, setSession] = useState<Session>({ status: "unknown" });
+  // Keyed by user id so a stale profile never shows after an account switch or sign-out.
+  const [loaded, setLoaded] = useState<{ userId: string; account: Account } | null>(null);
+  const userId = session.status === "in" ? session.userId : null;
+  const account = loaded && loaded.userId === userId ? loaded.account : null;
+
+  useEffect(() => {
+    const supabase = createSupabaseBrowserClient();
+    // Fires once with the current session, then on every sign-in and sign-out. Only state is set
+    // here: awaiting Supabase calls inside this callback can deadlock the auth client.
+    const { data } = supabase.auth.onAuthStateChange((_event, next) =>
+      setSession(next ? { status: "in", userId: next.user.id } : { status: "out" }),
+    );
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    let active = true;
+    createProfilesRepository(createSupabaseBrowserClient())
+      .getById(userId)
+      .then((profile) => {
+        if (!active) return;
+        const parsed = accountProfileSchema.safeParse(profile);
+        if (parsed.success) setLoaded({ userId, account: parsed.data });
+      })
+      .catch((error: unknown) => {
+        // The header degrades to nothing rather than blocking the page; /me still works by URL.
+        logger.warn("header_account_profile_failed", { error });
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  if (session.status === "unknown") return null;
+
+  if (session.status === "out") {
+    if (AUTH_PAGES.some((p) => pathname.startsWith(p))) return null;
+    const next = encodeURIComponent(pathname);
+    return (
+      <div className="flex items-center gap-1">
+        <Link
+          href={`/login?next=${next}`}
+          className={`rounded-lg px-2.5 py-1.5 text-sm font-semibold text-text-muted hover:text-text ${FOCUS_RING}`}
+        >
+          Sign in
+        </Link>
+        <Link
+          href="/signup?next=%2Fme"
+          className={`inline-flex h-8 items-center rounded-lg bg-brand px-3 text-sm font-semibold text-on-brand hover:bg-brand/85 ${FOCUS_RING}`}
+        >
+          Join
+        </Link>
+      </div>
+    );
+  }
+
+  if (!account) return null;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`Account menu for ${account.displayName}`}
+        className={`inline-flex size-8 items-center justify-center rounded-full ${FOCUS_RING}`}
+      >
+        <UserAvatar displayName={account.displayName} avatarUrl={account.avatarUrl} />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuLabel className="truncate">{account.displayName}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/me">Your profile</Link>
+        </DropdownMenuItem>
+        {isAdminRole(account.role) ? (
+          <DropdownMenuItem asChild>
+            <Link href="/admin">Admin</Link>
+          </DropdownMenuItem>
+        ) : null}
+        <DropdownMenuSeparator />
+        <form action={signOutAction}>
+          <DropdownMenuItem asChild>
+            <button type="submit" className="w-full">
+              Sign out
+            </button>
+          </DropdownMenuItem>
+        </form>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
