@@ -116,6 +116,23 @@ begin
     raise exception 'stale_pick' using errcode = 'P0001';
   end if;
 
+  -- A listing created after the set above was computed (its creator only needs the pick lock we
+  -- now hold, and it commits before us) would stay open for a player this team is about to drop.
+  -- Read-only and after the pick lock, so it cannot change the lock order; a retry picks the new
+  -- listing up in the set. accept_trade_offer has the same gap.
+  if exists (
+    select 1
+    from public.trade_listings l
+    join public.trade_listing_items i on i.listing_id = l.id
+    where l.owner_team_id = v_team.id
+      and i.sport_id = v_sport_id
+      and l.status = 'open'
+      and l.closes_at > now()
+      and l.id <> all(coalesce(v_listing_ids, '{}'))
+  ) then
+    raise exception 'stale_pick' using errcode = 'P0001';
+  end if;
+
   -- 4. The added participant. NO KEY UPDATE, not UPDATE: two teams racing for the same participant
   -- conflict with each other and serialize, but the foreign-key checks on picks and moves (which
   -- take KEY SHARE on this row) do not wait behind it.

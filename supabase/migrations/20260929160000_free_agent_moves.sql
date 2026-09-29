@@ -35,8 +35,8 @@ create index free_agent_moves_season_created_idx on public.free_agent_moves (sea
 create index free_agent_moves_team_idx on public.free_agent_moves (fantasy_team_id, created_at desc);
 
 -- Existing rows are all trades, so the default keeps accept_trade_offer working unchanged.
--- Set null, not cascade, for the move reference, for the same reason as trade_offer_id: the points
--- were earned and must survive the provenance row. The check keeps the two provenance columns from
+-- Set null, not cascade: a move deleted on its own (admin cleanup) must not take the banked points
+-- with it. A team delete cascades both anyway. The check keeps the two provenance columns from
 -- contradicting the source. No >= 0 check on the values, as in the trade tables.
 alter table public.banked_scores
   add column source public.banked_source not null default 'trade',

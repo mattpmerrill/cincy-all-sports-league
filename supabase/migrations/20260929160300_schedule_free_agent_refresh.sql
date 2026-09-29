@@ -2,7 +2,8 @@
 --
 -- The route loads every team or athlete ESPN lists for the sport into participants (insert-only,
 -- safe to re-run) and refreshes free-agent facts where the 30-minute sync does not cover them.
--- 09:00 UTC is 04:00 or 05:00 Eastern, after the previous day's games have settled.
+-- 09:15 UTC is 04:15 or 05:15 Eastern, after the previous day's games have settled. The quarter
+-- past keeps it out of the minute the */30 score sync fires in, so the two do not start together.
 --
 -- Same secret as the score sync: the job reads 'cron_secret' from Supabase Vault at run time, so
 -- this file holds no secret. See 20260928121000_schedule_score_sync.sql for the one-time setup.
@@ -18,7 +19,7 @@ select cron.unschedule(jobid) from cron.job where jobname = 'cincy-free-agent-re
 -- Codes are lowercase letters only (sports.code check), so they are safe in a query string.
 select cron.schedule(
   'cincy-free-agent-refresh',
-  '0 9 * * *',
+  '15 9 * * *',
   $job$
   select net.http_post(
     url := 'https://www.cincysports.xyz/api/cron/free-agents?sport=' || code,

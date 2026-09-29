@@ -3,7 +3,7 @@
 -- everyone else, cascade, and the daily refresh job. Fixtures are self-contained.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(107);
+select plan(111);
 
 -- The seed may already have an active season; only one can be active at a time.
 update public.seasons set is_active = false;
@@ -50,10 +50,22 @@ insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-000000000001', 'owner1@example.com'),
   ('00000000-0000-0000-0000-000000000002', 'owner2@example.com'),
   ('00000000-0000-0000-0000-000000000003', 'owner3@example.com'),
-  ('00000000-0000-0000-0000-000000000004', 'plain@example.com');
+  ('00000000-0000-0000-0000-000000000004', 'plain@example.com'),
+  ('00000000-0000-0000-0000-000000000005', 'nopicks@example.com');
 update public.fantasy_teams set owner_id = '00000000-0000-0000-0000-000000000001' where slug = 'team-one';
 update public.fantasy_teams set owner_id = '00000000-0000-0000-0000-000000000002' where slug = 'team-two';
 update public.fantasy_teams set owner_id = '00000000-0000-0000-0000-000000000003' where slug = 'team-three';
+-- T5 is owned by u5 but holds no picks at all.
+insert into public.fantasy_teams (id, season_id, name, slug, owner_id) values
+  ('50000000-0000-0000-0000-000000000005', '10000000-0000-0000-0000-000000000001', 'Team Five', 'team-five', '00000000-0000-0000-0000-000000000005');
+-- Another season, inactive, whose team holds A6. Being held there must not stop A6 being a free
+-- agent in this season, because one participant row serves every season.
+insert into public.seasons (id, name, starts_on, ends_on, is_active) values
+  ('10000000-0000-0000-0000-000000000002', 'other-season', '2029-01-01', '2029-12-31', false);
+insert into public.fantasy_teams (id, season_id, name, slug) values
+  ('50000000-0000-0000-0000-000000000006', '10000000-0000-0000-0000-000000000002', 'Team Six', 'team-six');
+insert into public.picks (fantasy_team_id, sport_id, participant_id) values
+  ('50000000-0000-0000-0000-000000000006', '20000000-0000-0000-0000-000000000001', '40000000-0000-0000-0000-0000000000a6');
 -- In ww, T1 and T2 both hold W1 and T3 and T4 both hold W2.
 insert into public.picks (fantasy_team_id, sport_id, participant_id)
 select t.id, s.id, p.id
@@ -278,6 +290,9 @@ select throws_ok(
   $$select public.make_free_agent_move(pg_temp.u(1), 'ww', pg_temp.p('d2'), pg_temp.p('d3'), '[]', 'x', '{}')$$,
   'P0001', 'stale_pick', 'a drop that does not match the current pick is stale even in a duplicate-friendly sport');
 select throws_ok(
+  $$select public.make_free_agent_move(pg_temp.u(5), 'aa', pg_temp.p('a1'), pg_temp.p('a6'), '[]', 'x', '{}')$$,
+  'P0001', 'stale_pick', 'a team with no pick in the sport has nothing to drop');
+select throws_ok(
   $$select public.make_free_agent_move(pg_temp.u(1), 'aa', pg_temp.p('a5'), pg_temp.p('a5'), '[]', 'x', '{}')$$,
   'P0001', 'same_participant', 'dropping and adding the same participant is refused');
 select throws_ok(
@@ -371,7 +386,8 @@ select lives_ok(
   $$select set_config('t.m4', public.make_free_agent_move(
       pg_temp.u(2), 'aa', pg_temp.p('a2'), pg_temp.p('a6'),
       jsonb_build_array(pg_temp.sc('a2', 12, 1, 5), pg_temp.sc('a6', 3, 0, 2)), 'Team Two moved', '{}')::text, true)$$,
-  'a team whose pick already had a baseline can move');
+  'a team whose pick already had a baseline can move, and a participant held only in another season is a free agent');
+select is((select count(*)::int from public.picks where participant_id = pg_temp.p('a6')), 2, 'the other season''s hold on the participant is untouched');
 select results_eq(
   $$select points, championships, postseason_points from public.banked_scores
     where fantasy_team_id = pg_temp.t(2) and free_agent_move_id = pg_temp.tid('m4')$$,
@@ -399,10 +415,20 @@ select results_eq(
     order by participant_id$$,
   $$values (pg_temp.p('b1'), 2::numeric, 0, 0::numeric), (pg_temp.p('b5'), 2::numeric, 1, 0::numeric)$$,
   'the second move banks against the first move''s baseline (6 - 4, 1 - 0, 1 - 1), and the first row stays');
-select is((select count(*)::int from public.free_agent_moves), 6, 'every successful call wrote one move');
+-- A caller that sends no payload still gets a post that links to its move.
+select lives_ok(
+  $$select set_config('t.m5', public.make_free_agent_move(
+      pg_temp.u(3), 'bb', pg_temp.p('b3'), pg_temp.p('b5'),
+      jsonb_build_array(pg_temp.sc('b3', 1, 0, 0), pg_temp.sc('b5', 6, 1, 1)), 'Team Three moved in B', null)::text, true)$$,
+  'a move with a null post payload succeeds');
+select is(
+  (select payload from public.messages where body = 'Team Three moved in B'),
+  jsonb_build_object('moveId', pg_temp.tid('m5')),
+  'a null payload becomes just the move id');
+select is((select count(*)::int from public.free_agent_moves), 7, 'every successful call wrote one move');
 select is(
   (select count(*)::int from public.messages m join public.free_agent_moves f on f.id::text = m.payload ->> 'moveId'),
-  6, 'every move has exactly its own post');
+  7, 'every move has exactly its own post');
 select is((select count(*)::int from public.picks where fantasy_team_id in (select id from public.fantasy_teams where season_id = '10000000-0000-0000-0000-000000000001')), 16, 'moves change picks in place, never add or remove them');
 reset role;
 
@@ -501,11 +527,11 @@ select is((select count(*)::int from public.free_agent_moves where fantasy_team_
 select lives_ok($$delete from public.fantasy_teams where id = pg_temp.t(2)$$, 'a team with moves can be deleted');
 select is((select count(*)::int from public.free_agent_moves where fantasy_team_id = pg_temp.t(2)), 0, 'deleting a team deletes its moves');
 select is((select count(*)::int from public.banked_scores where fantasy_team_id = pg_temp.t(2)), 0, 'and its banked rows');
-select is((select count(*)::int from public.free_agent_moves), 5, 'other teams'' moves are untouched');
+select is((select count(*)::int from public.free_agent_moves), 6, 'other teams'' moves are untouched');
 
 -- ===== daily refresh job =====
 select is((select count(*)::int from cron.job where jobname = 'cincy-free-agent-refresh'), 1, 'the free-agent refresh job is scheduled');
-select is((select schedule from cron.job where jobname = 'cincy-free-agent-refresh'), '0 9 * * *', 'it runs daily at 09:00 UTC');
+select is((select schedule from cron.job where jobname = 'cincy-free-agent-refresh'), '15 9 * * *', 'it runs daily at 09:15 UTC, off the score sync''s half-hour marks');
 select ok(
   (select command like '%/api/cron/free-agents?sport=%' and command like '%from public.sports%'
    from cron.job where jobname = 'cincy-free-agent-refresh'),

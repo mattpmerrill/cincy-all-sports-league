@@ -73,6 +73,6 @@ is safe.
 - There is no cap or cooldown on moves, so a team can stream: add a team before its game, bank the
   win, and drop it for a team playing later. This was accepted as a product decision. A
   cooldown would be one domain constant and one SQL check against `free_agent_moves`.
-- Deleting a team deletes its moves and banked rows. Deleting a move (only possible by deleting its
-  team) leaves other banked rows in place with the move reference set to null.
+- Deleting a team deletes its moves and banked rows. A move deleted on its own (an admin cleanup)
+  leaves its banked row in place, still marked `free_agent`, with the move reference set to null.
 - Adding a move-like action means adding a function and its error tokens, not a new policy.
