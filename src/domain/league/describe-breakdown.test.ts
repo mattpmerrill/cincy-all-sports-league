@@ -92,10 +92,18 @@ describe("describePickBreakdown", () => {
       score: { lines: [] },
       adjustment: adjustment({
         banked: [
-          { sport: "nfl", participant: bears, total: 12, championships: 0, postseasonPoints: 0 },
+          {
+            sport: "nfl",
+            participant: bears,
+            source: "trade",
+            total: 12,
+            championships: 0,
+            postseasonPoints: 0,
+          },
           {
             sport: "nfl",
             participant: { ...bears, name: "Jets" },
+            source: "trade",
             total: 0,
             championships: 0,
             postseasonPoints: 0,
@@ -109,6 +117,28 @@ describe("describePickBreakdown", () => {
         points: 12,
         isAdjustment: true,
       },
+    ]);
+  });
+
+  it("words a dropped player differently from a traded one, for gains and losses alike", () => {
+    const banked = (total: number, source: "trade" | "free_agent") => ({
+      sport: "nfl" as const,
+      participant: bears,
+      source,
+      total,
+      championships: 0,
+      postseasonPoints: 0,
+    });
+    const texts = (b: ReturnType<typeof banked>[]) =>
+      describePickBreakdown({ score: { lines: [] }, adjustment: adjustment({ banked: b }) }).map(
+        (v) => v.text,
+      );
+    expect(texts([banked(5, "free_agent"), banked(5, "trade")])).toEqual([
+      "Includes 5 pts from Chicago Bears before dropping them",
+      "Includes 5 pts from Chicago Bears before the trade",
+    ]);
+    expect(texts([banked(-3, "free_agent")])).toEqual([
+      "Less 3 pts from Chicago Bears before dropping them",
     ]);
   });
 

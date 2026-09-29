@@ -15,7 +15,8 @@ import { createLeagueRepository } from "./league.repository";
 export const loadCachedLeagueData = unstable_cache(
   async () => createLeagueRepository(createSupabasePublicClient()).load(),
   // Bump the version when `LeagueData` changes shape: the data cache outlives a deploy, and the
-  // new code would otherwise read old entries (no `banked`, no `baseline`) for up to 10 minutes.
-  ["league-data", "v2"],
+  // new code would otherwise read old entries (no `banked`, no `baseline`, no banked `source`) for
+  // up to 10 minutes.
+  ["league-data", "v3"],
   { tags: [LEAGUE_CACHE_TAG], revalidate: 600 },
 );

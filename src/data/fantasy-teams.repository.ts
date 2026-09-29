@@ -1,4 +1,5 @@
-import type { TeamData } from "@/domain/league";
+import { BANKED_SOURCES } from "@/domain/league";
+import type { BankedSource, TeamData } from "@/domain/league";
 import type { DbClient } from "./db-client";
 import { PARTICIPANT_COLUMNS, toOwner, toParticipant, toSportCode } from "./mappers";
 import type { OwnerRow, ParticipantRow } from "./mappers";
@@ -16,6 +17,7 @@ type PickRow = {
 };
 
 type BankedRow = {
+  source: string;
   points: number;
   championships: number;
   postseason_points: number;
@@ -30,6 +32,13 @@ type TeamRow = {
   picks: PickRow[];
   banked_scores: BankedRow[];
 };
+
+/** An unknown source means the enum grew without the domain learning it: fail loudly. */
+function toBankedSource(value: string): BankedSource {
+  const found = BANKED_SOURCES.find((s) => s === value);
+  if (!found) throw new Error(`Unknown banked source "${value}"`);
+  return found;
+}
 
 /** Row to domain. An unknown sport code means the DB and the sport catalog have drifted: fail loudly. */
 export function toTeamData(row: TeamRow): TeamData {
@@ -51,6 +60,7 @@ export function toTeamData(row: TeamRow): TeamData {
     banked: row.banked_scores.map((b) => ({
       sport: toSportCode(b.participants.sports.code),
       participant: toParticipant(b.participants),
+      source: toBankedSource(b.source),
       total: b.points,
       championships: b.championships,
       postseasonPoints: b.postseason_points,
@@ -72,7 +82,7 @@ export function createFantasyTeamsRepository(db: DbClient) {
         .select(
           `id, slug, name, profiles(id, display_name, avatar_url),
             picks(sports(code), participants(${PARTICIPANT_COLUMNS}), baseline_points, baseline_championships, baseline_postseason_points, acquired_at),
-            banked_scores(points, championships, postseason_points, participants(${PARTICIPANT_COLUMNS}, sports(code)))`,
+            banked_scores(source, points, championships, postseason_points, participants(${PARTICIPANT_COLUMNS}, sports(code)))`,
         )
         .eq("season_id", seasonId)
         .order("name", { ascending: true });
