@@ -71,10 +71,26 @@ export type TradePayload = TradeListedPayload | TradeOfferPayload | TradeComplet
 type WithoutListing<P> = P extends unknown ? Omit<P, "listingId"> : never;
 export type TradePayloadDraft = WithoutListing<TradePayload>;
 
+/**
+ * A free-agent move: one team dropped a participant and picked up another in the same sport.
+ * `moveId` lets the card link to the moves list; the database function injects it in the same
+ * transaction, so the builder returns the draft below.
+ */
+export type FreeAgentMovePayload = {
+  type: "free_agent_move";
+  moveId: string;
+  team: TradeTeamLink;
+  sport: SportCode;
+  dropped: string;
+  added: string;
+};
+export type FreeAgentMovePayloadDraft = Omit<FreeAgentMovePayload, "moveId">;
+
 export type ScoreUpdatePayload = { type: "score_update"; items: ScoreUpdateItem[] };
 export type MoversPayload = { type: "movers"; date: string | null; items: MoverItem[] };
 
-export type LeaguePayload = ScoreUpdatePayload | MoversPayload | TradePayload;
+export type LeaguePayload =
+  ScoreUpdatePayload | MoversPayload | TradePayload | FreeAgentMovePayload;
 
 export type Message = {
   id: string;

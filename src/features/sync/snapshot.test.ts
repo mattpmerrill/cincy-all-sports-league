@@ -118,6 +118,7 @@ describe("computeSnapshotRows", () => {
             {
               sport: "nfl" as const,
               participant: participant(mine ?? ""),
+              source: "trade" as const,
               ...NO_BASELINE,
               total: liveOf(mine),
             },

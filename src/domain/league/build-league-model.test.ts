@@ -39,6 +39,24 @@ describe("buildLeagueModel", () => {
     expect(after.standings[0]?.championships).toBe(1);
   });
 
+  it("marks a sport complete when the champion is a participant nobody holds", () => {
+    // A free agent can win the title. If only held champions counted, the sport would stay open
+    // and someone could add the winner the day after.
+    const model = buildLeagueModel(
+      leagueData({
+        teams: [{ id: "a" }],
+        startsOn: { nfl: "2026-09-07" },
+        results: [
+          { participantId: "free-nfl", ruleId: "nfl-champion", quantity: 1, eventLabel: "" },
+        ],
+      }),
+      TODAY,
+    );
+    expect(model.sports.nfl.status.phase).toBe("complete");
+    // Nobody held the champion, so no team is credited with a championship.
+    expect(model.standings[0]?.championships).toBe(0);
+  });
+
   it("ranks a sport with one row per team, so a shared WNBA pick shows up for both owners", () => {
     const model = buildLeagueModel(
       leagueData({

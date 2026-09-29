@@ -1,6 +1,7 @@
 import type { BreakdownLine, ParticipantScore } from "@/domain/scoring";
 import type { PickAdjustment } from "./credit-pick";
 import { formatPoints } from "./format";
+import type { BankedSource } from "./types";
 
 export type BreakdownView = {
   /** Human sentence for the line, e.g. "4 wins × 4.1" or "Divisional Round appearance". */
@@ -34,10 +35,16 @@ export function describeBreakdownLine(line: BreakdownLine): BreakdownView {
   }
 }
 
+const BANKED_REASON: Record<BankedSource, string> = {
+  trade: "before the trade",
+  free_agent: "before dropping them",
+};
+
 /**
  * The lines a person reads for one pick, summing to what the team is credited: the participant's
  * scoring lines, less what it earned before joining this team, plus what this team earned from
- * players it traded away in the sport. With no trade this is exactly the scoring lines.
+ * players it let go in the sport (traded away or dropped). With no move this is exactly the
+ * scoring lines.
  */
 export function describePickBreakdown(pick: {
   score: Pick<ParticipantScore, "lines">;
@@ -55,11 +62,12 @@ export function describePickBreakdown(pick: {
   for (const banked of pick.adjustment.banked) {
     if (banked.total === 0) continue;
     const amount = plural(Math.abs(banked.total), "pt", "pts");
+    const reason = BANKED_REASON[banked.source];
     views.push({
       text:
         banked.total > 0
-          ? `Includes ${amount} from ${banked.participant.name} before the trade`
-          : `Less ${amount} from ${banked.participant.name} before the trade`,
+          ? `Includes ${amount} from ${banked.participant.name} ${reason}`
+          : `Less ${amount} from ${banked.participant.name} ${reason}`,
       points: banked.total,
       isAdjustment: true,
     });

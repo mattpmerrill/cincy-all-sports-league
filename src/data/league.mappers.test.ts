@@ -75,6 +75,7 @@ describe("toTeamData", () => {
       ],
       banked_scores: [
         {
+          source: "trade",
           points: 8.2,
           championships: 0,
           postseason_points: 3,
@@ -90,11 +91,52 @@ describe("toTeamData", () => {
       {
         sport: "wta",
         participant: expect.objectContaining({ id: "p0", name: "Iga Swiatek" }),
+        source: "trade",
         total: 8.2,
         championships: 0,
         postseasonPoints: 3,
       },
     ]);
+  });
+
+  it("keeps a dropped player's banked points apart from a traded one's by source", () => {
+    const bankedRow = (source: string) => ({
+      source,
+      points: 4,
+      championships: 0,
+      postseason_points: 0,
+      participants: { ...participants, sports: { code: "wta" } },
+    });
+    const team = toTeamData({
+      id: "t1",
+      slug: "papie",
+      name: "Papie",
+      profiles: null,
+      picks: [],
+      banked_scores: [bankedRow("free_agent"), bankedRow("trade")],
+    });
+    expect(team.banked.map((b) => b.source)).toEqual(["free_agent", "trade"]);
+  });
+
+  it("fails loudly on a banked source the domain doesn't know", () => {
+    expect(() =>
+      toTeamData({
+        id: "t1",
+        slug: "x",
+        name: "X",
+        profiles: null,
+        picks: [],
+        banked_scores: [
+          {
+            source: "waiver",
+            points: 1,
+            championships: 0,
+            postseason_points: 0,
+            participants: { ...participants, sports: { code: "wta" } },
+          },
+        ],
+      }),
+    ).toThrow(/waiver/);
   });
 
   it("fails loudly on a sport code the catalog doesn't know", () => {

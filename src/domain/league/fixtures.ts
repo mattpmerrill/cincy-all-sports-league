@@ -1,7 +1,14 @@
 import { SPORT_CODES } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
 import type { ScoreTotals } from "@/domain/scoring";
-import type { LeagueData, ParticipantData, ResultData, SnapshotData, TeamData } from "./types";
+import type {
+  BankedSource,
+  LeagueData,
+  ParticipantData,
+  ResultData,
+  SnapshotData,
+  TeamData,
+} from "./types";
 
 const participant = (id: string): ParticipantData => ({
   id,
@@ -24,6 +31,8 @@ type TeamSpec = {
   banked?: {
     sport: SportCode;
     participantId: string;
+    /** Defaults to "trade". */
+    source?: BankedSource;
     total: number;
     championships?: number;
     postseasonPoints?: number;
@@ -99,9 +108,10 @@ export function leagueData(opts: {
           acquiredAt: t.baselines?.[sport] ? "2026-09-20T12:00:00Z" : null,
         };
       }),
-      banked: (t.banked ?? []).map(({ participantId, sport, ...points }) => ({
+      banked: (t.banked ?? []).map(({ participantId, sport, source, ...points }) => ({
         sport,
         participant: participant(participantId),
+        source: source ?? "trade",
         ...NO_SCORE,
         ...points,
       })),
