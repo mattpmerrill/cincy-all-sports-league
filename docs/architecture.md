@@ -57,7 +57,22 @@ page -> feature query -> data (read facts + rules) -> domain (points, ranks) -> 
 ```
 
 Sync runs from a `CRON_SECRET`-guarded route on a schedule and uses the server-only secret key.
-Admin overrides are locked rows that sync never overwrites
+Sync flow, in order:
+
+```
+pg_cron (every 30 min) -> POST /api/cron/sync (bearer CRON_SECRET, constant-time check)
+  -> syncLeague({ now, sports? })
+     per sport, 4 at a time, failures isolated, each writing a sync_runs row:
+       outside season window ........ skipped (noted once a day)
+       ResultsProvider.fetchFacts ... records | stages (+bye implication) | majors | ranks
+       planSportSync (pure) ......... facts + existing rows -> upserts / deletes, locks respected
+       applyChanges ................. idempotent upsert on (season, participant, rule, event)
+     if anything changed:
+       standings_snapshots upsert for today (scoreParticipant -> scoreFantasyTeam -> rankStandings)
+       revalidateLeague() ......... drops the cached public read model
+```
+
+The admin "Sync now" button runs the same service for one sport. Admin overrides are locked rows that sync never overwrites
 ([ADR-002](decisions/ADR-002-espn-public-api-with-admin-overrides.md)).
 
 ## Conventions

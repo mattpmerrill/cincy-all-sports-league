@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 const LINKS = [
   { href: "/admin", label: "Claims" },
+  { href: "/admin/results", label: "Results" },
   { href: "/admin/members", label: "Members" },
 ] as const;
 
@@ -14,7 +15,8 @@ export function AdminNav() {
   return (
     <nav aria-label="Admin sections" className="flex gap-1 border-b border-line">
       {LINKS.map(({ href, label }) => {
-        const current = pathname === href;
+        // Sport pages live under /admin/results/[sport], so the section stays highlighted there.
+        const current = pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`));
         return (
           <Link
             key={href}

@@ -1,0 +1,64 @@
+import { describe, expect, it } from "vitest";
+import { toTeamData } from "./fantasy-teams.repository";
+import { toRuleData } from "./league.repository";
+
+const ruleRow = {
+  id: "r1",
+  code: "rank_1",
+  label: "Year-end WTA rank #1",
+  kind: "final_rank_band" as const,
+  points: 50,
+  rank_from: 1 as number | null,
+  rank_to: 1 as number | null,
+  is_championship: false,
+  sort_order: 6,
+  sport_id: "sp1",
+};
+const codes = new Map([["sp1", "wta"]]);
+
+describe("toRuleData", () => {
+  it("maps a rank band with both bounds", () => {
+    expect(toRuleData(ruleRow, codes)).toMatchObject({
+      sport: "wta",
+      rule: { kind: "final_rank_band", rankFrom: 1, rankTo: 1, points: 50 },
+    });
+  });
+
+  it("rejects a rank band that lost a bound and a rule for an unknown sport", () => {
+    expect(() => toRuleData({ ...ruleRow, rank_to: null }, codes)).toThrow(/bounds/);
+    expect(() => toRuleData(ruleRow, new Map([["sp1", "curling"]]))).toThrow(/curling/);
+  });
+});
+
+describe("toTeamData", () => {
+  const participants = {
+    id: "p1",
+    name: "Coco Gauff",
+    short_name: "Gauff",
+    logo_url: null,
+    primary_color: null,
+  };
+  it("keeps null owners and missing logos as null, not empty strings", () => {
+    const team = toTeamData({
+      id: "t1",
+      slug: "papie",
+      name: "Papie",
+      profiles: null,
+      picks: [{ sports: { code: "wta" }, participants }],
+    });
+    expect(team.owner).toBeNull();
+    expect(team.picks[0]).toMatchObject({ sport: "wta", participant: { logoUrl: null } });
+  });
+
+  it("fails loudly on a sport code the catalog doesn't know", () => {
+    expect(() =>
+      toTeamData({
+        id: "t1",
+        slug: "x",
+        name: "X",
+        profiles: null,
+        picks: [{ sports: { code: "curling" }, participants }],
+      }),
+    ).toThrow(/curling/);
+  });
+});

@@ -1,0 +1,29 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getCurrentUser } from "@/features/auth/guards";
+import { PickCard } from "@/features/fantasy-teams/components/pick-card";
+import { TeamHeader } from "@/features/fantasy-teams/components/team-header";
+import { getTeamDetail } from "@/features/fantasy-teams/fantasy-teams.server";
+import { PageMain } from "@/ui/page";
+
+export async function generateMetadata({ params }: PageProps<"/teams/[slug]">): Promise<Metadata> {
+  const team = await getTeamDetail((await params).slug);
+  return { title: team?.name ?? "Team not found" };
+}
+
+export default async function TeamPage({ params }: PageProps<"/teams/[slug]">) {
+  const { slug } = await params;
+  const [team, user] = await Promise.all([getTeamDetail(slug), getCurrentUser()]);
+  if (!team) notFound();
+
+  return (
+    <PageMain width="wide">
+      <TeamHeader team={team} isMine={user !== null && team.owner?.id === user.id} />
+      <section aria-label="Picks" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {team.picks.map((pick, index) => (
+          <PickCard key={pick.sport} pick={pick} index={index} />
+        ))}
+      </section>
+    </PageMain>
+  );
+}

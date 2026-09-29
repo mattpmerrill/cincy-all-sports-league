@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
+import { AppShell } from "@/ui/app-shell";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -12,7 +13,9 @@ const display = Barlow_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "Cincy's All-Sports League",
+  title: { default: "Cincy's All-Sports League", template: "%s | Cincy's All-Sports League" },
+  applicationName: "Cincy's All-Sports League",
+  appleWebApp: { capable: true, title: "Cincy's League", statusBarStyle: "black-translucent" },
   description:
     "Live leaderboard for a 20-team, 11-sport family fantasy league, scored automatically from ESPN data.",
 };
@@ -23,12 +26,16 @@ export const viewport: Viewport = {
   // Browser chrome can't read CSS variables, so this mirrors --base in globals.css.
   themeColor: "#0b0f1a",
   colorScheme: "dark",
+  // Lets the header and tab bar extend under the notch and home indicator.
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${display.variable} dark h-full`}>
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }

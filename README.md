@@ -4,9 +4,17 @@ A mobile-first web app for a family fantasy league: 20 teams, each with one pick
 Members sign in, follow a live leaderboard, and watch their scores update automatically from
 ESPN's public data. It replaced a hand-typed spreadsheet.
 
-<!-- Screenshots: add leaderboard, team page and sport page images here -->
+<p>
+  <img src="docs/screenshots/leaderboard-mobile.png" alt="Leaderboard on a phone" width="260">
+  <img src="docs/screenshots/team-mobile.png" alt="Team page on a phone" width="260">
+  <img src="docs/screenshots/sport-mobile.png" alt="Sport page on a phone" width="260">
+</p>
 
-> Screenshots coming soon.
+![Leaderboard on desktop](docs/screenshots/leaderboard-desktop.png)
+
+More: [team (desktop)](docs/screenshots/team-desktop.png),
+[rules](docs/screenshots/rules-mobile.png), [sign in](docs/screenshots/login-mobile.png),
+[profile](docs/screenshots/me-mobile.png).
 
 ## Features
 
@@ -88,6 +96,71 @@ sets `profiles.role = 'admin'`. After that, admins can promote and demote member
 
 **Claiming a team.** After signing in, a member requests an unclaimed team on `/me`. An admin
 approves or rejects it under `/admin`; approval sets the team's owner in one database transaction.
+
+## Dev results
+
+A fresh local database has the seeded league but no results, so every team sits at 0.
+`supabase/dev-results.sql` loads the 2026-09-28 spreadsheet state (NCAAF and NFL wins), two
+`sync_runs` rows and yesterday's standings snapshots, so the leaderboard, "Updated 12 min ago" and
+the movement arrows have something to show. It is local-only and never run automatically:
+
+```sh
+psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -f supabase/dev-results.sql
+```
+
+Never run it against the hosted project. To run the app against the local stack without touching
+`.env.local`, export the values from `supabase status` in your shell before `pnpm dev`
+(`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`,
+`CRON_SECRET`); shell variables win over `.env.local`.
+
+## Caching
+
+Public pages read one league model, cached with Next's data cache under the tag `league` (10
+minute safety expiry). Points are computed per request from cached facts, so the cache holds no
+derived state. Anything that writes results calls `revalidateLeague()` from `@/lib/league-cache`
+(Route Handlers and Server Actions only) and the next visit sees fresh standings.
+
+## Smoke tests
+
+`pnpm test:e2e` runs the Playwright specs in `e2e/`. Set `E2E_BASE_URL` to test a running
+deployment (the league must be seeded); without it the suite builds and serves the app itself.
+
+## Score sync
+
+`src/features/sync` pulls facts from ESPN (through `src/integrations/espn`, behind a vendor-neutral
+`ResultsProvider`) and writes them to `participant_results` with `source = 'espn'`.
+
+- **Trigger.** Supabase `pg_cron` + `pg_net` call `POST /api/cron/sync` every 30 minutes
+  (migration `20260928121000_schedule_score_sync.sql`). Vercel Hobby's own cron only runs daily.
+  The route requires `Authorization: Bearer $CRON_SECRET` (constant-time compare). `GET` works for
+  a manual `curl`; `?sport=nfl` (repeatable) syncs just those sports.
+- **One call is enough.** A full all-sports sync measured about 2.4 s (about 6.7 s fully
+  sequential) against complete past seasons, far inside the route's 60 s `maxDuration`, so cron
+  makes a single call and there is no rotation. Sports run four at a time.
+- **Windows and isolation.** A sport syncs only between its `season_sports.starts_on` and the
+  season's `ends_on`; outside that a single "skipped" note is written per day. One sport failing
+  records a failed `sync_runs` row and never stops the others.
+- **Rules.** Locked rows are never modified or deleted. Byes count as reaching earlier rounds.
+  Majors write one row per event for picked athletes once the event is complete. WTA and FedExCup
+  ranks are an in-season projection onto the final-rank band; an admin confirms the true final
+  rank by locking it. A fact with no matching rule code fails that sport loudly.
+- **After a change** sync upserts today's `standings_snapshots` and calls `revalidateLeague()`.
+- **Admin.** `/admin/results` shows sync health and a "Sync now" button per sport; each sport page
+  lists the picks' results to add, edit, delete, lock or unlock. Rows added by hand are locked by
+  default, otherwise the next sync would overwrite them.
+
+### Cron setup (one time per Supabase project)
+
+The migration contains no secret. In the Supabase SQL editor run once, using the same value as
+`CRON_SECRET` in Vercel:
+
+```sql
+select vault.create_secret('<the CRON_SECRET value>', 'cron_secret');
+```
+
+Until then the job fires and gets a harmless 401. Check runs with
+`select * from cron.job_run_details order by start_time desc limit 5;` and the `sync_runs` table.
+Locally, test with `curl -X POST -H "Authorization: Bearer $CRON_SECRET" "http://localhost:3000/api/cron/sync?sport=nfl"`.
 
 ## Scripts
 

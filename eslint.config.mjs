@@ -94,7 +94,15 @@ export default defineConfig([
   },
   {
     files: ["src/**/*.{ts,tsx}"],
-    ignores: ["**/*.test.ts", "src/app/layout.tsx"],
+    // Files rendered outside the CSS pipeline (OS manifest, generated images) can't use tokens.
+    ignores: [
+      "**/*.test.ts",
+      "src/app/layout.tsx",
+      "src/app/manifest.ts",
+      "src/app/icon.tsx",
+      "src/app/apple-icon.tsx",
+      "src/app/opengraph-image.tsx",
+    ],
     rules: {
       "no-restricted-syntax": [
         "error",

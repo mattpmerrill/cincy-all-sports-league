@@ -1,15 +1,40 @@
-import { Badge } from "@/ui/badge";
+import { getCurrentUser } from "@/features/auth/guards";
+import { LeaderboardHero } from "@/features/standings/components/leaderboard-hero";
+import { LeaderboardRow } from "@/features/standings/components/leaderboard-row";
+import { getLeaderboard } from "@/features/standings/standings.server";
+import { EmptyState, PageMain } from "@/ui/page";
 
-export default function HomePage() {
+export default async function LeaderboardPage() {
+  const [board, user] = await Promise.all([getLeaderboard(), getCurrentUser()]);
+
+  if (!board) {
+    return (
+      <PageMain>
+        <EmptyState
+          title="No season is set up yet"
+          description="Standings appear here once an admin activates a season."
+        />
+      </PageMain>
+    );
+  }
+
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-16 text-center">
-      <Badge variant="outline" className="border-heat text-heat">
-        Season 2026-27
-      </Badge>
-      <h1 className="text-5xl leading-none font-extrabold sm:text-7xl">
-        Cincy&apos;s <span className="text-brand">All-Sports</span> League
-      </h1>
-      <p className="text-lg text-text-muted">Leaderboard coming soon</p>
-    </main>
+    <PageMain
+      width="wide"
+      className="lg:grid lg:grid-cols-[20rem_minmax(0,1fr)] lg:items-start lg:gap-8"
+    >
+      <LeaderboardHero board={board} now={new Date()} className="lg:sticky lg:top-20" />
+      <ol aria-label="Standings" className="flex flex-col gap-2.5">
+        {board.rows.map((row, index) => (
+          <LeaderboardRow
+            key={row.teamId}
+            row={row}
+            index={index}
+            maxSportPoints={board.maxSportPoints}
+            isMine={user !== null && row.owner?.id === user.id}
+          />
+        ))}
+      </ol>
+    </PageMain>
   );
 }
