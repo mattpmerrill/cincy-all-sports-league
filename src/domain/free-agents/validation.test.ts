@@ -96,9 +96,7 @@ describe("validateMove", () => {
 
   it("gives messages a person can read, with the sport named when it is locked", () => {
     const locked = validateMove({ ...base, sportStatuses: phases(["mlb"]) });
-    expect(!locked.ok && locked.error.message).toBe(
-      "The MLB season is over, so moves are closed.",
-    );
+    expect(!locked.ok && locked.error.message).toBe("The MLB season is over, so moves are closed.");
   });
 });
 

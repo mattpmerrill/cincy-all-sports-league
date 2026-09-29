@@ -90,10 +90,7 @@ export type ScoreUpdatePayload = { type: "score_update"; items: ScoreUpdateItem[
 export type MoversPayload = { type: "movers"; date: string | null; items: MoverItem[] };
 
 export type LeaguePayload =
-  | ScoreUpdatePayload
-  | MoversPayload
-  | TradePayload
-  | FreeAgentMovePayload;
+  ScoreUpdatePayload | MoversPayload | TradePayload | FreeAgentMovePayload;
 
 export type Message = {
   id: string;
