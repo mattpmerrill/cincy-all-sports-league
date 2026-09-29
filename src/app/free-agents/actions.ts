@@ -5,7 +5,8 @@ import { requireUser } from "@/features/auth/guards";
 import { getFreeAgentsService } from "@/features/free-agents/free-agents.server";
 import { makeMoveSchema } from "@/features/free-agents/schemas";
 import { getSyncService } from "@/features/sync/sync.server";
-import { formError, formSuccess, formText, zodFormError, type FormState } from "@/lib/form-state";
+import { formError, formSuccess, formText, type FormState } from "@/lib/form-state";
+import { withDeadline } from "@/lib/deadline";
 import { revalidateLeague } from "@/lib/league-cache";
 import { logger, newCorrelationId } from "@/lib/logger";
 
@@ -17,6 +18,15 @@ import { logger, newCorrelationId } from "@/lib/logger";
 //   sport              the sport code ("mlb", "nba", ...)
 //   dropParticipantId  the participant being dropped (a staleness check; SQL uses the current pick)
 //   addParticipantId   the free agent being added
+
+/**
+ * The whole ESPN refresh gets this long, however many attempts it makes: a person is waiting, and
+ * a move that cannot be priced in time is refused (`facts_unavailable`) rather than left hanging.
+ */
+const REFRESH_DEADLINE_MS = 20_000;
+
+/** Shown when the form itself is malformed: its fields are hidden, so there is nothing to point at. */
+const BAD_REQUEST = "Something looks off with that request. Refresh the page and try again.";
 
 /**
  * A move changes picks and banked points, so the cached league read goes, and so does every page
@@ -45,19 +55,28 @@ export async function makeMoveAction(_prev: FormState, formData: FormData): Prom
     dropParticipantId: formText(formData, "dropParticipantId"),
     addParticipantId: formText(formData, "addParticipantId"),
   });
-  if (!parsed.success) return zodFormError(parsed.error);
+  if (!parsed.success) {
+    // Every schema message is ours; a raw Zod default ("Invalid input...") would be a leak.
+    const message = parsed.error.issues[0]?.message;
+    return formError(message && !message.startsWith("Invalid") ? message : BAD_REQUEST);
+  }
   const { sport, dropParticipantId, addParticipantId } = parsed.data;
 
   try {
     const service = await getFreeAgentsService({
       // A person is waiting on this response, so ESPN gets a short leash. The sync service (and its
       // secret-key client) is only built if the service gets as far as needing fresh facts.
-      refreshFacts: (moveSport, participantIds) =>
-        getSyncService({ espn: { timeoutMs: 5000, maxAttempts: 2 } }).refreshParticipants({
-          sport: moveSport,
-          participantIds,
-          now: new Date(),
-        }),
+      refreshFacts: async (moveSport, participantIds) => {
+        const refreshed = await withDeadline(
+          getSyncService({ espn: { timeoutMs: 5000, maxAttempts: 2 } }).refreshParticipants({
+            sport: moveSport,
+            participantIds,
+            now: new Date(),
+          }),
+          REFRESH_DEADLINE_MS,
+        );
+        return refreshed.ok ? refreshed.value : refreshed;
+      },
     });
     const result = await service.makeMove(user.value, {
       sport,
