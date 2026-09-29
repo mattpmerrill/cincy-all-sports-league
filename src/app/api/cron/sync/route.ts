@@ -3,7 +3,7 @@ import { z } from "zod";
 import { SPORT_CODES } from "@/domain/sports/sports";
 import { serverEnv } from "@/lib/env.server";
 import { logger, newCorrelationId } from "@/lib/logger";
-import { isAuthorizedCronRequest } from "@/features/sync/cron-auth";
+import { isAuthorizedCronRequest } from "@/lib/cron-auth";
 import { getSyncService } from "@/features/sync/sync.server";
 
 // Hobby's ceiling. A full all-sports run measured well under this (see README, "Score sync").

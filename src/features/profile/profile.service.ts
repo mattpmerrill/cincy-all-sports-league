@@ -4,7 +4,12 @@ import type { Actor } from "@/domain/membership/membership";
 
 export type ProfileService = ReturnType<typeof createProfileService>;
 
-export function createProfileService(profiles: Pick<ProfilesRepository, "updateDisplayName">) {
+export function createProfileService(
+  profiles: Pick<
+    ProfilesRepository,
+    "updateDisplayName" | "getWeeklyEmailOptIn" | "setWeeklyEmailOptIn"
+  >,
+) {
   return {
     /** A member edits only their own name; the actor's id is the target, never a parameter. */
     async updateDisplayName(
@@ -13,6 +18,20 @@ export function createProfileService(profiles: Pick<ProfilesRepository, "updateD
     ): Promise<Result<Profile, AppError<"not_found">>> {
       const updated = await profiles.updateDisplayName(actor.id, displayName);
       return updated ? ok(updated) : err("not_found", "We couldn't find your profile.");
+    },
+
+    /** True when the member gets the Monday digest. A missing profile reads as opted in (the default). */
+    async getWeeklyEmail(actor: Actor): Promise<boolean> {
+      return (await profiles.getWeeklyEmailOptIn(actor.id)) ?? true;
+    },
+
+    /** Own row only: the actor's id is the target, and RLS refuses anything else. */
+    async setWeeklyEmail(
+      actor: Actor,
+      optIn: boolean,
+    ): Promise<Result<{ optedIn: boolean }, AppError<"not_found">>> {
+      const updated = await profiles.setWeeklyEmailOptIn(actor.id, optIn);
+      return updated ? ok({ optedIn: optIn }) : err("not_found", "We couldn't find your profile.");
     },
   };
 }

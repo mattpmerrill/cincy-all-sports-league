@@ -5,7 +5,7 @@ import { requireUser } from "@/features/auth/guards";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { claimTeamSchema } from "@/features/claims/schemas";
 import { getProfileService } from "@/features/profile/profile.server";
-import { updateDisplayNameSchema } from "@/features/profile/schemas";
+import { updateDisplayNameSchema, weeklyEmailSchema } from "@/features/profile/schemas";
 import {
   echoFields,
   formError,
@@ -50,4 +50,21 @@ export async function claimTeamAction(_prev: FormState, formData: FormData): Pro
   revalidatePath("/me");
   if (!result.ok) return formError(result.error.message);
   return formSuccess("Request sent. An admin will review it soon.");
+}
+
+export async function setWeeklyEmailAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser();
+  if (!user.ok) return formError(user.error.message);
+
+  const parsed = weeklyEmailSchema.safeParse({ optIn: formText(formData, "optIn") });
+  if (!parsed.success) return zodFormError(parsed.error);
+
+  const optIn = parsed.data.optIn === "true";
+  const result = await (await getProfileService()).setWeeklyEmail(user.value, optIn);
+  if (!result.ok) return formError(result.error.message);
+  revalidatePath("/me");
+  return formSuccess(optIn ? "Weekly email is on." : "Weekly email is off.");
 }

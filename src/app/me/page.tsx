@@ -5,18 +5,23 @@ import { requireUserOrRedirect } from "@/features/auth/guards";
 import { ClaimTeamPanel } from "@/features/claims/components/claim-team-panel";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { DisplayNameForm } from "@/features/profile/components/display-name-form";
+import { WeeklyEmailForm } from "@/features/profile/components/weekly-email-form";
+import { getProfileService } from "@/features/profile/profile.server";
 import { isAdminRole } from "@/domain/membership/membership";
 import { Badge } from "@/ui/badge";
 import { PageHeader, PageMain, PageSection } from "@/ui/page";
 import { SubmitButton } from "@/ui/submit-button";
 import { UserAvatar } from "@/ui/user-avatar";
-import { claimTeamAction, updateDisplayNameAction } from "./actions";
+import { claimTeamAction, setWeeklyEmailAction, updateDisplayNameAction } from "./actions";
 
 export const metadata: Metadata = { title: "Your profile" };
 
 export default async function MePage() {
   const user = await requireUserOrRedirect("/me");
-  const { state, claimable } = await (await getClaimsService()).getMyClaims(user.id);
+  const [{ state, claimable }, weeklyEmail] = await Promise.all([
+    getClaimsService().then((service) => service.getMyClaims(user.id)),
+    getProfileService().then((service) => service.getWeeklyEmail(user)),
+  ]);
 
   return (
     <PageMain>
@@ -57,6 +62,13 @@ export default async function MePage() {
 
       <PageSection title="Profile">
         <DisplayNameForm displayName={user.displayName} action={updateDisplayNameAction} />
+      </PageSection>
+
+      <PageSection
+        title="Weekly email"
+        description="Standings and the biggest movers, every Monday morning."
+      >
+        <WeeklyEmailForm optedIn={weeklyEmail} action={setWeeklyEmailAction} />
       </PageSection>
     </PageMain>
   );

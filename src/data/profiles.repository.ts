@@ -65,6 +65,31 @@ export function createProfilesRepository(db: DbClient) {
       return data ? toProfile(data) : null;
     },
 
+    async getWeeklyEmailOptIn(id: string): Promise<boolean | null> {
+      const { data, error } = await db
+        .from("profiles")
+        .select("weekly_email_opt_in")
+        .eq("id", id)
+        .maybeSingle();
+      if (error) throw error;
+      return data ? data.weekly_email_opt_in : null;
+    },
+
+    /**
+     * Touches only this one column of this one row. False when no row matched (missing profile,
+     * or RLS refused because the caller is not that user).
+     */
+    async setWeeklyEmailOptIn(id: string, optIn: boolean): Promise<boolean> {
+      const { data, error } = await db
+        .from("profiles")
+        .update({ weekly_email_opt_in: optIn })
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
+      if (error) throw error;
+      return data !== null;
+    },
+
     /** Returns null when nothing changed: the target is missing or RLS/the role trigger refused. */
     async setRole(id: string, role: UserRole): Promise<Profile | null> {
       const { data, error } = await db

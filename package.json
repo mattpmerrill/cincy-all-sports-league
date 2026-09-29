@@ -21,6 +21,7 @@
     "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts"
   },
   "dependencies": {
+    "@react-email/components": "^1.0.12",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.2",
     "class-variance-authority": "^0.7.1",
