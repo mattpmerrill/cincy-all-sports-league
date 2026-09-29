@@ -6,6 +6,7 @@ import { AuthDivider } from "@/features/auth/components/auth-divider";
 import { GoogleButton } from "@/features/auth/components/google-button";
 import { SignUpForm } from "@/features/auth/components/signup-form";
 import { getCurrentUser } from "@/features/auth/guards";
+import { LegalConsent } from "@/features/auth/components/legal-consent";
 import { safeNextPath } from "@/features/auth/safe-next";
 
 export const metadata: Metadata = { title: "Create account" };
@@ -35,6 +36,7 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
       <GoogleButton next={next} label="Sign up with Google" />
       <AuthDivider />
       <SignUpForm next={next} />
+      <LegalConsent />
     </AuthCard>
   );
 }

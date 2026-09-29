@@ -18,6 +18,14 @@ describe("parsePublicEnv", () => {
     expect(parsePublicEnv(valid).NEXT_PUBLIC_SITE_URL).toBe("http://localhost:3000");
   });
 
+  it("omits the Google verification token when unset and keeps it when present", () => {
+    expect(parsePublicEnv(valid).NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION).toBeUndefined();
+    expect(
+      parsePublicEnv({ ...valid, NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: "test123" })
+        .NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    ).toBe("test123");
+  });
+
   it("names the bad variables without echoing their values", () => {
     const attempt = () =>
       parsePublicEnv({ ...valid, NEXT_PUBLIC_SUPABASE_URL: "not-a-url-secret" });

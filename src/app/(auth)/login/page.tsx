@@ -6,6 +6,7 @@ import { AuthDivider } from "@/features/auth/components/auth-divider";
 import { GoogleButton } from "@/features/auth/components/google-button";
 import { LoginForm } from "@/features/auth/components/login-form";
 import { getCurrentUser } from "@/features/auth/guards";
+import { LegalConsent } from "@/features/auth/components/legal-consent";
 import { safeNextPath } from "@/features/auth/safe-next";
 import { Alert } from "@/ui/alert";
 
@@ -43,6 +44,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <GoogleButton next={next} label="Continue with Google" />
       <AuthDivider />
       <LoginForm next={next} />
+      <LegalConsent />
     </AuthCard>
   );
 }

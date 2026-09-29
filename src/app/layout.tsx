@@ -13,13 +13,18 @@ const display = Barlow_Condensed({
   weight: ["600", "700", "800"],
 });
 
+const env = publicEnv();
+
 export const metadata: Metadata = {
-  metadataBase: new URL(publicEnv().NEXT_PUBLIC_SITE_URL),
+  metadataBase: new URL(env.NEXT_PUBLIC_SITE_URL),
   title: { default: "Cincy's All-Sports League", template: "%s | Cincy's All-Sports League" },
   applicationName: "Cincy's All-Sports League",
   appleWebApp: { capable: true, title: "Cincy's League", statusBarStyle: "black-translucent" },
   description:
     "Live leaderboard for a 20-team, 11-sport family fantasy league, scored automatically from ESPN data.",
+  ...(env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION } }
+    : {}),
 };
 
 export const viewport: Viewport = {

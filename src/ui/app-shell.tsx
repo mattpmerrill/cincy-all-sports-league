@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLinks } from "./nav-links";
+import { SiteFooter } from "./site-footer";
 import { Wordmark } from "./wordmark";
 
 /** App chrome: sticky header with top nav from md up, bottom tab bar on phones (safe-area aware). */
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex flex-1 flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
+        <SiteFooter />
       </div>
 
       <nav
