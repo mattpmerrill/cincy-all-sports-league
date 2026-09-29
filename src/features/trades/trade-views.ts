@@ -74,6 +74,11 @@ export type TradesArea = {
   block: ListingCard[];
   /** Completed trades, most recent first. */
   recent: ListingCard[];
+  /**
+   * Accepted offers from the last week that this member was part of (as owner or offerer). The
+   * page celebrates the ones this browser hasn't seen yet.
+   */
+  celebrate: string[];
 };
 
 /** One sport of a proposed trade from the viewer's side. */
@@ -122,6 +127,8 @@ export type ListingView = {
   offerChoices: TradeChoice[];
   /** Why a bidder cannot offer right now (closed, or an offer is already waiting). */
   offerBlockedReason: string | null;
+  /** The accepted offer, when the viewer was one of the two teams in the trade (else empty). */
+  celebrate: string[];
 };
 
 // ===== areas =====
@@ -193,12 +200,14 @@ export function buildTradesArea(input: {
         .filter((o) => o.status === "pending"),
     }));
 
+  const myListings = myCards.filter(
+    (c) => c.status === "open" || isRecent(endedAt(c.listing, c.status), now),
+  );
+
   return {
     myTeam,
     waitingOnYou,
-    myListings: myCards.filter(
-      (c) => c.status === "open" || isRecent(endedAt(c.listing, c.status), now),
-    ),
+    myListings,
     myOffers: input.myOffers.flatMap((offer) => {
       const status = effectiveOfferStatus(offer, offer.listing, now);
       const listingStatus = effectiveListingStatus(offer.listing, now);
@@ -219,6 +228,14 @@ export function buildTradesArea(input: {
     }),
     block: input.open.map(card).filter((c) => c.status === "open"),
     recent: input.completed.map(card),
+    celebrate: [
+      ...myListings.flatMap((c) =>
+        c.status === "accepted" && c.listing.acceptedOfferId ? [c.listing.acceptedOfferId] : [],
+      ),
+      ...input.myOffers.flatMap((o) =>
+        o.status === "accepted" && isRecent(o.resolvedAt, now) ? [o.id] : [],
+      ),
+    ],
   };
 }
 
@@ -349,5 +366,11 @@ export function buildListingView(input: {
     canCancel: role === "owner" && status === "open",
     offerChoices: role === "bidder" ? input.choices.choices : [],
     offerBlockedReason: role === "bidder" ? input.choices.blockedReason : null,
+    celebrate:
+      status === "accepted" &&
+      listing.acceptedOfferId &&
+      (role === "owner" || offers.some((o) => o.isMine && o.offer.id === listing.acceptedOfferId))
+        ? [listing.acceptedOfferId]
+        : [],
   };
 }

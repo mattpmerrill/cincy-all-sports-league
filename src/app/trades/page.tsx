@@ -8,6 +8,7 @@ import {
   RecentTradeCard,
 } from "@/features/trades/components/listing-cards";
 import { OfferCard } from "@/features/trades/components/offer-card";
+import { CelebrateTrade } from "@/features/trades/components/trade-celebration";
 import { TradeFlash } from "@/features/trades/components/trade-flash";
 import { TradesJoinPrompt } from "@/features/trades/components/trades-join-prompt";
 import { KIND_LABEL } from "@/features/trades/components/trade-parts";
@@ -33,6 +34,7 @@ export default async function TradesPage() {
 
   return (
     <PageMain width="wide">
+      <CelebrateTrade offerIds={area.celebrate} />
       <PageHeader
         title="Trades"
         description="Put players on the block, make offers and swap picks, one sport at a time."
@@ -57,13 +59,15 @@ export default async function TradesPage() {
             title="Waiting on you"
             description="Offers on your players. Accepting swaps them right away and can't be undone."
           >
-            {area.waitingOnYou.length === 0 ? (
-              <EmptyState
-                title="Nothing waiting"
-                description="When someone offers a trade for your players, it shows up here."
-              />
-            ) : (
-              <TradeFlash>
+            {/* The flash wraps both states: answering the last offer empties the list, and the
+                outcome message has to outlive it. */}
+            <TradeFlash>
+              {area.waitingOnYou.length === 0 ? (
+                <EmptyState
+                  title="Nothing waiting"
+                  description="When someone offers a trade for your players, it shows up here."
+                />
+              ) : (
                 <div className="flex flex-col gap-6">
                   {area.waitingOnYou.map(({ listing: card, offers }) => (
                     <div key={card.listing.id} className="flex flex-col gap-2">
@@ -96,8 +100,8 @@ export default async function TradesPage() {
                     </div>
                   ))}
                 </div>
-              </TradeFlash>
-            )}
+              )}
+            </TradeFlash>
           </PageSection>
 
           <PageSection

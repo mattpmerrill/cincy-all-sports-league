@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/guards";
 import { ListingHero } from "@/features/trades/components/listing-hero";
 import { OfferCard } from "@/features/trades/components/offer-card";
+import { CelebrateTrade } from "@/features/trades/components/trade-celebration";
 import { OfferPanel } from "@/features/trades/components/trade-forms";
 import { TradesJoinPrompt } from "@/features/trades/components/trades-join-prompt";
 import { listingParamSchema } from "@/features/trades/schemas";
@@ -38,6 +39,7 @@ export default async function TradeListingPage({ params }: PageProps<"/trades/[i
 
   return (
     <PageMain>
+      <CelebrateTrade offerIds={view.celebrate} />
       <ListingHero view={view} cancel={cancelListingAction} />
 
       {view.role === "signed_out" ? (

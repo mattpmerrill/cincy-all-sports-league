@@ -23,7 +23,7 @@ export const KIND_LABEL: Record<ListingKind, string> = {
 
 const PILL_TONE = {
   live: { text: "text-brand-bright", dot: "bg-brand" },
-  done: { text: "text-gold", dot: "bg-gold" },
+  done: { text: "text-success", dot: "bg-success" },
   quiet: { text: "text-text-muted", dot: "bg-text-muted" },
 } as const;
 

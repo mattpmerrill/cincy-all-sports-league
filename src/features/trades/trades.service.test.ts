@@ -574,6 +574,40 @@ describe("getTradesArea", () => {
     expect(area.recent.map((c) => c.status)).toEqual(["accepted"]);
   });
 
+  it("celebrates recent trades the member was part of, on either side, and nothing older", async () => {
+    const { service } = setup({
+      mine: [
+        listingOf({
+          id: "l-sold",
+          ownerTeam: teamRef("me"),
+          status: "accepted",
+          acceptedOfferId: "o-bought",
+          resolvedAt: AN_HOUR_AGO,
+        }),
+        listingOf({
+          id: "l-long-ago",
+          ownerTeam: teamRef("me"),
+          status: "accepted",
+          acceptedOfferId: "o-old",
+          resolvedAt: "2026-06-01T00:00:00Z",
+        }),
+      ],
+      offersBy: [
+        {
+          offer: offerOf("o-mine", "me", ["nfl"], { status: "accepted", resolvedAt: AN_HOUR_AGO }),
+          listing: listingOf({ id: "l-theirs", status: "accepted", acceptedOfferId: "o-mine" }),
+        },
+        {
+          offer: offerOf("o-lost", "me", ["nfl"], { status: "rejected", resolvedAt: AN_HOUR_AGO }),
+          listing: listingOf({ id: "l-other" }),
+        },
+      ],
+    });
+    const area = await service.getTradesArea({ id: "u-me" });
+    expect(area.celebrate).toEqual(["o-bought", "o-mine"]);
+    expect((await service.getTradesArea(null)).celebrate).toEqual([]);
+  });
+
   it("shows a signed-out visitor only the block and recent trades", async () => {
     const { service } = setup({
       open: [listingOf()],
@@ -616,6 +650,25 @@ describe("getListingView", () => {
     ]);
     expect(view?.offerChoices).toEqual([]);
     expect(view?.offerBlockedReason).toMatch(/already have an offer/);
+  });
+
+  it("celebrates an accepted trade for its two teams only", async () => {
+    const done = listingOf({
+      status: "accepted",
+      acceptedOfferId: "o-me",
+      resolvedAt: AN_HOUR_AGO,
+      offers: [
+        offerOf("o-me", "me", ["nfl"], { status: "accepted", resolvedAt: AN_HOUR_AGO }),
+        offerOf("o-papie", "papie", ["nba"], { status: "rejected", resolvedAt: AN_HOUR_AGO }),
+      ],
+    });
+    const { service } = setup({ listings: [done] });
+    expect((await service.getListingView("l1", { id: "u-coop" }))?.celebrate).toEqual(["o-me"]);
+    expect((await service.getListingView("l1", { id: "u-me" }))?.celebrate).toEqual(["o-me"]);
+    expect((await service.getListingView("l1", { id: "u-papie" }))?.celebrate).toEqual([]);
+    expect((await service.getListingView("l1", null))?.celebrate).toEqual([]);
+    const open = setup({ listings: [listingOf()] }).service;
+    expect((await open.getListingView("l1", { id: "u-coop" }))?.celebrate).toEqual([]);
   });
 
   it("puts the viewer's own offer first and keeps the rest oldest first", async () => {

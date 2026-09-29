@@ -7,9 +7,16 @@ import { logger } from "@/lib/logger";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 const PendingTradeCount = createContext(0);
+const RefreshPendingTrades = createContext<() => void>(() => undefined);
 
 /** How many offers are waiting on the signed-in member; 0 when signed out or outside the provider. */
 export const usePendingTradeCount = () => useContext(PendingTradeCount);
+
+/**
+ * Recount now. Trade buttons call it after their own action succeeds: a Server Action that stays
+ * on the same page changes neither the pathname nor (reliably, or soon enough) a realtime event.
+ */
+export const useRefreshPendingTrades = () => useContext(RefreshPendingTrades);
 
 /**
  * Owns the one fetch loop and the one realtime channel behind every trades badge, mounted once
@@ -22,6 +29,8 @@ export function TradesBadgeProvider({ children }: { children: ReactNode }) {
   const [count, setCount] = useState(0);
   // Realtime and auth callbacks outlive renders; they refetch through this ref.
   const refresh = useRef<() => Promise<void>>(async () => undefined);
+  // Stable across renders, so consumers can hold it without re-rendering on every count change.
+  const [requestRefresh] = useState(() => () => void refresh.current());
 
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
@@ -78,5 +87,9 @@ export function TradesBadgeProvider({ children }: { children: ReactNode }) {
     void refresh.current();
   }, [pathname]);
 
-  return <PendingTradeCount value={count}>{children}</PendingTradeCount>;
+  return (
+    <RefreshPendingTrades value={requestRefresh}>
+      <PendingTradeCount value={count}>{children}</PendingTradeCount>
+    </RefreshPendingTrades>
+  );
 }

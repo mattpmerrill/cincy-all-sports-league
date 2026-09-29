@@ -5,7 +5,9 @@ import { idleFormState, type FormState } from "@/lib/form-state";
 import { Button } from "@/ui/button";
 import { FormMessage } from "@/ui/form-message";
 import { SubmitButton } from "@/ui/submit-button";
+import { celebrateTrade } from "./trade-celebration";
 import { useFlash } from "./trade-flash";
+import { useRefreshPendingTrades } from "./trades-badge-provider";
 
 /** A Server Action passed down by the route, so this feature never imports `app`. */
 export type TradeAction = (prev: FormState, formData: FormData) => Promise<FormState>;
@@ -34,15 +36,22 @@ export function OfferDecisionActions({
   reject: TradeAction;
 }) {
   const flash = useFlash();
+  const refreshBadge = useRefreshPendingTrades();
   // Inside a list that drops the offer once it is decided, report to the list instead of here.
   const report =
     (action: TradeAction): TradeAction =>
     async (prev, formData) => {
       const result = await action(prev, formData);
       flash?.(result);
+      if (result.status === "success") refreshBadge();
       return result;
     };
-  const [acceptState, acceptAction] = useActionState(report(accept), idleFormState);
+  const acceptAndCelebrate: TradeAction = async (prev, formData) => {
+    const result = await report(accept)(prev, formData);
+    if (result.status === "success") celebrateTrade(offerId);
+    return result;
+  };
+  const [acceptState, acceptAction] = useActionState(acceptAndCelebrate, idleFormState);
   const [rejectState, rejectAction] = useActionState(report(reject), idleFormState);
   const [confirming, setConfirming] = useState(false);
   const message = flash ? idleFormState : latest(acceptState, rejectState);
@@ -139,7 +148,12 @@ export function CancelListingButton({
   canCancel: boolean;
   action: TradeAction;
 }) {
-  const [state, formAction] = useActionState(action, idleFormState);
+  const refreshBadge = useRefreshPendingTrades();
+  const [state, formAction] = useActionState<FormState, FormData>(async (prev, formData) => {
+    const result = await action(prev, formData);
+    if (result.status === "success") refreshBadge();
+    return result;
+  }, idleFormState);
   const [confirming, setConfirming] = useState(false);
   return (
     <div className="flex flex-col gap-2 empty:hidden">

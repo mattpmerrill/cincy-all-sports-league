@@ -179,5 +179,5 @@ export async function acceptOfferAction(_prev: FormState, formData: FormData): P
   revalidatePath("/");
   revalidatePath("/teams/[slug]", "page");
   revalidatePath("/sports/[code]", "page");
-  return formSuccess("Trade done. The players have changed teams.");
+  return formSuccess("Trade done! The players have changed teams.");
 }
