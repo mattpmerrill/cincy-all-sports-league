@@ -11,7 +11,13 @@ const data: LeagueData = {
     playoffScoringMode: "highest_only",
   },
   sports: [
-    { code: "nfl", startsOn: "2026-09-07", majorPointsCap: null, allowsDuplicatePicks: false },
+    {
+      code: "nfl",
+      startsOn: "2026-09-07",
+      endsOn: null,
+      majorPointsCap: null,
+      allowsDuplicatePicks: false,
+    },
   ],
   rules: [
     {

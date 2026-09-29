@@ -3,7 +3,7 @@
     "name": "2026-27",
     "starts_on": "2026-08-27",
     "ends_on": "2027-11-15",
-    "playoff_scoring_mode": "cumulative",
+    "playoff_scoring_mode": "highest_only",
     "is_active": true
   },
   "sports": [
@@ -1488,6 +1488,7 @@
       "allows_duplicate_picks": false,
       "season": {
         "starts_on": "2027-02-01",
+        "ends_on": "2027-05-31",
         "espn_season": 2027,
         "major_points_cap": null
       },
@@ -1531,14 +1532,14 @@
           "code": "win",
           "label": "Regular-season win",
           "kind": "per_win",
-          "points": 0.7,
+          "points": 3.6,
           "is_championship": false
         },
         {
           "code": "tie",
           "label": "Regular-season draw (one-third of a win)",
           "kind": "per_tie",
-          "points": 0.2333,
+          "points": 1.2,
           "is_championship": false
         }
       ],

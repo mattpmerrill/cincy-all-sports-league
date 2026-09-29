@@ -2,7 +2,7 @@
 -- exercised as the table owner so RLS is out of the picture. Access rules live in 02/03.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(22);
 
 -- Self-contained fixtures: nothing here depends on the seed data.
 insert into public.seasons (id, name, starts_on, ends_on)
@@ -108,6 +108,16 @@ select throws_ok(
   $$insert into public.team_claims (fantasy_team_id, user_id, status, reviewed_at)
     values ('50000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'approved', now())$$,
   '23505', null, 'a user cannot have two approved claims');
+
+-- per-sport end date
+select throws_ok(
+  $$update public.season_sports set ends_on = '2029-12-31'
+    where sport_id = '20000000-0000-0000-0000-000000000001'$$,
+  '23514', null, 'a sport cannot end before it starts');
+select lives_ok(
+  $$update public.season_sports set ends_on = '2030-05-31'
+    where sport_id = '20000000-0000-0000-0000-000000000001'$$,
+  'a sport can end after it starts (and ends_on may stay null)');
 
 select * from finish();
 rollback;

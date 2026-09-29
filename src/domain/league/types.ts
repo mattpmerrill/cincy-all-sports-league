@@ -22,6 +22,8 @@ export type SportSeasonData = {
   code: SportCode;
   /** ISO date the sport's season begins. */
   startsOn: string;
+  /** ISO date the sport's scored window closes; null runs to the season's end. */
+  endsOn: string | null;
   majorPointsCap: number | null;
   allowsDuplicatePicks: boolean;
 };

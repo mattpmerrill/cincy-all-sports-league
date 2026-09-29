@@ -31,6 +31,7 @@ export function leagueData(opts: {
     sports: SPORT_CODES.map((code) => ({
       code,
       startsOn: opts.startsOn?.[code] ?? "2026-08-27",
+      endsOn: null,
       majorPointsCap: null,
       allowsDuplicatePicks: code === "wnba",
     })),

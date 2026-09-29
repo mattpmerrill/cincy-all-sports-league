@@ -427,6 +427,7 @@ export type Database = {
       }
       season_sports: {
         Row: {
+          ends_on: string | null
           espn_season: number
           major_points_cap: number | null
           season_id: string
@@ -434,6 +435,7 @@ export type Database = {
           starts_on: string
         }
         Insert: {
+          ends_on?: string | null
           espn_season: number
           major_points_cap?: number | null
           season_id: string
@@ -441,6 +443,7 @@ export type Database = {
           starts_on: string
         }
         Update: {
+          ends_on?: string | null
           espn_season?: number
           major_points_cap?: number | null
           season_id?: string

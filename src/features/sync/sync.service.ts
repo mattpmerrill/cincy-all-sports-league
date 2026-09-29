@@ -94,7 +94,7 @@ export function createSyncService(deps: SyncDeps) {
     const outside =
       today < target.startsOn
         ? "before_season_start"
-        : today > target.seasonEndsOn
+        : today > target.endsOn
           ? "after_season_end"
           : null;
     if (outside) {

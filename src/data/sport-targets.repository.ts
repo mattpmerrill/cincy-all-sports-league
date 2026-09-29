@@ -26,10 +26,11 @@ export type TargetParticipant = {
 /** One sport in the active season: its window, its rules and the participants somebody picked. */
 export type SportTarget = {
   seasonId: string;
-  seasonEndsOn: string;
   sportId: string;
   sport: SportCode;
   startsOn: string;
+  /** Last day sync runs for this sport: its own end date, else the season's. */
+  endsOn: string;
   espnSeason: number;
   rules: TargetRule[];
   participants: TargetParticipant[];
@@ -52,7 +53,7 @@ export function createSportTargetsRepository(db: DbClient) {
       const [seasonSports, rules, picks] = await Promise.all([
         db
           .from("season_sports")
-          .select("starts_on, espn_season, sports(id, code)")
+          .select("starts_on, ends_on, espn_season, sports(id, code)")
           .eq("season_id", season.id),
         fetchAllRows((from, to) =>
           db
@@ -99,10 +100,10 @@ export function createSportTargetsRepository(db: DbClient) {
         return [
           {
             seasonId: season.id,
-            seasonEndsOn: season.ends_on,
             sportId: sport.id,
             sport: sport.code,
             startsOn: row.starts_on,
+            endsOn: row.ends_on ?? season.ends_on,
             espnSeason: row.espn_season,
             rules: rules
               .filter((r) => r.sport_id === sport.id)

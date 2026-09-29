@@ -84,7 +84,7 @@ export function createLeagueRepository(db: DbClient) {
   async function listSeasonSports(seasonId: string): Promise<SportSeasonData[]> {
     const { data, error } = await db
       .from("season_sports")
-      .select("starts_on, major_points_cap, sports(code, allows_duplicate_picks)")
+      .select("starts_on, ends_on, major_points_cap, sports(code, allows_duplicate_picks)")
       .eq("season_id", seasonId);
     if (error) throw error;
     return data.flatMap((row) => {
@@ -94,6 +94,7 @@ export function createLeagueRepository(db: DbClient) {
         {
           code: sportCode(sport.code),
           startsOn: row.starts_on,
+          endsOn: row.ends_on,
           majorPointsCap: row.major_points_cap,
           allowsDuplicatePicks: sport.allows_duplicate_picks,
         },

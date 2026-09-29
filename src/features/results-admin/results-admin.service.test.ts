@@ -22,7 +22,7 @@ const rule = (id: string, kind: SportTarget["rules"][number]["kind"], extra = {}
 
 const target: SportTarget = {
   seasonId: "s",
-  seasonEndsOn: "2027-11-15",
+  endsOn: "2027-11-15",
   sportId: "sp",
   sport: "wta",
   startsOn: "2027-01-01",

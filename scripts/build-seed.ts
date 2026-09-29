@@ -42,6 +42,9 @@ function assertRosterIsValid(league: League) {
     if (SPORTS[sport.code].participantKind === "athlete" && sport.season.major_points_cap === null)
       fail(`${sport.code}: athlete sports need major_points_cap`);
 
+    if (sport.season.ends_on !== undefined && sport.season.ends_on <= sport.season.starts_on)
+      fail(`${sport.code}: ends_on must be after starts_on`);
+
     for (const rule of sport.rules) {
       const isBand = rule.kind === "final_rank_band";
       if (isBand !== (rule.rank_from !== undefined && rule.rank_to !== undefined))
@@ -97,15 +100,16 @@ function build(league: League): string {
   const seasonSportRows = league.sports.map((sp) => [
     str(sp.code),
     str(sp.season.starts_on),
+    str(sp.season.ends_on ?? null),
     String(sp.season.espn_season),
     num(sp.season.major_points_cap),
   ]);
   out.push(
-    "insert into public.season_sports (season_id, sport_id, starts_on, espn_season, major_points_cap)",
-    "select se.id, sp.id, v.starts_on::date, v.espn_season, v.cap::numeric",
+    "insert into public.season_sports (season_id, sport_id, starts_on, ends_on, espn_season, major_points_cap)",
+    "select se.id, sp.id, v.starts_on::date, v.ends_on::date, v.espn_season, v.cap::numeric",
     "from (values",
     values(seasonSportRows),
-    ") as v(code, starts_on, espn_season, cap)",
+    ") as v(code, starts_on, ends_on, espn_season, cap)",
     "join public.sports sp on sp.code = v.code",
     `join public.seasons se on se.name = ${str(s.name)}`,
     "on conflict do nothing;",

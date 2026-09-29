@@ -39,6 +39,8 @@ export const leagueSchema = z.object({
       allows_duplicate_picks: z.boolean(),
       season: z.object({
         starts_on: z.string().date(),
+        // Optional so most sports simply run to the season's end.
+        ends_on: z.string().date().optional(),
         espn_season: z.number().int(),
         major_points_cap: z.number().positive().nullable(),
       }),

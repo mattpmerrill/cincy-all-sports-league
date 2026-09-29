@@ -11,13 +11,13 @@ export function playoffNote(mode: PlayoffScoringMode): RuleNote {
       }
     : {
         title: "Best playoff round only",
-        body: "Only the deepest round a team reaches pays. A bye counts as reaching the round it skipped.",
+        body: "Only the deepest round a team reaches pays, so playoff points do not stack. The champion's 50 is the most a team can earn from the playoffs.",
       };
 }
 
 export const GAME_TIE_NOTES: RuleNote[] = [
   { title: "NFL ties", body: "A tie counts as half a win." },
-  { title: "MLS draws", body: "A draw counts as one-third of a win, matching the 3-1-0 table." },
+  { title: "MLS draws", body: "A draw is worth 1.2 points, a third of a win." },
 ];
 
 export const LEADERBOARD_TIE_NOTES: RuleNote[] = [

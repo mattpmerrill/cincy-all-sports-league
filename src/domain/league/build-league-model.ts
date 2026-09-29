@@ -92,7 +92,10 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
   const sports = Object.fromEntries(
     SPORT_CODES.map((code) => {
       const s = sportOf(code);
-      return [code, { ...s, status: seasonStatus(s.startsOn, today, championSports.has(code)) }];
+      return [
+        code,
+        { ...s, status: seasonStatus(s.startsOn, s.endsOn, today, championSports.has(code)) },
+      ];
     }),
   ) as Record<SportCode, SportInfo>;
 

@@ -13,7 +13,7 @@ const NOW = new Date("2026-09-28T16:00:00Z"); // 12:00 in Cincinnati, still 2026
 
 const target = (sport: SportTarget["sport"], over: Partial<SportTarget> = {}): SportTarget => ({
   seasonId: "season",
-  seasonEndsOn: "2027-11-15",
+  endsOn: "2027-11-15",
   sportId: `id-${sport}`,
   sport,
   startsOn: "2026-09-07",
@@ -53,7 +53,13 @@ const league: LeagueData = {
     playoffScoringMode: "cumulative",
   },
   sports: [
-    { code: "nfl", startsOn: "2026-09-07", majorPointsCap: null, allowsDuplicatePicks: false },
+    {
+      code: "nfl",
+      startsOn: "2026-09-07",
+      endsOn: null,
+      majorPointsCap: null,
+      allowsDuplicatePicks: false,
+    },
   ],
   rules: [
     {
@@ -271,10 +277,20 @@ describe("syncLeague", () => {
     expect(h.invalidate).not.toHaveBeenCalled();
   });
 
+  it("syncs a sport on its own last day, and skips it the day after", async () => {
+    const lastDay = harness({ targets: [target("nba", { endsOn: "2026-09-28" })] });
+    expect((await lastDay.service.syncLeague({ now: NOW })).sports[0]?.status).not.toBe("skipped");
+    const dayAfter = harness({ targets: [target("nba", { endsOn: "2026-09-27" })] });
+    expect((await dayAfter.service.syncLeague({ now: NOW })).sports[0]).toMatchObject({
+      status: "skipped",
+      code: "after_season_end",
+    });
+  });
+
   it("skips a sport outside its season window and notes it once per day", async () => {
     const targets = [
       target("nhl", { startsOn: "2026-09-29" }),
-      target("nba", { seasonEndsOn: "2026-09-27" }),
+      target("nba", { endsOn: "2026-09-27" }),
     ];
     const first = harness({ targets });
     const report = await first.service.syncLeague({ now: NOW });
@@ -366,7 +382,13 @@ describe("league posts", () => {
       ...league,
       sports: [
         ...league.sports,
-        { code: "nba", startsOn: "2026-09-07", majorPointsCap: null, allowsDuplicatePicks: false },
+        {
+          code: "nba",
+          startsOn: "2026-09-07",
+          endsOn: null,
+          majorPointsCap: null,
+          allowsDuplicatePicks: false,
+        },
       ],
       rules: [
         ...league.rules,
