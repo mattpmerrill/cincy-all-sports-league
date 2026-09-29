@@ -1,10 +1,10 @@
-import { TeamSkeleton } from "@/features/fantasy-teams/components/team-skeleton";
+import { PageLoader } from "@/ui/page-loader";
 import { PageMain } from "@/ui/page";
 
 export default function Loading() {
   return (
     <PageMain width="wide">
-      <TeamSkeleton />
+      <PageLoader label="Loading team" />
     </PageMain>
   );
 }
