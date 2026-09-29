@@ -1,0 +1,20 @@
+import type { Sport } from "@/domain/sports/sports";
+
+const SITE = "https://site.api.espn.com/apis/site/v2/sports";
+// Standings live under /apis/v2, not /apis/site/v2 (the site variant returns an empty shell).
+const SITE_V2 = "https://site.api.espn.com/apis/v2/sports";
+const CORE = "https://sports.core.api.espn.com/v2/sports";
+
+const path = (s: Pick<Sport, "espnSport" | "espnLeague">) => `${s.espnSport}/${s.espnLeague}`;
+
+export const espnUrls = {
+  standings: (s: Sport, season: number) => `${SITE_V2}/${path(s)}/standings?season=${season}`,
+  teamSchedule: (s: Sport, teamId: string, season: number) =>
+    `${SITE}/${path(s)}/teams/${encodeURIComponent(teamId)}/schedule?season=${season}`,
+  /** `query` is ESPN's own filter string, e.g. `dates=202604` (a month) or `dates=20260420` (a day). */
+  scoreboard: (s: Sport, query: string) => `${SITE}/${path(s)}/scoreboard?${query}&limit=1000`,
+  wtaRankings: (s: Sport) => `${SITE}/${path(s)}/rankings`,
+  /** Overall (id 0) FedExCup table for the season. */
+  fedexCupStandings: (s: Sport, season: number) =>
+    `${CORE}/${s.espnSport}/leagues/${s.espnLeague}/seasons/${season}/types/2/standings/0`,
+};

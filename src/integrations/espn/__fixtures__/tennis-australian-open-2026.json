@@ -1,0 +1,614 @@
+{
+  "events": [
+    {
+      "name": "Australian Open",
+      "major": true,
+      "status": {
+        "type": {
+          "completed": true
+        }
+      },
+      "groupings": [
+        {
+          "grouping": {
+            "slug": "womens-singles"
+          },
+          "competitions": [
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "3792",
+                  "winner": false
+                },
+                {
+                  "id": "11219",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "2971",
+                  "winner": false
+                },
+                {
+                  "id": "3038",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "1802",
+                  "winner": true
+                },
+                {
+                  "id": "5604",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "3913",
+                  "winner": false
+                },
+                {
+                  "id": "3626",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "1649",
+                  "winner": false
+                },
+                {
+                  "id": "3039",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "2615",
+                  "winner": false
+                },
+                {
+                  "id": "14311",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "8017",
+                  "winner": false
+                },
+                {
+                  "id": "1797",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "9820",
+                  "winner": true
+                },
+                {
+                  "id": "2748",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "1556",
+                  "winner": true
+                },
+                {
+                  "id": "740",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "6571",
+                  "winner": false
+                },
+                {
+                  "id": "2113",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "3221",
+                  "winner": true
+                },
+                {
+                  "id": "5848",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "3387",
+                  "winner": true
+                },
+                {
+                  "id": "6970",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "7804",
+                  "winner": false
+                },
+                {
+                  "id": "2221",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "3730",
+                  "winner": true
+                },
+                {
+                  "id": "2977",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "2584",
+                  "winner": true
+                },
+                {
+                  "id": "2789",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 3"
+              },
+              "competitors": [
+                {
+                  "id": "8419",
+                  "winner": false
+                },
+                {
+                  "id": "3126",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "11219",
+                  "winner": false
+                },
+                {
+                  "id": "3038",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "14311",
+                  "winner": true
+                },
+                {
+                  "id": "1802",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "3039",
+                  "winner": false
+                },
+                {
+                  "id": "3626",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "9820",
+                  "winner": false
+                },
+                {
+                  "id": "1797",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "1556",
+                  "winner": false
+                },
+                {
+                  "id": "2113",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "3221",
+                  "winner": true
+                },
+                {
+                  "id": "3387",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "2221",
+                  "winner": false
+                },
+                {
+                  "id": "3126",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 4"
+              },
+              "competitors": [
+                {
+                  "id": "3730",
+                  "winner": true
+                },
+                {
+                  "id": "2584",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Quarterfinal"
+              },
+              "competitors": [
+                {
+                  "id": "14311",
+                  "winner": false
+                },
+                {
+                  "id": "3038",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Quarterfinal"
+              },
+              "competitors": [
+                {
+                  "id": "1797",
+                  "winner": true
+                },
+                {
+                  "id": "3626",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Quarterfinal"
+              },
+              "competitors": [
+                {
+                  "id": "3730",
+                  "winner": false
+                },
+                {
+                  "id": "3126",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Quarterfinal"
+              },
+              "competitors": [
+                {
+                  "id": "3221",
+                  "winner": false
+                },
+                {
+                  "id": "2113",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Semifinal"
+              },
+              "competitors": [
+                {
+                  "id": "1797",
+                  "winner": false
+                },
+                {
+                  "id": "3038",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Semifinal"
+              },
+              "competitors": [
+                {
+                  "id": "3126",
+                  "winner": true
+                },
+                {
+                  "id": "2113",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Final"
+              },
+              "competitors": [
+                {
+                  "id": "3126",
+                  "winner": true
+                },
+                {
+                  "id": "3038",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 2"
+              },
+              "competitors": [
+                {
+                  "id": "2734",
+                  "winner": false
+                },
+                {
+                  "id": "5604",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 2"
+              },
+              "competitors": [
+                {
+                  "id": "7927",
+                  "winner": false
+                },
+                {
+                  "id": "1797",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 2"
+              },
+              "competitors": [
+                {
+                  "id": "8017",
+                  "winner": true
+                },
+                {
+                  "id": "6708",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 1"
+              },
+              "competitors": [
+                {
+                  "id": "2028",
+                  "winner": false
+                },
+                {
+                  "id": "1802",
+                  "winner": true
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Round 1"
+              },
+              "competitors": [
+                {
+                  "id": "2748",
+                  "winner": true
+                },
+                {
+                  "id": "3142",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Qualifying 1st Round"
+              },
+              "competitors": [
+                {
+                  "id": "13479",
+                  "winner": true
+                },
+                {
+                  "id": "5168",
+                  "winner": false
+                }
+              ]
+            },
+            {
+              "round": {
+                "displayName": "Qualifying 1st Round"
+              },
+              "competitors": [
+                {
+                  "id": "3784",
+                  "winner": false
+                },
+                {
+                  "id": "4666",
+                  "winner": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "grouping": {
+            "slug": "mens-singles"
+          },
+          "competitions": [
+            {
+              "round": {
+                "displayName": "Final"
+              },
+              "competitors": [
+                {
+                  "id": "296",
+                  "winner": false
+                },
+                {
+                  "id": "3782",
+                  "winner": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

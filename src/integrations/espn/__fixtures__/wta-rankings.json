@@ -1,0 +1,26 @@
+{
+  "rankings": [
+    {
+      "ranks": [
+        {
+          "current": 1,
+          "athlete": {
+            "id": "3126"
+          }
+        },
+        {
+          "current": 2,
+          "athlete": {
+            "id": "3038"
+          }
+        },
+        {
+          "current": 3,
+          "athlete": {
+            "id": "2113"
+          }
+        }
+      ]
+    }
+  ]
+}

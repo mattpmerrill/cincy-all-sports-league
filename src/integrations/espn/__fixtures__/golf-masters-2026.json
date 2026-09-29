@@ -1,0 +1,1142 @@
+{
+  "events": [
+    {
+      "id": "401811941",
+      "name": "Masters Tournament",
+      "date": "2026-04-09T04:00Z",
+      "competitions": [
+        {
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "id": "3470",
+              "order": 1,
+              "score": "-12",
+              "linescores": [
+                {
+                  "value": 67.0
+                },
+                {
+                  "value": 65.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 71.0
+                }
+              ]
+            },
+            {
+              "id": "9478",
+              "order": 2,
+              "score": "-11",
+              "linescores": [
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 65.0
+                },
+                {
+                  "value": 68.0
+                }
+              ]
+            },
+            {
+              "id": "5553",
+              "order": 3,
+              "score": "-10",
+              "linescores": [
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 66.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 66.0
+                }
+              ]
+            },
+            {
+              "id": "5409",
+              "order": 4,
+              "score": "-10",
+              "linescores": [
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 66.0
+                },
+                {
+                  "value": 68.0
+                }
+              ]
+            },
+            {
+              "id": "569",
+              "order": 5,
+              "score": "-10",
+              "linescores": [
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 70.0
+                }
+              ]
+            },
+            {
+              "id": "4425906",
+              "order": 6,
+              "score": "-10",
+              "linescores": [
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 67.0
+                },
+                {
+                  "value": 65.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "10592",
+              "order": 7,
+              "score": "-9",
+              "linescores": [
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 68.0
+                }
+              ]
+            },
+            {
+              "id": "9938",
+              "order": 8,
+              "score": "-9",
+              "linescores": [
+                {
+                  "value": 67.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "8973",
+              "order": 9,
+              "score": "-8",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 67.0
+                }
+              ]
+            },
+            {
+              "id": "10140",
+              "order": 10,
+              "score": "-8",
+              "linescores": [
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 68.0
+                }
+              ]
+            },
+            {
+              "id": "9843",
+              "order": 11,
+              "score": "-7",
+              "linescores": [
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 70.0
+                }
+              ]
+            },
+            {
+              "id": "5467",
+              "order": 12,
+              "score": "-5",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 68.0
+                }
+              ]
+            },
+            {
+              "id": "5860",
+              "order": 13,
+              "score": "-5",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 69.0
+                }
+              ]
+            },
+            {
+              "id": "6798",
+              "order": 14,
+              "score": "-5",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 71.0
+                }
+              ]
+            },
+            {
+              "id": "6007",
+              "order": 15,
+              "score": "-5",
+              "linescores": [
+                {
+                  "value": 77.0
+                },
+                {
+                  "value": 67.0
+                },
+                {
+                  "value": 66.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "5579",
+              "order": 16,
+              "score": "-5",
+              "linescores": [
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "1680",
+              "order": 17,
+              "score": "-5",
+              "linescores": [
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 75.0
+                }
+              ]
+            },
+            {
+              "id": "9530",
+              "order": 18,
+              "score": "-4",
+              "linescores": [
+                {
+                  "value": 77.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 67.0
+                }
+              ]
+            },
+            {
+              "id": "4364873",
+              "order": 19,
+              "score": "-4",
+              "linescores": [
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 67.0
+                }
+              ]
+            },
+            {
+              "id": "9037",
+              "order": 20,
+              "score": "-4",
+              "linescores": [
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 71.0
+                }
+              ]
+            },
+            {
+              "id": "4513",
+              "order": 21,
+              "score": "-3",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 66.0
+                }
+              ]
+            },
+            {
+              "id": "4375972",
+              "order": 22,
+              "score": "-3",
+              "linescores": [
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 72.0
+                }
+              ]
+            },
+            {
+              "id": "11119",
+              "order": 23,
+              "score": "-3",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "4901368",
+              "order": 24,
+              "score": "-2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 69.0
+                }
+              ]
+            },
+            {
+              "id": "388",
+              "order": 25,
+              "score": "-2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 70.0
+                }
+              ]
+            },
+            {
+              "id": "4426181",
+              "order": 26,
+              "score": "-2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 70.0
+                }
+              ]
+            },
+            {
+              "id": "9525",
+              "order": 27,
+              "score": "-2",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "4921329",
+              "order": 28,
+              "score": "-2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "4690755",
+              "order": 29,
+              "score": "-2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "3832",
+              "order": 30,
+              "score": "-1",
+              "linescores": [
+                {
+                  "value": 77.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 70.0
+                }
+              ]
+            },
+            {
+              "id": "5408",
+              "order": 31,
+              "score": "-1",
+              "linescores": [
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 72.0
+                }
+              ]
+            },
+            {
+              "id": "4587",
+              "order": 32,
+              "score": "-1",
+              "linescores": [
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 80.0
+                }
+              ]
+            },
+            {
+              "id": "3550",
+              "order": 33,
+              "score": "E",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 76.0
+                },
+                {
+                  "value": 66.0
+                }
+              ]
+            },
+            {
+              "id": "3448",
+              "order": 34,
+              "score": "E",
+              "linescores": [
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 69.0
+                }
+              ]
+            },
+            {
+              "id": "1225",
+              "order": 35,
+              "score": "E",
+              "linescores": [
+                {
+                  "value": 79.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 67.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "5539",
+              "order": 36,
+              "score": "E",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 76.0
+                }
+              ]
+            },
+            {
+              "id": "4404992",
+              "order": 37,
+              "score": "E",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 77.0
+                }
+              ]
+            },
+            {
+              "id": "9780",
+              "order": 38,
+              "score": "+1",
+              "linescores": [
+                {
+                  "value": 78.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 68.0
+                }
+              ]
+            },
+            {
+              "id": "5076021",
+              "order": 39,
+              "score": "+1",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 77.0
+                }
+              ]
+            },
+            {
+              "id": "9221",
+              "order": 40,
+              "score": "+1",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 80.0
+                }
+              ]
+            },
+            {
+              "id": "4848",
+              "order": 41,
+              "score": "+2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 73.0
+                }
+              ]
+            },
+            {
+              "id": "5054388",
+              "order": 42,
+              "score": "+2",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 76.0
+                }
+              ]
+            },
+            {
+              "id": "8961",
+              "order": 43,
+              "score": "+2",
+              "linescores": [
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 76.0
+                }
+              ]
+            },
+            {
+              "id": "3792",
+              "order": 44,
+              "score": "+2",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 77.0
+                }
+              ]
+            },
+            {
+              "id": "4348470",
+              "order": 45,
+              "score": "+2",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 68.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 77.0
+                }
+              ]
+            },
+            {
+              "id": "11382",
+              "order": 46,
+              "score": "+3",
+              "linescores": [
+                {
+                  "value": 76.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 77.0
+                }
+              ]
+            },
+            {
+              "id": "7081",
+              "order": 47,
+              "score": "+4",
+              "linescores": [
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 72.0
+                }
+              ]
+            },
+            {
+              "id": "10906",
+              "order": 48,
+              "score": "+5",
+              "linescores": [
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 78.0
+                },
+                {
+                  "value": 70.0
+                }
+              ]
+            },
+            {
+              "id": "9126",
+              "order": 49,
+              "score": "+6",
+              "linescores": [
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 75.0
+                }
+              ]
+            },
+            {
+              "id": "4585549",
+              "order": 50,
+              "score": "+6",
+              "linescores": [
+                {
+                  "value": 76.0
+                },
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 71.0
+                },
+                {
+                  "value": 78.0
+                }
+              ]
+            },
+            {
+              "id": "10364",
+              "order": 51,
+              "score": "+7",
+              "linescores": [
+                {
+                  "value": 69.0
+                },
+                {
+                  "value": 79.0
+                },
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 72.0
+                }
+              ]
+            },
+            {
+              "id": "158",
+              "order": 52,
+              "score": "+8",
+              "linescores": [
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 74.0
+                },
+                {
+                  "value": 75.0
+                }
+              ]
+            },
+            {
+              "id": "11253",
+              "order": 53,
+              "score": "+10",
+              "linescores": [
+                {
+                  "value": 78.0
+                },
+                {
+                  "value": 70.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 77.0
+                }
+              ]
+            },
+            {
+              "id": "1097",
+              "order": 54,
+              "score": "+12",
+              "linescores": [
+                {
+                  "value": 75.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 77.0
+                },
+                {
+                  "value": 75.0
+                }
+              ]
+            },
+            {
+              "id": "4589438",
+              "order": 55,
+              "score": "+5",
+              "linescores": [
+                {
+                  "value": 77.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 0.0
+                }
+              ]
+            },
+            {
+              "id": "4251",
+              "order": 56,
+              "score": "+5",
+              "linescores": [
+                {
+                  "value": 77.0
+                },
+                {
+                  "value": 72.0
+                },
+                {
+                  "value": 0.0
+                }
+              ]
+            },
+            {
+              "id": "4304",
+              "order": 57,
+              "score": "+5",
+              "linescores": [
+                {
+                  "value": 76.0
+                },
+                {
+                  "value": 73.0
+                },
+                {
+                  "value": 0.0
+                }
+              ]
+            },
+            {
+              "id": "2201886",
+              "order": 89,
+              "score": "+15",
+              "linescores": [
+                {
+                  "value": 81.0
+                },
+                {
+                  "value": 78.0
+                },
+                {
+                  "value": 0.0
+                }
+              ]
+            },
+            {
+              "id": "65",
+              "order": 90,
+              "score": "+16",
+              "linescores": [
+                {
+                  "value": 79.0
+                },
+                {
+                  "value": 81.0
+                },
+                {
+                  "value": 0.0
+                }
+              ]
+            },
+            {
+              "id": "10058",
+              "order": 91,
+              "score": "+18",
+              "linescores": [
+                {
+                  "value": 82.0
+                },
+                {
+                  "value": 80.0
+                },
+                {
+                  "value": 0.0
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

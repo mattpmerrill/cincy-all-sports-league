@@ -1,0 +1,530 @@
+{
+  "events": [
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 82.0,
+                "displayValue": "82"
+              },
+              "team": {
+                "id": "2305"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 78.0,
+                "displayValue": "78"
+              },
+              "team": {
+                "id": "12"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "score": {
+                "value": 75.0,
+                "displayValue": "75"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": true,
+              "score": {
+                "value": 78.0,
+                "displayValue": "78"
+              },
+              "team": {
+                "id": "2641"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 84.0,
+                "displayValue": "84"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 61.0,
+                "displayValue": "61"
+              },
+              "team": {
+                "id": "2305"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 73.0,
+                "displayValue": "73"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 57.0,
+                "displayValue": "57"
+              },
+              "team": {
+                "id": "66"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "score": {
+                "value": 79.0,
+                "displayValue": "79"
+              },
+              "team": {
+                "id": "38"
+              }
+            },
+            {
+              "winner": true,
+              "score": {
+                "value": 89.0,
+                "displayValue": "89"
+              },
+              "team": {
+                "id": "12"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Phillips 66 Big 12 Tournament - Quarterfinal"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 81.0,
+                "displayValue": "81"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 59.0,
+                "displayValue": "59"
+              },
+              "team": {
+                "id": "2116"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Phillips 66 Big 12 Tournament - Semifinal"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 82.0,
+                "displayValue": "82"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 80.0,
+                "displayValue": "80"
+              },
+              "team": {
+                "id": "66"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 2,
+        "name": "Regular Season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Phillips 66 Big 12 Tournament - Final"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 79.0,
+                "displayValue": "79"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 74.0,
+                "displayValue": "74"
+              },
+              "team": {
+                "id": "248"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 3,
+        "name": "Postseason"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - 1st Round"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 92.0,
+                "displayValue": "92"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 58.0,
+                "displayValue": "58"
+              },
+              "team": {
+                "id": "112358"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 3,
+        "name": "Postseason"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - 2nd Round"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 78.0,
+                "displayValue": "78"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 66.0,
+                "displayValue": "66"
+              },
+              "team": {
+                "id": "328"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 3,
+        "name": "Postseason"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - Sweet 16"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 109.0,
+                "displayValue": "109"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 88.0,
+                "displayValue": "88"
+              },
+              "team": {
+                "id": "8"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 3,
+        "name": "Postseason"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - Elite 8"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "score": {
+                "value": 79.0,
+                "displayValue": "79"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "score": {
+                "value": 64.0,
+                "displayValue": "64"
+              },
+              "team": {
+                "id": "2509"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "seasonType": {
+        "type": 3,
+        "name": "Postseason"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - Final Four"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "score": {
+                "value": 73.0,
+                "displayValue": "73"
+              },
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": true,
+              "score": {
+                "value": 91.0,
+                "displayValue": "91"
+              },
+              "team": {
+                "id": "130"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

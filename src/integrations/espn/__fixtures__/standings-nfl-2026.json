@@ -1,0 +1,68 @@
+{
+  "children": [
+    {
+      "name": "Conference",
+      "standings": {
+        "entries": [
+          {
+            "team": {
+              "id": "12"
+            },
+            "stats": [
+              {
+                "name": "losses",
+                "value": 0.0
+              },
+              {
+                "name": "ties",
+                "value": 0.0
+              },
+              {
+                "name": "wins",
+                "value": 3.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "4"
+            },
+            "stats": [
+              {
+                "name": "losses",
+                "value": 1.0
+              },
+              {
+                "name": "ties",
+                "value": 0.0
+              },
+              {
+                "name": "wins",
+                "value": 2.0
+              }
+            ]
+          },
+          {
+            "team": {
+              "id": "24"
+            },
+            "stats": [
+              {
+                "name": "losses",
+                "value": 3.0
+              },
+              {
+                "name": "ties",
+                "value": 0.0
+              },
+              {
+                "name": "wins",
+                "value": 0.0
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

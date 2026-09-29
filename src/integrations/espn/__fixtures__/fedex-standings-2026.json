@@ -1,0 +1,98 @@
+{
+  "standings": [
+    {
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2026/athletes/9478?lang=en&region=us"
+      },
+      "records": [
+        {
+          "stats": [
+            {
+              "name": "cupPoints",
+              "displayName": "FedExCup Points",
+              "shortDisplayName": "FedExCup Points",
+              "description": "The total points the player has earned in the FedExCup points race.",
+              "abbreviation": "CUPPTS",
+              "type": "cuppoints",
+              "value": 4986.0,
+              "displayValue": "4986"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2026/athletes/9037?lang=en&region=us"
+      },
+      "records": [
+        {
+          "stats": [
+            {
+              "name": "cupPoints",
+              "displayName": "FedExCup Points",
+              "shortDisplayName": "FedExCup Points",
+              "description": "The total points the player has earned in the FedExCup points race.",
+              "abbreviation": "CUPPTS",
+              "type": "cuppoints",
+              "value": 3463.0,
+              "displayValue": "3463"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2026/athletes/11119?lang=en&region=us"
+      },
+      "records": [
+        {
+          "stats": [
+            {
+              "name": "cupPoints",
+              "displayName": "FedExCup Points",
+              "shortDisplayName": "FedExCup Points",
+              "description": "The total points the player has earned in the FedExCup points race.",
+              "abbreviation": "CUPPTS",
+              "type": "cuppoints",
+              "value": 3292.0,
+              "displayValue": "3292"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2026/athletes/65?lang=en&region=us"
+      },
+      "records": [
+        {
+          "stats": [
+            {
+              "name": "cupPoints",
+              "displayName": "FedExCup Points",
+              "shortDisplayName": "FedExCup Points",
+              "description": "The total points the player has earned in the FedExCup points race.",
+              "abbreviation": "CUPPTS",
+              "type": "cuppoints",
+              "value": 0.0,
+              "displayValue": "0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "athlete": {
+        "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2026/athletes/3463?lang=en&region=us"
+      },
+      "records": [
+        {
+          "stats": []
+        }
+      ]
+    }
+  ]
+}

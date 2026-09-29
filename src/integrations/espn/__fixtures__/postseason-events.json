@@ -1,0 +1,3870 @@
+{
+  "nfl": [
+    {
+      "id": "401772979",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NFC Wild Card Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "29"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772981",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NFC Wild Card Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "3"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "9"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772977",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "AFC Wild Card Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "30"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772980",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NFC Wild Card Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "21"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "25"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772978",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "AFC Wild Card Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "24"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772976",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "AFC Wild Card Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "23"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "34"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772982",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "AFC Divisional Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772984",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NFC Divisional Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "26"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "25"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772983",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "AFC Divisional Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "34"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772985",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NFC Divisional Playoffs"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "3"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772986",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "AFC Championship"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772987",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NFC Championship"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "26"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401831718",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Pro Bowl Games"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "31"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "32"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401772988",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Super Bowl LX"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "26"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "nhl": [
+    {
+      "id": "401871166",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "East 2nd Round - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "15"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401871302",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "West 2nd Round - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "30"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872903",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "West Final - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "37"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873383",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "East Final - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "10"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401874171",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Stanley Cup Final - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "37"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401869715",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "East 1st Round - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401869716",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "West 1st Round - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "9"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "30"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401874172",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Stanley Cup Final - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "37"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401874173",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Stanley Cup Final - Game 3"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "37"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "7"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401874174",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Stanley Cup Final - Game 4"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "37"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401874175",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Stanley Cup Final - Game 5"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "37"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401874176",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Stanley Cup Final - Game 6"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "37"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "7"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mlb": [
+    {
+      "id": "401809251",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "ALWC - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "5"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "6"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809260",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NLWC - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "16"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "25"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809254",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "ALWC - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "10"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "2"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809257",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NLWC - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "17"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809273",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NLDS - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "8"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "16"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809263",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "ALDS - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "10"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809278",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NLDS - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "22"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809268",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "ALDS - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "6"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809283",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "ALCS - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "12"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809284",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "ALCS - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "12"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809290",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NLCS - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "8"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809291",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NLCS - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "8"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809297",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809298",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809299",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 3"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809300",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 4"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "19"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809301",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 5"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "19"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "14"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809302",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 6"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401809303",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "World Series - Game 7"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "14"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "19"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "mls": [
+    {
+      "id": "760057",
+      "season": {
+        "slug": "eastern-conference-playoffs---wild-card"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "182"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "12011"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "760058",
+      "season": {
+        "slug": "western-conference-playoffs---wild-card"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "9723"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "4771"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "760079",
+      "season": {
+        "slug": "eastern-conference-playoffs---round-one"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "MIA leads series 1-0"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "20232"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "18986"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "760076",
+      "season": {
+        "slug": "western-conference-playoffs---round-one"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "VAN leads series 1-0"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "9727"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "185"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "760833",
+      "season": {
+        "slug": "western-conference-playoffs---semifinals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Vancouver Whitecaps advance 4-3 on penalties"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "9727"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "18966"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "760862",
+      "season": {
+        "slug": "eastern-conference-playoffs---semifinals"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "18267"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "20232"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "761971",
+      "season": {
+        "slug": "eastern-conference-playoffs---final"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "20232"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "17606"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "762050",
+      "season": {
+        "slug": "western-conference-playoffs---final"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "22529"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "9727"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "762182",
+      "season": {
+        "slug": "mls-cup"
+      },
+      "competitions": [
+        {
+          "notes": [],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "20232"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "9727"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "wnba": [
+    {
+      "id": "401820272",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "First Round - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "8"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "129689"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401820327",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "WNBA Semifinals - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "5"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401820322",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "WNBA Finals - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "11"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401820325",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "WNBA Finals - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "11"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401820326",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "WNBA FINALS - Game 3"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "11"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401820329",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "WNBA Finals - Game 4"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "11"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "17"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ncaaf": [
+    {
+      "id": "401779840",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff First Round Game"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "201"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "333"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401779843",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff First Round Game"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "2483"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "256"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401779842",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff First Round Game"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "145"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2655"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401779841",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff First Round Game"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "245"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "2390"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769070",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff Quarterfinal at the Goodyear Cotton Bowl Classic"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "194"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "2390"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769072",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff Quarterfinal at the Rose Bowl Presented by Prudential"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "84"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "333"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769073",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff Quarterfinal at the Allstate Sugar Bowl"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "61"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "145"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769071",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff Quarterfinal at the Capital One Orange Bowl"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "2641"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "2483"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769075",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff Semifinal at the Vrbo Fiesta Bowl"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "145"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "2390"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769074",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff Semifinal at the Chick-fil-A Peach Bowl"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "84"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2483"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401769076",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Football Playoff National Championship Presented by AT&T"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "84"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2390"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401838053",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Xbox Bowl"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "2032"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2623"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ncaab": [
+    {
+      "id": "401856434",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - First Four"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "152"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "251"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401856569",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - Sweet 16"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "8"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401856575",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - West Region - Elite 8"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2509"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401858379",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Basketball Crown - Quarterfinals"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "38"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "201"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401858383",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Basketball Crown - Semifinals"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "239"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "201"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401858385",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "College Basketball Crown Championship Game"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "277"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "201"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401856599",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - Final Four"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "12"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "130"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401856600",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - National Championship"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "130"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "41"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401858361",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NIT - Semifinal"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "167"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "202"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401858363",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NIT - Championship"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "2"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "202"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401856478",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - East Region - 1st Round"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "150"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "2561"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401856532",
+      "season": {
+        "slug": "post-season"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Men's Basketball Championship - Midwest Region - 2nd Round"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "130"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "139"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "ncaasb": [
+    {
+      "id": "401872513",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Tuscaloosa Regional - Alabama advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "807"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "560"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872515",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Austin Regional - Texas advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "533"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872517",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Norman Regional - Oklahoma advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "501"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "524"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872519",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Lincoln Regional - Nebraska advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "511"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "714"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872521",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Fayetteville Regional - Arkansas advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "470"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "488"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872523",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Gainesville Regional -  Florida advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "487"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "489"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872525",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Knoxville Regional - Tennessee advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "543"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "611"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872527",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Los Angeles Regional - UCLA advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "605"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "478"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872530",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Tallahassee Regional - UCF advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "572"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "484"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872531",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Athens Regional - Georgia advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "1140"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "490"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872533",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Lubbock Regional - Texas Tech advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "504"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "613"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872536",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Durham Regional - Duke advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "505"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "472"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872537",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Stillwater Regional - Oklahoma State advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "476"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "522"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872541",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - College Station Regional - Arizona State advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "471"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "535"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872563",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Baton Rouge Regional - LSU advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "544"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "497"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872539",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Eugene Regional - Mississippi State advances to Super Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "562"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "780"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873440",
+      "season": {
+        "slug": "super-regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Lincoln Super Regional - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "511"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "522"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873429",
+      "season": {
+        "slug": "super-regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Knoxville Super Regional - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "490"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "611"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873441",
+      "season": {
+        "slug": "super-regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Austin Super Regional - Game 3"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "471"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873584",
+      "season": {
+        "slug": "world-series"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Women's College World Series - Double Elimination Round"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "560"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "478"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873586",
+      "season": {
+        "slug": "world-series"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Women's College World Series - Elimination Game"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "562"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873600",
+      "season": {
+        "slug": "world-series"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Women's College World Series - Texas Tech advances to Championship Finals"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "560"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "613"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873599",
+      "season": {
+        "slug": "world-series"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Women's College World Series -  Texas advances to Championship Finals"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "611"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873592",
+      "season": {
+        "slug": "championship-series"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Women's College World Series Championship Finals - Game 1"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "613"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401873593",
+      "season": {
+        "slug": "championship-series"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "Women's College World Series Championship Finals - Game 2"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": false,
+              "team": {
+                "id": "613"
+              }
+            },
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872442",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Tuscaloosa Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "560"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "807"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872182",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Austin Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "538"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "814"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872184",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Norman Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "524"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "646"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872186",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Lincoln Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "511"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "785"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "401872189",
+      "season": {
+        "slug": "regionals"
+      },
+      "competitions": [
+        {
+          "notes": [
+            {
+              "headline": "NCAA Softball Championship - Fayetteville Regional"
+            }
+          ],
+          "status": {
+            "type": {
+              "completed": true
+            }
+          },
+          "competitors": [
+            {
+              "winner": true,
+              "team": {
+                "id": "470"
+              }
+            },
+            {
+              "winner": false,
+              "team": {
+                "id": "708"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
