@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/features/auth/guards";
 import { PickCard } from "@/features/fantasy-teams/components/pick-card";
@@ -16,12 +17,29 @@ export default async function TeamPage({ params }: PageProps<"/teams/[slug]">) {
   const [team, user] = await Promise.all([getTeamDetail(slug), getCurrentUser()]);
   if (!team) notFound();
 
+  const isMine = user !== null && team.owner?.id === user.id;
+
   return (
     <PageMain width="wide">
-      <TeamHeader team={team} isMine={user !== null && team.owner?.id === user.id} />
+      <TeamHeader team={team} isMine={isMine} />
       <section aria-label="Picks" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {team.picks.map((pick, index) => (
-          <PickCard key={pick.sport} pick={pick} index={index} />
+          <PickCard
+            key={pick.sport}
+            pick={pick}
+            index={index}
+            footer={
+              isMine && pick.movable ? (
+                <Link
+                  href={`/free-agents/${pick.sport}`}
+                  className="inline-flex min-h-11 items-center rounded-md text-sm font-semibold text-brand-bright underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/60"
+                >
+                  Drop / add
+                  <span className="sr-only"> {pick.sportName} pick</span>
+                </Link>
+              ) : undefined
+            }
+          />
         ))}
       </section>
     </PageMain>

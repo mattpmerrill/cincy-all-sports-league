@@ -1,5 +1,5 @@
 import type { LeagueModelSource } from "@/data/league-model";
-import { describePickBreakdown } from "@/domain/league";
+import { describePickBreakdown, isRosterLocked } from "@/domain/league";
 import type { BreakdownView, OwnerData, SeasonStatus } from "@/domain/league";
 import type { RankMovement } from "@/domain/standings";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
@@ -14,6 +14,8 @@ export type PickView = {
   logoUrl: string | null;
   primaryColor: string | null;
   status: SeasonStatus;
+  /** Whether the pick can still be swapped (drop and add): false once its season is over. */
+  movable: boolean;
   points: number;
   lines: BreakdownView[];
 };
@@ -53,6 +55,7 @@ export function createFantasyTeamsService({ model }: { model: LeagueModelSource 
             logoUrl: pick.participant.logoUrl,
             primaryColor: pick.participant.primaryColor,
             status: league.sports[pick.sport].status,
+            movable: !isRosterLocked(league.sports[pick.sport].status),
             points: pick.credited.total,
             lines: describePickBreakdown(pick),
           };

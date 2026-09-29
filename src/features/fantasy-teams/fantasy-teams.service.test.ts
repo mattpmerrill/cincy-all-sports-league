@@ -35,6 +35,27 @@ describe("getTeamDetail", () => {
     expect(team?.rankLabel).toBe("1");
     expect(team?.teamCount).toBe(2);
   });
+
+  it("marks a pick movable until its season is over", async () => {
+    const team = await service().getTeamDetail("a");
+    expect(team?.picks.every((p) => p.movable)).toBe(true);
+
+    const over = await createFantasyTeamsService({
+      model: createLeagueModelSource({
+        loadData: async () =>
+          leagueData({
+            teams: [{ id: "a" }],
+            // A recorded champion ends the sport's season.
+            results: [
+              { participantId: "a-nfl", ruleId: "nfl-champion", quantity: 1, eventLabel: "Final" },
+            ],
+          }),
+        now: () => new Date("2026-09-28T16:00:00Z"),
+      }),
+    }).getTeamDetail("a");
+    expect(over?.picks.find((p) => p.sport === "nfl")?.movable).toBe(false);
+    expect(over?.picks.find((p) => p.sport === "mlb")?.movable).toBe(true);
+  });
 });
 
 describe("getTeamDetail after a trade", () => {
