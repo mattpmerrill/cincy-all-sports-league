@@ -3,10 +3,10 @@
 import { useActionState, useState } from "react";
 import { idleFormState, type FormState } from "@/lib/form-state";
 import { Button } from "@/ui/button";
+import { useFlash } from "@/ui/flash-slot";
 import { FormMessage } from "@/ui/form-message";
 import { SubmitButton } from "@/ui/submit-button";
 import { celebrateTrade } from "./trade-celebration";
-import { useFlash } from "./trade-flash";
 import { useRefreshPendingTrades } from "./trades-badge-provider";
 
 /** A Server Action passed down by the route, so this feature never imports `app`. */

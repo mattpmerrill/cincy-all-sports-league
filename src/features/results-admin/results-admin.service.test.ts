@@ -33,6 +33,7 @@ const target: SportTarget = {
     rule("band", "final_rank_band", { rankFrom: 1, rankTo: 5 }),
   ],
   participants: [{ id: "p1", name: "Iga", shortName: "Iga", externalId: "1" }],
+  freeAgents: [],
 };
 
 function setup() {

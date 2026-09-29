@@ -1,0 +1,113 @@
+{
+  "rankings": [
+    {
+      "id": "2",
+      "name": "WTA",
+      "shortName": "WTA",
+      "type": "wta",
+      "ranks": [
+        {
+          "current": 1,
+          "previous": 1,
+          "points": 9901,
+          "trend": "-",
+          "athlete": {
+            "id": "3126",
+            "firstName": "Elena",
+            "lastName": "Rybakina",
+            "displayName": "Elena Rybakina",
+            "headshot": "https://a.espncdn.com/i/headshots/tennis/players/full/3126.png"
+          }
+        },
+        {
+          "current": 2,
+          "previous": 2,
+          "points": 7810,
+          "trend": "-",
+          "athlete": {
+            "id": "3038",
+            "firstName": "Aryna",
+            "lastName": "Sabalenka",
+            "displayName": "Aryna Sabalenka",
+            "headshot": "https://a.espncdn.com/i/headshots/tennis/players/full/3038.png"
+          }
+        },
+        {
+          "current": 3,
+          "previous": 3,
+          "points": 7265,
+          "trend": "-",
+          "athlete": {
+            "id": "2113",
+            "firstName": "Jessica",
+            "lastName": "Pegula",
+            "displayName": "Jessica Pegula",
+            "headshot": "https://a.espncdn.com/i/headshots/tennis/players/full/2113.png"
+          }
+        },
+        {
+          "current": 4,
+          "previous": 4,
+          "points": 7244,
+          "trend": "-",
+          "athlete": {
+            "id": "3626",
+            "firstName": "Coco",
+            "lastName": "Gauff",
+            "displayName": "Coco Gauff",
+            "headshot": "https://a.espncdn.com/i/headshots/tennis/players/full/3626.png"
+          }
+        },
+        {
+          "current": 5,
+          "previous": 5,
+          "points": 5841,
+          "trend": "-",
+          "athlete": {
+            "id": "9820",
+            "firstName": "Mirra",
+            "lastName": "Andreeva",
+            "displayName": "Mirra Andreeva"
+          }
+        },
+        {
+          "current": 6,
+          "previous": 6,
+          "points": 5328,
+          "trend": "-",
+          "athlete": {
+            "id": "6970",
+            "firstName": "Linda",
+            "lastName": "Noskova",
+            "displayName": "Linda Noskova"
+          }
+        },
+        {
+          "current": 7,
+          "previous": 7,
+          "points": 4809,
+          "trend": "-",
+          "athlete": {
+            "id": "1797",
+            "firstName": "Elina",
+            "lastName": "Svitolina",
+            "displayName": "Elina Svitolina",
+            "headshot": "https://a.espncdn.com/i/headshots/tennis/players/full/1797.png"
+          }
+        },
+        {
+          "current": 8,
+          "previous": 8,
+          "points": 4683,
+          "trend": "-",
+          "athlete": {
+            "id": "3039",
+            "firstName": "Karolina",
+            "lastName": "Muchova",
+            "displayName": "Karolina Muchova"
+          }
+        }
+      ]
+    }
+  ]
+}

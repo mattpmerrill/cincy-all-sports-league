@@ -36,3 +36,16 @@ type MajorResultBase<Finish> = {
 
 export type TennisMajorResult = MajorResultBase<TennisFinish>;
 export type GolfMajorResult = MajorResultBase<GolfFinish>;
+
+/**
+ * Someone or something ESPN lists for a sport, in league vocabulary: what a `participants` row
+ * needs. Says nothing about how they are doing.
+ */
+export type DirectoryEntry = {
+  espnId: string;
+  name: string;
+  shortName: string;
+  logoUrl: string | null;
+  /** `#rrggbb` lowercase, or null when ESPN has none we can trust. */
+  primaryColor: string | null;
+};

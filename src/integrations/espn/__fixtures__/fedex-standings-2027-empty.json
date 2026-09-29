@@ -1,0 +1,6 @@
+{
+  "$ref": "http://sports.core.api.espn.com/v2/sports/golf/leagues/pga/seasons/2027/types/2/standings/0?lang=en&region=us",
+  "id": "0",
+  "name": "overall",
+  "displayName": "Standings"
+}

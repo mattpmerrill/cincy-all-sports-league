@@ -8,6 +8,12 @@ const CORE = "https://sports.core.api.espn.com/v2/sports";
 const path = (s: Pick<Sport, "espnSport" | "espnLeague">) => `${s.espnSport}/${s.espnLeague}`;
 
 export const espnUrls = {
+  /** Every team the league lists. `limit=1000` because the default page is far smaller. */
+  teams: (s: Sport) => `${SITE}/${path(s)}/teams?limit=1000`,
+  coreGroupTeams: (s: Sport, season: number, groupId: number) =>
+    `${CORE}/${s.espnSport}/leagues/${s.espnLeague}/seasons/${season}/types/2/groups/${groupId}/teams?limit=1000`,
+  coreAthlete: (s: Sport, season: number, athleteId: string) =>
+    `${CORE}/${s.espnSport}/leagues/${s.espnLeague}/seasons/${season}/athletes/${encodeURIComponent(athleteId)}`,
   standings: (s: Sport, season: number) => `${SITE_V2}/${path(s)}/standings?season=${season}`,
   teamSchedule: (s: Sport, teamId: string, season: number) =>
     `${SITE}/${path(s)}/teams/${encodeURIComponent(teamId)}/schedule?season=${season}`,

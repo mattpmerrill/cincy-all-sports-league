@@ -1,0 +1,249 @@
+{
+  "sports": [
+    {
+      "id": "1",
+      "name": "Baseball",
+      "slug": "baseball",
+      "leagues": [
+        {
+          "id": "102",
+          "name": "NCAA Softball",
+          "abbreviation": "MLB",
+          "slug": "college-softball",
+          "teams": [
+            {
+              "team": {
+                "id": "529",
+                "uid": "s:1~l:102~t:529",
+                "slug": "clemson-tigers",
+                "abbreviation": "CLEM",
+                "displayName": "Clemson Tigers",
+                "shortDisplayName": "Clemson",
+                "name": "Tigers",
+                "nickname": "Clemson",
+                "location": "Clemson",
+                "color": "F35B0F",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "1140",
+                "uid": "s:1~l:102~t:1140",
+                "slug": "clemson-tigers",
+                "abbreviation": "CLEM",
+                "displayName": "Clemson Tigers",
+                "shortDisplayName": "Clemson",
+                "name": "Tigers",
+                "nickname": "Clemson",
+                "location": "Clemson",
+                "color": "F35B0F",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/228.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "583",
+                "uid": "s:1~l:102~t:583",
+                "slug": "le-moyne-dolphins",
+                "abbreviation": "LEM",
+                "displayName": "Le Moyne Dolphins",
+                "shortDisplayName": "Le Moyne",
+                "name": "Dolphins",
+                "nickname": "Le Moyne",
+                "location": "Le Moyne",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2330.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "1283",
+                "uid": "s:1~l:102~t:1283",
+                "slug": "le-moyne-dolphins",
+                "abbreviation": "LE ",
+                "displayName": "Le Moyne Dolphins",
+                "shortDisplayName": "Le Moyne",
+                "name": "Dolphins",
+                "nickname": "Le Moyne",
+                "location": "Le Moyne",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2330.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "620",
+                "uid": "s:1~l:102~t:620",
+                "slug": "wofford-terriers",
+                "abbreviation": "WOF",
+                "displayName": "Wofford Terriers",
+                "shortDisplayName": "Wofford Terriers",
+                "name": "Terriers",
+                "location": "Wofford",
+                "color": "000000",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2747.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "1285",
+                "uid": "s:1~l:102~t:1285",
+                "slug": "wofford-terriers",
+                "abbreviation": "WOF",
+                "displayName": "Wofford Terriers",
+                "shortDisplayName": "Wofford",
+                "name": "Terriers",
+                "nickname": "Wofford",
+                "location": "Wofford",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2747.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "1195",
+                "uid": "s:1~l:102~t:1195",
+                "slug": "tbd",
+                "displayName": "TBD",
+                "shortDisplayName": "TBD",
+                "name": "TBD",
+                "location": "TBD",
+                "isActive": true,
+                "isAllStar": false
+              }
+            },
+            {
+              "team": {
+                "id": "1196",
+                "uid": "s:1~l:102~t:1196",
+                "slug": "tbd",
+                "abbreviation": "HAW",
+                "displayName": "TBD",
+                "shortDisplayName": "TBD",
+                "name": "TBD",
+                "location": "TBD",
+                "isActive": true,
+                "isAllStar": false
+              }
+            },
+            {
+              "team": {
+                "id": "860",
+                "uid": "s:1~l:102~t:860",
+                "slug": "alabama-huntsville-chargers",
+                "abbreviation": "AH",
+                "displayName": "Alabama Huntsville Chargers",
+                "shortDisplayName": "UA-Huntsville",
+                "name": "Chargers",
+                "nickname": "UA-Huntsville",
+                "location": "Alabama Huntsville",
+                "isActive": true,
+                "isAllStar": false
+              }
+            },
+            {
+              "team": {
+                "id": "567",
+                "uid": "s:1~l:102~t:567",
+                "slug": "air-force-falcons",
+                "abbreviation": "AFA",
+                "displayName": "Air Force Falcons",
+                "shortDisplayName": "Air Force",
+                "name": "Falcons",
+                "nickname": "Air Force",
+                "location": "Air Force",
+                "color": "004A7B",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2005.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "670",
+                "uid": "s:1~l:102~t:670",
+                "slug": "akron-zips",
+                "abbreviation": "AKR",
+                "displayName": "Akron Zips",
+                "shortDisplayName": "Akron",
+                "name": "Zips",
+                "nickname": "Akron",
+                "location": "Akron",
+                "color": "0A1E5B",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2006.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

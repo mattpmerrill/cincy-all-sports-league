@@ -52,11 +52,20 @@ export type PickData = {
   acquiredAt: string | null;
 };
 
+/** Why a team stopped holding a participant and froze what it had earned from them. */
+export const BANKED_SOURCES = ["trade", "free_agent"] as const;
+export type BankedSource = (typeof BANKED_SOURCES)[number];
+
 /**
- * Points a team earned from a participant it has since traded away, frozen at trade time. The
- * participant is here so the UI can say whose points they were.
+ * Points a team earned from a participant it has since let go (traded away, or dropped for a free
+ * agent), frozen at that moment. The participant is here so the UI can say whose points they were;
+ * the source is here so it can say why they left.
  */
-export type BankedScoreData = ScoreTotals & { sport: SportCode; participant: ParticipantData };
+export type BankedScoreData = ScoreTotals & {
+  sport: SportCode;
+  participant: ParticipantData;
+  source: BankedSource;
+};
 
 export type TeamData = {
   id: string;

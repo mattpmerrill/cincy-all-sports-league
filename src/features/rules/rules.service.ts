@@ -4,6 +4,7 @@ import { groupRules } from "@/domain/league";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
 import { formatPoints } from "@/domain/league";
+import { FREE_AGENT_NOTES } from "./free-agent-rules";
 import { GAME_TIE_NOTES, LEADERBOARD_TIE_NOTES, playoffNote } from "./tie-rules";
 import type { RuleNote } from "./tie-rules";
 import { TRADE_NOTES } from "./trade-rules";
@@ -25,6 +26,7 @@ export type RulesView = {
     gameTies: RuleNote[];
     leaderboardTies: RuleNote[];
     trades: RuleNote[];
+    freeAgents: RuleNote[];
   };
 };
 
@@ -58,6 +60,7 @@ export function createRulesService({
           gameTies: GAME_TIE_NOTES,
           leaderboardTies: LEADERBOARD_TIE_NOTES,
           trades: TRADE_NOTES,
+          freeAgents: FREE_AGENT_NOTES,
         },
       };
     },

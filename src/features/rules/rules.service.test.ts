@@ -42,3 +42,11 @@ describe("trade rules", () => {
     expect(window?.body).toContain(`${TRADE_WINDOW_HOURS} hours`);
   });
 });
+
+describe("free-agent rules", () => {
+  it("are on the rules page, in the league's vocabulary", async () => {
+    const notes = (await rules("cumulative", null))?.notes.freeAgents ?? [];
+    expect(notes.length).toBeGreaterThan(0);
+    expect(JSON.stringify(notes)).not.toMatch(/waiver/i);
+  });
+});

@@ -22,3 +22,11 @@ export function seasonStatus(
   if (today < startsOn) return { phase: "upcoming", label: `Starts ${formatMonthDay(startsOn)}` };
   return { phase: "in_season", label: "In season" };
 }
+
+/**
+ * Whether a sport's picks are frozen: once the season is complete, trades and free-agent moves
+ * are closed. Upcoming is open (a move before the season costs nothing, and points start at zero).
+ * SQL cannot know season status, so the services check this before calling the write functions.
+ */
+export const isRosterLocked = (status: Pick<SeasonStatus, "phase">): boolean =>
+  status.phase === "complete";

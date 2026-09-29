@@ -12,10 +12,13 @@ export { describeBreakdownLine, describePickBreakdown } from "./describe-breakdo
 export type { BreakdownView } from "./describe-breakdown";
 export { groupRules } from "./rules-view";
 export type { RuleGroup, RuleGroupKind, RuleRow } from "./rules-view";
-export { seasonStatus } from "./season-status";
+export { isRosterLocked, seasonStatus } from "./season-status";
 export type { SeasonStatus } from "./season-status";
+export { createParticipantScorer } from "./participant-scorer";
+export { BANKED_SOURCES } from "./types";
 export type {
   BankedScoreData,
+  BankedSource,
   LeagueData,
   OwnerData,
   ParticipantData,

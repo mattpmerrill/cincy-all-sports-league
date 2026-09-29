@@ -23,7 +23,10 @@ export type TargetParticipant = {
   externalId: string | null;
 };
 
-/** One sport in the active season: its window, its rules and the participants somebody picked. */
+/**
+ * One sport in the active season: its window, its rules, the participants somebody picked and,
+ * separately, the ones nobody holds.
+ */
 export type SportTarget = {
   seasonId: string;
   sportId: string;
@@ -33,7 +36,10 @@ export type SportTarget = {
   endsOn: string;
   espnSeason: number;
   rules: TargetRule[];
+  /** Held only: the admin results editor lists exactly these, so free agents stay out of it. */
   participants: TargetParticipant[];
+  /** Every other participant in the sport (the free-agent pool). */
+  freeAgents: TargetParticipant[];
 };
 
 export type SportTargetsRepository = ReturnType<typeof createSportTargetsRepository>;
@@ -76,6 +82,25 @@ export function createSportTargetsRepository(db: DbClient) {
       ]);
       if (seasonSports.error) throw seasonSports.error;
 
+      // Read after season_sports so a one-sport run (the daily pool refresh, "Sync now") does not
+      // pull all ~1,450 rows.
+      const wantedSportIds = seasonSports.data.flatMap((row) =>
+        row.sports && (!only || (isSportCode(row.sports.code) && only.includes(row.sports.code)))
+          ? [row.sports.id]
+          : [],
+      );
+      const pool =
+        wantedSportIds.length === 0
+          ? []
+          : await fetchAllRows((from, to) =>
+              db
+                .from("participants")
+                .select("id, sport_id, name, short_name, espn_id")
+                .in("sport_id", wantedSportIds)
+                .order("id")
+                .range(from, to),
+            );
+
       return seasonSports.data.flatMap((row) => {
         const sport = row.sports;
         if (!sport || !isSportCode(sport.code)) return [];
@@ -96,6 +121,11 @@ export function createSportTargetsRepository(db: DbClient) {
           });
         }
         participants.sort((a, b) => a.name.localeCompare(b.name));
+
+        const freeAgents = pool
+          .filter((p) => p.sport_id === sport.id && !seen.has(p.id))
+          .map((p) => ({ id: p.id, name: p.name, shortName: p.short_name, externalId: p.espn_id }))
+          .sort((a, b) => a.name.localeCompare(b.name));
 
         return [
           {
@@ -119,6 +149,7 @@ export function createSportTargetsRepository(db: DbClient) {
               }))
               .sort((a, b) => a.sortOrder - b.sortOrder),
             participants,
+            freeAgents,
           },
         ];
       });

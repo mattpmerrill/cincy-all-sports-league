@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Radio } from "lucide-react";
+import { ArrowLeftRight, ArrowRight, Radio } from "lucide-react";
 import Link from "next/link";
 import { groupScoreUpdateItems, type Message, type TradeTeamLink } from "@/domain/feed";
 import { formatPoints } from "@/domain/league/format";
@@ -213,6 +213,28 @@ export function LeaguePostContent({ message }: { message: Message }) {
           ))}
         </ul>
         <ViewTradeLink listingId={payload.listingId} />
+      </div>
+    );
+  }
+
+  if (payload?.type === "free_agent_move") {
+    return (
+      <div className="flex flex-col gap-2">
+        <p className={cardTitle}>Free agent move</p>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
+          <SportLabel sport={payload.sport} />
+          <TeamLink team={payload.team} />
+          <span>dropped</span>
+          <span className="min-w-0 font-semibold break-words text-text-muted line-through">
+            {payload.dropped}
+          </span>
+          <ArrowRight aria-hidden="true" className="size-3.5 shrink-0 text-text-muted" />
+          <span className="sr-only">picked up</span>
+          <span className="min-w-0 font-semibold break-words">{payload.added}</span>
+        </p>
+        <Link href="/free-agents" className={`${teamLink} w-fit text-sm underline`}>
+          See moves
+        </Link>
       </div>
     );
   }

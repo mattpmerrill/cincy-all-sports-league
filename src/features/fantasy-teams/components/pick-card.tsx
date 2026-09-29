@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { formatPoints } from "@/domain/league";
 import { ParticipantImage } from "@/ui/participant-image";
 import { SportIcon } from "@/ui/sport-icon";
@@ -8,7 +8,16 @@ import { cn } from "cn";
 import type { PickView } from "../fantasy-teams.service";
 
 /** One pick: who it is, where its season stands, what it has earned, and the math behind it. */
-export function PickCard({ pick, index }: { pick: PickView; index: number }) {
+export function PickCard({
+  pick,
+  index,
+  footer,
+}: {
+  pick: PickView;
+  index: number;
+  /** Actions for the pick, decided by the page (only the owner gets any). */
+  footer?: ReactNode;
+}) {
   // The team's own color tints the card corner; text always uses the design tokens.
   const style = pick.primaryColor
     ? ({ "--pick-color": pick.primaryColor, animationDelay: `${index * 45}ms` } as CSSProperties)
@@ -72,6 +81,7 @@ export function PickCard({ pick, index }: { pick: PickView; index: number }) {
           </ul>
         )}
       </details>
+      {footer ? <div className="border-t border-line/70 pt-2">{footer}</div> : null}
     </article>
   );
 }

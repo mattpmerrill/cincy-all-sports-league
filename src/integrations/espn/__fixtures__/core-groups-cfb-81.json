@@ -1,0 +1,14 @@
+{
+  "count": 130,
+  "pageIndex": 1,
+  "pageSize": 1000,
+  "pageCount": 1,
+  "items": [
+    {
+      "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/teams/2130?lang=en&region=us"
+    },
+    {
+      "$ref": "http://sports.core.api.espn.com/v2/sports/football/leagues/college-football/seasons/2026/teams/2000?lang=en&region=us"
+    }
+  ]
+}

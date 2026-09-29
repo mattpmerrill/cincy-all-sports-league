@@ -36,4 +36,39 @@ export type ProviderError = AppError;
 
 export interface ResultsProvider {
   fetchFacts(request: FactsRequest): Promise<Result<SportFacts, ProviderError>>;
+  /**
+   * True when this sport's facts cost one vendor call per participant (college records), so the
+   * caller must name the participants it wants and should budget how many. False for league-wide
+   * feeds, where every participant comes back in the same response for free.
+   */
+  fetchesPerParticipant(sport: SportCode): boolean;
+}
+
+/** A team or athlete the vendor lists for a sport, in the shape of a participants row. */
+export type DirectoryEntry = {
+  externalId: string;
+  name: string;
+  shortName: string;
+  logoUrl: string | null;
+  /** `#rrggbb` lowercase, or null. */
+  primaryColor: string | null;
+};
+
+/** A listed row the provider left out on purpose (a placeholder, a duplicate), for the log. */
+export type DirectorySkip = { externalId: string; name: string; reason: string };
+
+export type DirectoryRequest = {
+  sport: SportCode;
+  season: number;
+  /** Vendor ids already stored: not returned, and athletes' detail calls are skipped for them. */
+  knownExternalIds: ReadonlySet<string>;
+  /** Athlete sports only: how many of the best-ranked to list. */
+  athleteLimit: number;
+};
+
+/** Who exists in a sport, as opposed to how they are doing. */
+export interface DirectoryProvider {
+  fetchDirectory(
+    request: DirectoryRequest,
+  ): Promise<Result<{ entries: DirectoryEntry[]; skipped: DirectorySkip[] }, ProviderError>>;
 }
