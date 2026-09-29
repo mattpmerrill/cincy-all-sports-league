@@ -6,13 +6,16 @@ function UserAvatar({
   displayName,
   avatarUrl,
   size,
+  className,
 }: {
   displayName: string;
   avatarUrl: string | null;
   size?: "default" | "sm" | "lg";
+  /** Overrides the size preset, for places that need a bigger photo (size the fallback text there too). */
+  className?: string;
 }) {
   return (
-    <Avatar size={size}>
+    <Avatar size={size} className={className}>
       {avatarUrl ? <AvatarImage src={avatarUrl} alt="" referrerPolicy="no-referrer" /> : null}
       <AvatarFallback aria-hidden="true">{initialsOf(displayName)}</AvatarFallback>
     </Avatar>

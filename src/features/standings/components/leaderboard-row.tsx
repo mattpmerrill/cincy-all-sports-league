@@ -43,7 +43,9 @@ export function LeaderboardRow({
 
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
           <div className="flex items-center gap-2">
-            <span className="truncate text-base leading-tight font-semibold">{row.name}</span>
+            <span className="line-clamp-3 text-base leading-tight font-semibold break-words">
+              {row.name}
+            </span>
             {isMine ? (
               <span className="shrink-0 rounded-full bg-brand px-1.5 py-0.5 text-[0.65rem] leading-none font-bold text-on-brand">
                 You
@@ -51,20 +53,29 @@ export function LeaderboardRow({
             ) : null}
           </div>
           {row.owner ? (
-            <div className="flex items-center gap-1.5 text-xs text-text-muted">
-              <UserAvatar
-                displayName={row.owner.displayName}
-                avatarUrl={row.owner.avatarUrl}
-                size="sm"
-              />
-              <span className="truncate">{row.owner.displayName}</span>
-            </div>
+            <span className="truncate text-xs text-text-muted">{row.owner.displayName}</span>
           ) : null}
           <SportContributionBars sportPoints={row.sportPoints} max={maxSportPoints} />
         </div>
 
+        {/* Fixed width even when unclaimed, so scores line up down the list. The name sits in the
+            text beside it, so the photo is decorative and announces nothing. */}
+        <div className="flex size-10 shrink-0 items-center justify-center md:size-12">
+          {row.owner ? (
+            <UserAvatar
+              displayName={row.owner.displayName}
+              avatarUrl={row.owner.avatarUrl}
+              className={cn(
+                "size-10 ring-2 ring-line md:size-12",
+                "*:data-[slot=avatar-fallback]:text-sm *:data-[slot=avatar-fallback]:font-semibold md:*:data-[slot=avatar-fallback]:text-base",
+                isMine && "ring-brand",
+              )}
+            />
+          ) : null}
+        </div>
+
         <div className="flex shrink-0 flex-col items-end leading-none">
-          <span className="tabular font-display text-4xl font-extrabold md:text-5xl">
+          <span className="tabular font-display text-3xl font-extrabold min-[380px]:text-4xl md:text-5xl">
             {formatPoints(row.total)}
           </span>
           <span className="mt-1 text-[0.7rem] font-medium text-text-muted">pts</span>
