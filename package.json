@@ -18,7 +18,8 @@
     "db:types": "supabase gen types typescript --local > src/data/database.types.ts",
     "db:seed:build": "tsx scripts/build-seed.ts",
     "data:resolve": "tsx scripts/resolve-espn-ids.ts",
-    "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts"
+    "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts",
+    "announce:trades": "tsx --env-file=.env.local scripts/send-trades-announcement.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
