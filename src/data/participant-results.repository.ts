@@ -30,6 +30,11 @@ export type WriteResultError = AppError<"forbidden" | "conflict" | "invalid" | "
 const COLUMNS =
   "id, participant_id, scoring_rule_id, quantity, event_label, source, is_locked, updated_at";
 const CHUNK = 500;
+/**
+ * `.in()` puts every id in the request URL: a uuid is about 38 characters, so 450 of them (a
+ * softball pool) is roughly 17 KB, past what proxies accept. 150 ids stays near 6 KB.
+ */
+const ID_FILTER_CHUNK = 150;
 
 type Row = {
   id: string;
@@ -74,17 +79,24 @@ export function createParticipantResultsRepository(db: DbClient) {
       seasonId: string,
       participantIds: readonly string[],
     ): Promise<ParticipantResultRow[]> {
-      if (participantIds.length === 0) return [];
-      const rows = await fetchAllRows<Row>((from, to) =>
-        db
-          .from("participant_results")
-          .select(COLUMNS)
-          .eq("season_id", seasonId)
-          .in("participant_id", [...participantIds])
-          .order("id")
-          .range(from, to),
+      const chunks: string[][] = [];
+      for (let i = 0; i < participantIds.length; i += ID_FILTER_CHUNK) {
+        chunks.push(participantIds.slice(i, i + ID_FILTER_CHUNK));
+      }
+      const perChunk = await Promise.all(
+        chunks.map((ids) =>
+          fetchAllRows<Row>((from, to) =>
+            db
+              .from("participant_results")
+              .select(COLUMNS)
+              .eq("season_id", seasonId)
+              .in("participant_id", ids)
+              .order("id")
+              .range(from, to),
+          ),
+        ),
       );
-      return rows.map(toRow);
+      return perChunk.flat().map(toRow);
     },
 
     /**

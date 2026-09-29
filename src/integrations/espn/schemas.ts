@@ -100,12 +100,66 @@ export const wtaRankingsSchema = z.object({
 });
 
 export const fedexStandingsSchema = z.object({
-  standings: z.array(
+  // ESPN omits the key entirely for a season that has not started (FedExCup 2027 today), which
+  // means "no standings yet", not "the feed broke".
+  standings: z
+    .array(
+      z.object({
+        athlete: z.object({ $ref: z.string() }),
+        records: z.array(
+          z.object({
+            stats: z.array(z.object({ name: z.string(), value: z.number().optional() })),
+          }),
+        ),
+      }),
+    )
+    .default([]),
+});
+
+// ---- Directories (who exists, not how they are doing) ---------------------------------------
+
+const directoryTeam = z.object({
+  id,
+  displayName: z.string(),
+  location: z.string().optional(),
+  shortDisplayName: z.string().optional(),
+  color: z.string().optional(),
+  logos: z.array(z.object({ href: z.string() })).optional(),
+});
+
+export const teamsDirectorySchema = z.object({
+  sports: z
+    .array(
+      z.object({
+        leagues: z.array(z.object({ teams: z.array(z.object({ team: directoryTeam })) })),
+      }),
+    )
+    .min(1),
+});
+
+/** Core API list of a group's teams: only a `$ref` per team, the id is in its path. */
+export const coreGroupTeamsSchema = z.object({ items: z.array(z.object({ $ref: z.string() })) });
+
+export const coreAthleteSchema = z.object({
+  id,
+  displayName: z.string(),
+  lastName: z.string().optional(),
+  headshot: z.object({ href: z.string() }).optional(),
+});
+
+// The ranking carries a headshot for only some players, so it is optional here.
+export const wtaRankingsDirectorySchema = z.object({
+  rankings: z.array(
     z.object({
-      athlete: z.object({ $ref: z.string() }),
-      records: z.array(
+      ranks: z.array(
         z.object({
-          stats: z.array(z.object({ name: z.string(), value: z.number().optional() })),
+          current: z.number(),
+          athlete: z.object({
+            id,
+            displayName: z.string(),
+            lastName: z.string().optional(),
+            headshot: z.string().optional(),
+          }),
         }),
       ),
     }),

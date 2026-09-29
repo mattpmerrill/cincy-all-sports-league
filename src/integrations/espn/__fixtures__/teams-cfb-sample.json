@@ -1,0 +1,247 @@
+{
+  "sports": [
+    {
+      "id": "20",
+      "name": "Football",
+      "slug": "football",
+      "leagues": [
+        {
+          "id": "23",
+          "name": "NCAA - Football",
+          "abbreviation": "NCAAF",
+          "slug": "college-football",
+          "teams": [
+            {
+              "team": {
+                "id": "333",
+                "uid": "s:20~l:23~t:333",
+                "slug": "alabama-crimson-tide",
+                "abbreviation": "ALA",
+                "displayName": "Alabama Crimson Tide",
+                "shortDisplayName": "Alabama",
+                "name": "Crimson Tide",
+                "nickname": "Alabama",
+                "location": "Alabama",
+                "color": "9e1b32",
+                "alternateColor": "ffffff",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/333.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "2005",
+                "uid": "s:20~l:23~t:2005",
+                "slug": "air-force-falcons",
+                "abbreviation": "AF",
+                "displayName": "Air Force Falcons",
+                "shortDisplayName": "Air Force",
+                "name": "Falcons",
+                "nickname": "Air Force",
+                "location": "Air Force",
+                "color": "003594",
+                "alternateColor": "ffffff",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2005.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "16",
+                "uid": "s:20~l:23~t:16",
+                "slug": "sacramento-state-hornets",
+                "abbreviation": "SAC",
+                "displayName": "Sacramento State Hornets",
+                "shortDisplayName": "Sacramento St",
+                "name": "Hornets",
+                "nickname": "Sacramento St",
+                "location": "Sacramento State",
+                "color": "00573C",
+                "alternateColor": "cdb97d",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/16.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "2449",
+                "uid": "s:20~l:23~t:2449",
+                "slug": "north-dakota-state-bison",
+                "abbreviation": "NDSU",
+                "displayName": "North Dakota State Bison",
+                "shortDisplayName": "N Dakota St",
+                "name": "Bison",
+                "nickname": "N Dakota St",
+                "location": "North Dakota State",
+                "color": "01402A",
+                "alternateColor": "ffffff",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2449.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "2130",
+                "uid": "s:20~l:23~t:2130",
+                "slug": "chicago-state-cougars",
+                "abbreviation": "CHST",
+                "displayName": "Chicago State Cougars",
+                "shortDisplayName": "Chicago St",
+                "name": "Cougars",
+                "nickname": "Chicago St",
+                "location": "Chicago State",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2130.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "2000",
+                "uid": "s:20~l:23~t:2000",
+                "slug": "abilene-christian-wildcats",
+                "abbreviation": "ACU",
+                "displayName": "Abilene Christian Wildcats",
+                "shortDisplayName": "Abilene Chrstn",
+                "name": "Wildcats",
+                "nickname": "Abilene Chrstn",
+                "location": "Abilene Christian",
+                "color": "592d82",
+                "alternateColor": "b1b3b3",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2000.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "2001",
+                "uid": "s:20~l:23~t:2001",
+                "slug": "adams-state-grizzlies",
+                "abbreviation": "ADSU",
+                "displayName": "Adams State Grizzlies",
+                "shortDisplayName": "Adams St",
+                "name": "Grizzlies",
+                "nickname": "Adams St",
+                "location": "Adams State",
+                "color": "000000",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2001.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "2003",
+                "uid": "s:20~l:23~t:2003",
+                "slug": "adrian-bulldogs",
+                "abbreviation": "ADR",
+                "displayName": "Adrian Bulldogs",
+                "shortDisplayName": "Adrian",
+                "name": "Bulldogs",
+                "nickname": "Adrian",
+                "location": "Adrian",
+                "color": "000000",
+                "isActive": true,
+                "isAllStar": false,
+                "logos": [
+                  {
+                    "href": "https://a.espncdn.com/i/teamlogos/ncaa/500/2003.png",
+                    "width": 500,
+                    "height": 500,
+                    "rel": ["full", "default"]
+                  }
+                ]
+              }
+            },
+            {
+              "team": {
+                "id": "599",
+                "uid": "s:20~l:23~t:599",
+                "slug": "roosevelt-lakers",
+                "abbreviation": "RSVT",
+                "displayName": "Roosevelt Lakers",
+                "shortDisplayName": "Roosevelt",
+                "name": "Lakers",
+                "nickname": "Roosevelt",
+                "location": "Roosevelt",
+                "color": "000000",
+                "isActive": true,
+                "isAllStar": false
+              }
+            },
+            {
+              "team": {
+                "id": "127991",
+                "uid": "s:20~l:23~t:127991",
+                "slug": "roosevelt-lakers",
+                "abbreviation": "RSVT",
+                "displayName": "Roosevelt Lakers",
+                "shortDisplayName": "Roosevelt",
+                "name": "Lakers",
+                "nickname": "Roosevelt",
+                "location": "Roosevelt",
+                "color": "000000",
+                "isActive": true,
+                "isAllStar": false
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

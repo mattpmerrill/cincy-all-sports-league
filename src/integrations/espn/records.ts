@@ -11,6 +11,13 @@ export type TeamRecordsOptions = EspnClientOptions & {
 };
 
 const COLLEGE_SPORTS: ReadonlySet<SportCode> = new Set(["ncaaf", "ncaab", "ncaasb"]);
+/**
+ * True for sports whose records cost one ESPN call per team (college), so a caller must name the
+ * teams it wants. The one owner of that knowledge: sync uses it to decide what a regular run can
+ * afford to include.
+ */
+export const isPerTeamRecordsSport = (sport: SportCode): boolean => COLLEGE_SPORTS.has(sport);
+
 const PRO_STANDINGS_SPORTS: ReadonlySet<SportCode> = new Set([
   "nfl",
   "nba",
