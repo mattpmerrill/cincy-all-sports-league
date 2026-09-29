@@ -1,8 +1,9 @@
+import { isRosterLocked } from "@/domain/league";
 import type { PickData } from "@/domain/league";
-import { SPORTS } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
 import { effectiveListingStatus } from "@/domain/trades";
 import type { SportPhases, TradeListing } from "@/domain/trades";
+import { FREE_AGENT_MESSAGES, sportLockedMessage } from "./messages";
 import type { FreeAgentErrorCode, MoveCheck } from "./types";
 
 /**
@@ -13,7 +14,7 @@ import type { FreeAgentErrorCode, MoveCheck } from "./types";
  */
 
 const pass: MoveCheck = { ok: true };
-const fail = (code: FreeAgentErrorCode, message: string): MoveCheck => ({
+const fail = (code: FreeAgentErrorCode, message = FREE_AGENT_MESSAGES[code]): MoveCheck => ({
   ok: false,
   error: { code, message },
 });
@@ -38,20 +39,17 @@ export function validateMove(input: {
 }): MoveCheck {
   const { sport, add } = input;
   // Upcoming is allowed: a move before the season costs nothing, and points start at zero.
-  if (input.sportStatuses[sport].status.phase === "complete") {
-    return fail("sport_locked", `The ${SPORTS[sport].name} season is over, so moves are closed.`);
+  if (isRosterLocked(input.sportStatuses[sport].status)) {
+    return fail("sport_locked", sportLockedMessage(sport));
   }
   const current = input.team.picks.find((p) => p.sport === sport);
   if (!current || current.participant.id !== input.dropId) {
-    return fail(
-      "stale_pick",
-      "Your pick in this sport changed since you opened the page. Refresh and try again.",
-    );
+    return fail("stale_pick");
   }
-  if (add?.id === input.dropId) return fail("same_participant", "That's already your pick.");
-  if (!add || add.sport !== sport) return fail("not_found", "That player isn't in this sport.");
+  if (add?.id === input.dropId) return fail("same_participant");
+  if (!add || add.sport !== sport) return fail("not_found");
   if (!input.allowsDuplicatePicks && input.heldIds.has(add.id)) {
-    return fail("not_free_agent", "Another team just picked them up. Choose another free agent.");
+    return fail("not_free_agent");
   }
   return pass;
 }

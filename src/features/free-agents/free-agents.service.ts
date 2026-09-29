@@ -1,13 +1,15 @@
 import type { FantasyTeamsRepository, TeamRef } from "@/data/fantasy-teams.repository";
-import { FREE_AGENT_MESSAGES } from "@/data/free-agents.repository";
 import type { FreeAgentsRepository } from "@/data/free-agents.repository";
 import type { TradeLiveScore, TradesRepository } from "@/data/trades.repository";
 import {
+  FREE_AGENT_MESSAGES,
+  NO_ACTIVE_SEASON_MESSAGE,
   freeAgentMovePost,
   freeAgentStatLine,
   freeAgentsIn,
   heldParticipantIds,
   moveSideEffects,
+  sportLockedMessage,
   validateMove,
 } from "@/domain/free-agents";
 import type {
@@ -16,7 +18,7 @@ import type {
   FreeAgentMove,
   MoveSideEffects,
 } from "@/domain/free-agents";
-import { buildLeagueModel, createParticipantScorer } from "@/domain/league";
+import { buildLeagueModel, createParticipantScorer, isRosterLocked } from "@/domain/league";
 import type {
   LeagueData,
   LeagueModel,
@@ -71,21 +73,14 @@ export type FreeAgentsServiceDeps = {
 /** "Recent moves" is capped; the newest are the ones people look for. */
 const RECENT_MOVES_LIMIT = 30;
 
-const NO_SEASON = "There isn't an active season right now.";
 const SIGN_IN = "Sign in to make moves.";
 const NO_PICK = "You don't have a pick in this sport.";
 const NO_SIDE_EFFECTS: MoveSideEffects = { listings: 0, offers: 0 };
 
-/**
- * The refresh's own answer for "this sport isn't in the season". Sync owns the code; this feature
- * can only name it as a string, and the test pins the mapping.
- */
-const SPORT_NOT_IN_SEASON = "sport_not_in_season";
-
-const fail = (code: FreeAgentErrorCode): FreeAgentResult<never> => ({
-  ok: false,
-  error: { code, message: FREE_AGENT_MESSAGES[code] },
-});
+const fail = (
+  code: FreeAgentErrorCode,
+  message = FREE_AGENT_MESSAGES[code],
+): FreeAgentResult<never> => ({ ok: false, error: { code, message } });
 
 /** A pick as the pages show it: whose it is and what it is worth to the team. */
 export type MyPickView = {
@@ -159,22 +154,9 @@ const liveScore = (participantId: string, score: ParticipantScore): TradeLiveSco
   postseasonPoints: score.postseasonPoints,
 });
 
-/**
- * Why a sport takes no moves, or null. Asks the domain instead of restating its rule: the lock is
- * the first thing `validateMove` checks, so no team or participant is needed to get the answer.
- */
-function lockReason(model: Pick<LeagueModel, "sports">, sport: SportCode): string | null {
-  const check = validateMove({
-    sport,
-    sportStatuses: model.sports,
-    team: { picks: [] },
-    dropId: "",
-    add: null,
-    heldIds: new Set(),
-    allowsDuplicatePicks: false,
-  });
-  return !check.ok && check.error.code === "sport_locked" ? check.error.message : null;
-}
+/** Why a sport takes no moves, or null. */
+const lockReason = (model: Pick<LeagueModel, "sports">, sport: SportCode): string | null =>
+  isRosterLocked(model.sports[sport].status) ? sportLockedMessage(sport) : null;
 
 /** The viewer's standing row, or why they have none. */
 function whoIsViewing(
@@ -240,7 +222,7 @@ export function createFreeAgentsService(deps: FreeAgentsServiceDeps) {
         return {
           myTeam: null,
           canAct: false,
-          blockedReason: NO_SEASON,
+          blockedReason: NO_ACTIVE_SEASON_MESSAGE,
           sports: [],
           recentMoves: [],
         };
@@ -361,7 +343,7 @@ export function createFreeAgentsService(deps: FreeAgentsServiceDeps) {
         deps.repo.getParticipant(addId),
       ]);
       if (!team) return fail("not_owner");
-      if (!cached) return fail("invalid_sport");
+      if (!cached) return fail("invalid_sport", NO_ACTIVE_SEASON_MESSAGE);
       const request: MoveRequest = { sport, dropId, addId, target };
       const early = checkMove(modelOf(cached, now), team.id, request);
       if (!early.ok) return early;
@@ -375,14 +357,12 @@ export function createFreeAgentsService(deps: FreeAgentsServiceDeps) {
           code: refreshed.error.code,
           message: refreshed.error.message,
         });
-        return fail(
-          refreshed.error.code === SPORT_NOT_IN_SEASON ? "invalid_sport" : "facts_unavailable",
-        );
+        return fail("facts_unavailable");
       }
 
       // ----- 3. fresh data, validated again -----
       const fresh = await deps.loadFreshData();
-      if (!fresh) return fail("invalid_sport");
+      if (!fresh) return fail("invalid_sport", NO_ACTIVE_SEASON_MESSAGE);
       const late = checkMove(modelOf(fresh, now), team.id, request);
       if (!late.ok) return late;
       const { me } = late.value;

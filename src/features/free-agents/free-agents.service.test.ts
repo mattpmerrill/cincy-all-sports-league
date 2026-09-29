@@ -73,6 +73,7 @@ type World = {
 function setup(world: World = {}) {
   const cached = world.cached === undefined ? league() : world.cached;
   const fresh = world.fresh === undefined ? cached : world.fresh;
+  let refreshed = false;
   const refreshCalls: { sport: SportCode; ids: readonly string[] }[] = [];
   const moveCalls: Record<string, unknown>[] = [];
   const openListings = vi.fn(async () => world.open ?? []);
@@ -84,7 +85,9 @@ function setup(world: World = {}) {
 
   const deps: FreeAgentsServiceDeps = {
     loadCachedData: async () => cached,
-    loadFreshData: async () => fresh,
+    // The database only holds the refreshed facts once the refresh has run, so a fresh read that
+    // starts earlier sees the old ones. This is what pins "refresh, then read".
+    loadFreshData: async () => (refreshed ? fresh : cached),
     pool: { list: async (sport) => POOL[sport] ?? [] },
     repo: {
       getParticipant: async (id) => known.get(id) ?? null,
@@ -105,6 +108,10 @@ function setup(world: World = {}) {
     trades: { listOpenListings: openListings },
     refreshFacts: async (sport, ids) => {
       refreshCalls.push({ sport, ids });
+      // Completion, not the call, is what makes the facts visible: a read started while the
+      // refresh is still running must not see them.
+      await Promise.resolve();
+      refreshed = true;
       return world.refresh ?? ok(null);
     },
     now: () => NOW,
@@ -200,15 +207,21 @@ describe("makeMove: refreshing facts", () => {
     );
   });
 
-  it("says the sport is not part of the season when the refresh does", async () => {
-    const { service, moveCalls } = setup({
-      refresh: err("sport_not_in_season", "mlb is not part of the active season"),
-    });
+  it.each(["espn_unavailable", "sport_not_in_season"])(
+    "treats a %s refresh error like any other: facts_unavailable, nothing written",
+    async (code) => {
+      const { service, moveCalls } = setup({ refresh: err(code, "provider words") });
+      expect(await service.makeMove(me, mlb())).toEqual(failure("facts_unavailable"));
+      expect(moveCalls).toEqual([]);
+    },
+  );
+
+  it("says there is no season when there is none, keeping the invalid_sport code", async () => {
+    const { service } = setup({ cached: null, myTeam: { id: "me", name: "me", slug: "me" } });
     expect(await service.makeMove(me, mlb())).toEqual({
       ok: false,
-      error: { code: "invalid_sport", message: "That sport isn't part of this season." },
+      error: { code: "invalid_sport", message: "There isn't an active season right now." },
     });
-    expect(moveCalls).toEqual([]);
   });
 
   it("checks again on fresh data: a pick that changed while ESPN was asked", async () => {
@@ -297,6 +310,17 @@ describe("makeMove: the write", () => {
           },
         },
       },
+    ]);
+  });
+
+  it("reads the fresh facts only after the refresh has completed", async () => {
+    // Run in parallel with the refresh, the read would start first and price the move on the
+    // stale facts (2 and 2 points) instead of 6 and 8.
+    const { service, moveCalls } = setup({ cached: staleCache(), fresh: freshFacts() });
+    await service.makeMove(me, mlb());
+    expect(moveCalls[0]?.scores).toEqual([
+      expect.objectContaining({ participantId: "me-mlb", points: 6 }),
+      expect.objectContaining({ participantId: "fa-zebras", points: 8 }),
     ]);
   });
 
