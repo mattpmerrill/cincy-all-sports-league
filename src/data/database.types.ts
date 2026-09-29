@@ -39,10 +39,12 @@ export type Database = {
           championships: number
           created_at: string
           fantasy_team_id: string
+          free_agent_move_id: string | null
           id: string
           participant_id: string
           points: number
           postseason_points: number
+          source: Database["public"]["Enums"]["banked_source"]
           sport_id: string
           trade_offer_id: string | null
         }
@@ -50,10 +52,12 @@ export type Database = {
           championships: number
           created_at?: string
           fantasy_team_id: string
+          free_agent_move_id?: string | null
           id?: string
           participant_id: string
           points: number
           postseason_points: number
+          source?: Database["public"]["Enums"]["banked_source"]
           sport_id: string
           trade_offer_id?: string | null
         }
@@ -61,10 +65,12 @@ export type Database = {
           championships?: number
           created_at?: string
           fantasy_team_id?: string
+          free_agent_move_id?: string | null
           id?: string
           participant_id?: string
           points?: number
           postseason_points?: number
+          source?: Database["public"]["Enums"]["banked_source"]
           sport_id?: string
           trade_offer_id?: string | null
         }
@@ -74,6 +80,13 @@ export type Database = {
             columns: ["fantasy_team_id"]
             isOneToOne: false
             referencedRelation: "fantasy_teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "banked_scores_free_agent_move_id_fkey"
+            columns: ["free_agent_move_id"]
+            isOneToOne: false
+            referencedRelation: "free_agent_moves"
             referencedColumns: ["id"]
           },
           {
@@ -155,6 +168,75 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "seasons"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      free_agent_moves: {
+        Row: {
+          added_participant_id: string
+          created_at: string
+          created_by: string | null
+          dropped_participant_id: string
+          fantasy_team_id: string
+          id: string
+          season_id: string
+          sport_id: string
+        }
+        Insert: {
+          added_participant_id: string
+          created_at?: string
+          created_by?: string | null
+          dropped_participant_id: string
+          fantasy_team_id: string
+          id?: string
+          season_id: string
+          sport_id: string
+        }
+        Update: {
+          added_participant_id?: string
+          created_at?: string
+          created_by?: string | null
+          dropped_participant_id?: string
+          fantasy_team_id?: string
+          id?: string
+          season_id?: string
+          sport_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_agent_moves_added_fkey"
+            columns: ["added_participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+          {
+            foreignKeyName: "free_agent_moves_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "free_agent_moves_dropped_fkey"
+            columns: ["dropped_participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+          {
+            foreignKeyName: "free_agent_moves_sport_id_fkey"
+            columns: ["sport_id"]
+            isOneToOne: false
+            referencedRelation: "sports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "free_agent_moves_team_fkey"
+            columns: ["fantasy_team_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id", "season_id"]
           },
         ]
       }
@@ -947,6 +1029,18 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
+      make_free_agent_move: {
+        Args: {
+          p_actor: string
+          p_add_participant_id: string
+          p_drop_participant_id: string
+          p_post_body: string
+          p_post_payload: Json
+          p_scores: Json
+          p_sport_code: string
+        }
+        Returns: string
+      }
       make_trade_offer: {
         Args: {
           p_actor: string
@@ -1047,6 +1141,7 @@ export type Database = {
       }
     }
     Enums: {
+      banked_source: "trade" | "free_agent"
       claim_status: "pending" | "approved" | "rejected"
       message_kind: "member" | "league"
       participant_kind: "team" | "athlete"
@@ -1199,6 +1294,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      banked_source: ["trade", "free_agent"],
       claim_status: ["pending", "approved", "rejected"],
       message_kind: ["member", "league"],
       participant_kind: ["team", "athlete"],
