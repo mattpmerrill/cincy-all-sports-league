@@ -1,8 +1,7 @@
 import type { UserRole } from "@/domain/membership/membership";
-import type { PushTopicSettings } from "@/domain/push";
+import type { PushTopic, PushTopicSettings } from "@/domain/push";
 import type { DbClient } from "./db-client";
 import type { Tables } from "./database.types";
-import { PUSH_TOPIC_COLUMN } from "./push.repository";
 
 /** A member as the app sees them. Deliberately has no email: profiles are publicly readable. */
 export type Profile = {
@@ -37,6 +36,17 @@ export const OPT_IN_COLUMNS = [
 ] as const satisfies readonly (keyof Tables<"profiles">)[];
 export type OptInColumn = (typeof OPT_IN_COLUMNS)[number];
 type OptInRow = Record<OptInColumn, boolean>;
+
+/**
+ * Which `profiles` switch decides whether a topic reaches a member. The SQL `push_targets` CASE
+ * mirrors it. It sits here, not in the (server-only) push repository, because this file is built
+ * from the browser client too.
+ */
+export const PUSH_TOPIC_COLUMN = {
+  trades: "push_trades",
+  feed: "push_feed",
+  scores: "push_scores",
+} as const satisfies Record<PushTopic, OptInColumn>;
 
 /** A computed key widens to a string index; this keeps the write typed to the opt-in columns. */
 function optInPatch(column: OptInColumn, optIn: boolean): Partial<OptInRow> {

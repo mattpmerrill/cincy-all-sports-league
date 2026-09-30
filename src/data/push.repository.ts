@@ -1,3 +1,4 @@
+import "server-only";
 import { z } from "zod";
 import type { PushFailureOutcome, PushStore, PushTarget, PushTopic } from "@/domain/push";
 import type { AppError, Result } from "@/lib/result";
@@ -17,13 +18,8 @@ import { PG, type DbClient } from "./db-client";
 
 // ===== topics =====
 
-/** Which `profiles` switch decides whether a topic reaches a member. The SQL `push_targets` CASE mirrors it. */
-export const PUSH_TOPIC_COLUMN = {
-  trades: "push_trades",
-  feed: "push_feed",
-  scores: "push_scores",
-} as const satisfies Record<PushTopic, keyof Tables<"profiles">>;
-
+// The topic-to-column map lives in profiles.repository.ts: that file reaches the browser, and
+// this one must not.
 type Equal<A, B> = [A] extends [B] ? ([B] extends [A] ? true : false) : false;
 type Assert<T extends true> = T;
 /**

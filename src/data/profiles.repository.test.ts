@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "./db-client";
-import { createProfilesRepository } from "./profiles.repository";
+import { PUSH_TOPIC_COLUMN, createProfilesRepository } from "./profiles.repository";
 
 describe("email opt-ins", () => {
   it("reads the named column, and null when there is no profile", async () => {
@@ -69,5 +69,13 @@ describe("push switches", () => {
 
   it("is null when there is no profile", async () => {
     expect(await db(null).repo.getPushTopics("u1")).toBeNull();
+  });
+
+  it("names one profiles column per topic", () => {
+    expect(PUSH_TOPIC_COLUMN).toEqual({
+      trades: "push_trades",
+      feed: "push_feed",
+      scores: "push_scores",
+    });
   });
 });

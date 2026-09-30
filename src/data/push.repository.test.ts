@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
+
+// The module is server-only; outside the server bundler that import must be a no-op.
+vi.mock("server-only", () => ({}));
+
 import type { DbClient } from "./db-client";
-import { PUSH_TOPIC_COLUMN, PushStorageError, createPushRepository } from "./push.repository";
+import { PushStorageError, createPushRepository } from "./push.repository";
 
 const ACTOR = "6f3b7c1e-8c1a-4a55-9d0a-1b2c3d4e5f60";
 const SUB_ID = "0b9f7e2a-3f52-4d27-8f6e-4d3a5b6c7d80";
@@ -236,15 +240,5 @@ describe("a member's own devices", () => {
     ]);
     const selected = String(calls.find((c) => c.method === "select")?.args[0]);
     expect(selected).not.toMatch(/endpoint|p256dh|auth\b/);
-  });
-});
-
-describe("PUSH_TOPIC_COLUMN", () => {
-  it("names one profiles column per topic", () => {
-    expect(PUSH_TOPIC_COLUMN).toEqual({
-      trades: "push_trades",
-      feed: "push_feed",
-      scores: "push_scores",
-    });
   });
 });
