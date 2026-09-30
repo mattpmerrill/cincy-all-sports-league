@@ -44,6 +44,8 @@ type Listener = (event: FakeEvent) => void;
 
 type FakeClient = {
   url: string;
+  focused?: boolean;
+  visibilityState?: "visible" | "hidden";
   focus: ReturnType<typeof vi.fn>;
   navigate: ReturnType<typeof vi.fn>;
 };
@@ -429,12 +431,37 @@ describe("notificationclick", () => {
     expect(w.openWindow).toHaveBeenCalledExactlyOnceWith(`${ORIGIN}/feed`);
   });
 
-  it("opens a window when navigate is refused", async () => {
+  it("keeps the focused window, and opens no second one, when navigate is refused", async () => {
     const open = client(`${ORIGIN}/`, { navigate: vi.fn(() => Promise.reject(new Error("no"))) });
     const w = loadWorker([open]);
     await w.click({ url: "/feed" });
     expect(open.focus).toHaveBeenCalledOnce();
-    expect(w.openWindow).toHaveBeenCalledExactlyOnceWith(`${ORIGIN}/feed`);
+    expect(open.navigate).toHaveBeenCalledExactlyOnceWith(`${ORIGIN}/feed`);
+    expect(w.openWindow).not.toHaveBeenCalled();
+  });
+
+  it("uses the window the member is looking at, not just the first one of this site", async () => {
+    const buried = client(`${ORIGIN}/rules`, { visibilityState: "hidden", focused: false });
+    const visible = client(`${ORIGIN}/feed`, { visibilityState: "visible", focused: false });
+    const focused = client(`${ORIGIN}/me`, { visibilityState: "hidden", focused: true });
+    const first = loadWorker([buried, visible, focused]);
+    await first.click({ url: "/trades" });
+    expect(visible.navigate).toHaveBeenCalledExactlyOnceWith(`${ORIGIN}/trades`);
+    expect(buried.navigate).not.toHaveBeenCalled();
+    expect(focused.navigate).not.toHaveBeenCalled();
+
+    const second = loadWorker([buried, focused]);
+    await second.click({ url: "/trades" });
+    expect(focused.navigate).toHaveBeenCalledExactlyOnceWith(`${ORIGIN}/trades`);
+  });
+
+  it("falls back to the first window of this site when none is visible or focused", async () => {
+    const a = client(`${ORIGIN}/a`);
+    const b = client(`${ORIGIN}/b`, { visibilityState: "hidden", focused: false });
+    const w = loadWorker([client("https://evil.test/", { focused: true }), a, b]);
+    await w.click({ url: "/trades" });
+    expect(a.navigate).toHaveBeenCalledExactlyOnceWith(`${ORIGIN}/trades`);
+    expect(b.navigate).not.toHaveBeenCalled();
   });
 
   it("opens a window when focus is refused", async () => {

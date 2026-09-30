@@ -79,17 +79,21 @@ self.addEventListener("notificationclick", (event) => {
       .matchAll({ type: "window", includeUncontrolled: true })
       .catch(() => [])
       .then(async (list) => {
-        const client = list.find(sameOrigin);
-        if (client) {
-          try {
-            await client.focus();
-            await client.navigate(url);
-            return;
-          } catch {
-            // navigate() is missing or refused (older Safari, uncontrolled client): open instead.
-          }
+        // Prefer the window the member is looking at over one buried in another tab.
+        const mine = list.filter(sameOrigin);
+        const client = mine.find((c) => c.focused || c.visibilityState === "visible") || mine[0];
+        if (!client) return self.clients.openWindow(url);
+        try {
+          await client.focus();
+        } catch {
+          return self.clients.openWindow(url);
         }
-        await self.clients.openWindow(url);
+        try {
+          await client.navigate(url);
+        } catch {
+          // navigate() is missing or refused (older Safari, uncontrolled client): the focused
+          // window stays. Opening another one here could leave two app contexts on iOS.
+        }
       }),
   );
 });

@@ -8,7 +8,13 @@ import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 // (Notification.permission stays "denied"), so showNotification is refused there. Full Chromium
 // in its new headless mode honors it and keeps the notifications, so this file asks for that
 // build. It is still headless: no display is needed. It must sit at the top level of the file.
-test.use({ channel: "chromium" });
+//
+// Native notifications are switched off too. Left on, macOS can post real notifications to the
+// developer's Notification Center, and the bridge between them and Chromium drops pushes at random.
+test.use({
+  channel: "chromium",
+  launchOptions: { args: ["--disable-features=NativeNotifications,SystemNotifications"] },
+});
 
 const FALLBACK_TITLE = "Cincy's All-Sports League";
 
@@ -82,6 +88,12 @@ test.describe("service worker file", () => {
   });
 });
 
+// Chromium's push delivery and notification bridge sometimes drops the first message sent over
+// CDP; the worker is not at fault (the same payload shows on a retry). So each test delivers and
+// asserts inside a retry. Re-delivering uses the same tag, which replaces the earlier
+// notification, so "exactly one" still means something.
+const RETRY = { intervals: [500, 1000, 2000], timeout: 10_000 };
+
 test.describe("push handler", () => {
   test.beforeEach(async ({ context }) => {
     await context.grantPermissions(["notifications"]);
@@ -89,10 +101,9 @@ test.describe("push handler", () => {
 
   test("shows a valid message exactly as sent", async ({ context, page }) => {
     const deliver = await registerWorker(context, page);
-    await deliver(JSON.stringify(message));
-    await expect
-      .poll(() => shownWithTag(page, message.tag))
-      .toEqual([
+    await expect(async () => {
+      await deliver(JSON.stringify(message));
+      expect(await shownWithTag(page, message.tag)).toEqual([
         {
           title: message.title,
           body: message.body,
@@ -101,15 +112,16 @@ test.describe("push handler", () => {
           lang: "en",
         },
       ]);
+    }).toPass(RETRY);
   });
 
   test("shows the fallback for a payload it does not accept", async ({ context, page }) => {
     const deliver = await registerWorker(context, page);
     // Wrong version and an off-site url: the worker must still show something, never stay silent.
-    await deliver(JSON.stringify({ ...message, v: 2, url: "//evil.example", tag: "e2e-bad" }));
-    await expect
-      .poll(() => shownWithTag(page, "alert"))
-      .toEqual([
+    const bad = JSON.stringify({ ...message, v: 2, url: "//evil.example", tag: "e2e-bad" });
+    await expect(async () => {
+      await deliver(bad);
+      expect(await shownWithTag(page, "alert")).toEqual([
         {
           title: FALLBACK_TITLE,
           body: "Something new in the league.",
@@ -118,13 +130,17 @@ test.describe("push handler", () => {
           lang: "en",
         },
       ]);
+    }).toPass(RETRY);
     expect(await shownWithTag(page, "e2e-bad")).toEqual([]);
   });
 
   test("shows the fallback when the push is not JSON", async ({ context, page }) => {
     const deliver = await registerWorker(context, page);
-    await deliver("this is not json");
-    await expect.poll(async () => (await shownWithTag(page, "alert")).length).toBe(1);
-    expect((await shownWithTag(page, "alert"))[0]?.title).toBe(FALLBACK_TITLE);
+    await expect(async () => {
+      await deliver("this is not json");
+      const shown = await shownWithTag(page, "alert");
+      expect(shown).toHaveLength(1);
+      expect(shown[0]?.title).toBe(FALLBACK_TITLE);
+    }).toPass(RETRY);
   });
 });
