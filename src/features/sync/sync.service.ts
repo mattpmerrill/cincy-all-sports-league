@@ -6,6 +6,7 @@ import type { SnapshotWrite } from "@/data/standings-snapshots.repository";
 import type { Json } from "@/data/database.types";
 import type { SyncRunRow } from "@/data/sync-runs.repository";
 import type { Logger } from "@/lib/logger";
+import { mapPool } from "@/lib/map-pool";
 import { err, ok, type AppError, type Result } from "@/lib/result";
 import { easternDate } from "@/lib/time";
 import { buildMoversPost, buildScoreUpdatePost, type LeaguePost } from "@/domain/feed";
@@ -566,22 +567,4 @@ function summaryOf(plan: SyncPlan, applied: { upserted: number; deleted: number 
     unmatchedExternalIds: plan.unmatchedExternalIds,
     missingExternalIds: plan.missingExternalIdCount,
   };
-}
-
-/** Runs `fn` over `items` with at most `limit` in flight, keeping result order. */
-async function mapPool<T, R>(
-  items: readonly T[],
-  limit: number,
-  fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results = new Array<R>(items.length);
-  let next = 0;
-  const worker = async () => {
-    while (next < items.length) {
-      const i = next++;
-      results[i] = await fn(items[i]);
-    }
-  };
-  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
-  return results;
 }
