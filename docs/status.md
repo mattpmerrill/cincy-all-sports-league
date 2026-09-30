@@ -111,41 +111,79 @@ migrations and Matt's go-ahead first (see "Ship checklist" under Operations).
   locally" against `https://www.cincysports.xyz`, once per sport (11 calls), or wait for the
   09:15 UTC pg_cron job. The pool is empty until then. Check the cached read model size after it
   (see the last follow-up below).
-- Push alerts, key rotation: generating a new pair (`pnpm exec web-push generate-vapid-keys
---json`, on your machine, never pasted into chat or logs) invalidates every device
+- Push alerts, key rotation: generate a new pair as in ship step 1, which invalidates every device
   subscription. Update `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` together in Vercel and
   redeploy (the public key is inlined at build time). A browser that already allowed alerts
-  re-subscribes silently the next time it opens the site. Anyone else has to turn alerts on again.
-  Save the private key in a password manager first: Vercel sensitive values cannot be read back.
-  A half-rotated pair (one key changed) reads as "not available" and logs the variable names.
-- Push alerts, checking on it: delivery logs `push delivery finished` with counts (`sent`,
-  `noDevice`, `duplicates`, `removed`, `rejected`, `transient`, `pruned`) under one correlation id.
-  It never logs an endpoint, a key or alert text.
+  re-subscribes silently the next time it opens the site, after a 10 second pause. Anyone else has
+  to turn alerts on again. Save the private key in a password manager first: Vercel sensitive
+  values cannot be read back. A half-rotated pair (one key changed) reads as "not available" and
+  logs the variable names.
+- Push alerts, checking on it: delivery logs `push delivery finished` under one correlation id,
+  with these counts: `alerts` (in), `noDevice`, `duplicates`, `encodeFailed`, `sent`, `removed`,
+  `badEndpoint`, `rejected`, `transient`, `pruned` and `storeErrors`. It is a warning instead of
+  info when `storeErrors` is above zero. `push delivery ran out of time` (warn) adds the same
+  counts. It never logs an endpoint, a key or alert text.
+- Digest test: `/api/cron/weekly-digest?only=<email>` with the `CRON_SECRET` bearer.
+- A one-off League post in the feed is a row in `messages` with `kind = 'league'`, the active
+  `season_id` and an empty payload.
 
 ### Ship checklist for push alerts (needs Matt's explicit go-ahead)
 
 Every step here touches production configuration, the production database or the live site, so
-none of it happens without a yes from Matt at the time.
+none of it happens without a yes from Matt at the time. Run the commands from the repo root.
 
-1. On Matt's machine: `pnpm exec web-push generate-vapid-keys --json`. Never paste the output into
-   chat or logs.
-2. Save the private key in a password manager first. Vercel sensitive values cannot be read back,
-   and losing the key means rotating, which makes everyone turn alerts on again.
-3. Add the three variables to Vercel production:
-   `vercel env add NEXT_PUBLIC_VAPID_PUBLIC_KEY production`,
-   `vercel env add VAPID_PRIVATE_KEY production --sensitive`, and
-   `vercel env add VAPID_SUBJECT production` (value `https://www.cincysports.xyz`).
-4. Migrations before code: `supabase db push --linked --dry-run`, read it, then run it without
-   `--dry-run`. That applies `20260929170000` to `20260929170200` and any later ones.
-5. Merge to `main`. `NEXT_PUBLIC_*` is inlined at build time, so the keys must exist before that
-   build; if they were added later, redeploy. Optional staging: deploying without keys first is
-   safe (the UI says alerts are "not available yet" and the prompt never shows), then add the keys
-   and redeploy.
-6. After the deploy, check the worker's headers on the live site:
-   `curl -sI https://www.cincysports.xyz/sw.js`. Expect `Content-Type: application/javascript`,
-   `Cache-Control: no-cache, no-store, must-revalidate`, the `default-src 'self'; script-src 'self'`
-   CSP, `X-Content-Type-Options: nosniff` and **no** `Set-Cookie`. The headers were verified on
-   `next start`, not yet on Vercel.
+1. Generate the keys on Matt's machine, and never paste them into chat or a log:
+
+   ```sh
+   KEYS=$(pnpm exec web-push generate-vapid-keys --json)
+   PUB=$(printf '%s' "$KEYS" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).publicKey')
+   PRIV=$(printf '%s' "$KEYS" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).privateKey')
+   unset KEYS
+   printf '%s' "$PUB" | wc -c    # expect 87
+   printf '%s' "$PRIV" | wc -c   # expect 43
+   ```
+
+2. Save both keys in the password manager now. A sensitive Vercel value cannot be read back, and
+   losing the private key means rotating, which makes everyone turn alerts on again.
+3. Add them to Vercel Production. This does not redeploy anything:
+
+   ```sh
+   printf '%s' "$PUB" | vercel env add NEXT_PUBLIC_VAPID_PUBLIC_KEY production --no-sensitive
+   printf '%s' "$PRIV" | vercel env add VAPID_PRIVATE_KEY production --sensitive
+   unset PUB PRIV
+   vercel env ls production    # both names are listed
+   ```
+
+   Leave `VAPID_SUBJECT` unset: it defaults to `https://www.cincysports.xyz`, and a typo in it
+   switches push off. If it is set anyway:
+   `printf '%s' 'https://www.cincysports.xyz' | vercel env add VAPID_SUBJECT production --no-sensitive`.
+   Never copy the production pair into Preview or Development. (The flags above exist in Vercel
+   CLI 53.3.2, checked with `vercel env add --help`; the CLI also reads the value from stdin.)
+
+4. Migrations before code. `supabase db push --linked --dry-run` must list exactly
+   `20260929170000`, `20260929170100` and `20260929170200`. Then `supabase db push --linked`. Then
+   a read-only check that
+   `select jobname, schedule from cron.job where jobname = 'cincy-push-sends-cleanup';` returns
+   one row with the schedule `40 9 * * *`.
+5. Merge `feat/push-alerts` into `main` and push. The keys must exist before this build, because
+   `NEXT_PUBLIC_*` is inlined at build time. If they were added after it started, redeploy without
+   the build cache. Optional staging: skip step 3, merge, check the site, then do step 3 and
+   redeploy. Deploying without keys is safe: `/me` says alerts are "not available yet" and the
+   prompt never shows.
+6. After the deploy:
+   - `curl -sI https://www.cincysports.xyz/sw.js`. Expect these headers, and no `Set-Cookie`:
+     - `Content-Type: application/javascript; charset=utf-8`
+     - `Cache-Control: no-cache, no-store, must-revalidate`
+     - `Content-Security-Policy: default-src 'self'; script-src 'self'`
+     - `X-Content-Type-Options: nosniff`
+
+     They were verified on `next start`, not yet on Vercel.
+
+   - `curl -s https://www.cincysports.xyz/rules | grep -o 'configured\\":[a-z]*'` must print
+     `configured\":true`. That proves both keys were present at build time and are a pair. (Checked
+     against a local build: with a throwaway pair it prints `configured\":true`, without keys
+     `configured\":false`.)
+   - The Vercel logs show no line starting `push alerts are off`.
 7. Matt's real-device checklist, in this order, before anyone is told:
    1. `curl -sI https://www.cincysports.xyz/sw.js` headers as in step 6.
    2. iPhone Safari tab: the "add to Home Screen" hint shows on `/` and on `/me`.
@@ -163,9 +201,12 @@ none of it happens without a yes from Matt at the time.
        alerts must still be on (this is the regression check for the offline session case).
    11. iOS Settings > Notifications off for the app: `/me` shows blocked. Turn it back on.
    12. Sign out, then trigger an alert: nothing arrives and the device row is gone.
-   13. With permission granted, deploy a preview with a deliberately wrong public key: the device
-       re-subscribes silently. This also checks that WebKit allows `subscribe` without a tap when
-       permission is already granted, which is unverified.
+   13. On a preview at a stable branch URL with its own valid Preview-scoped key pair A, turn
+       alerts on. Set a new valid pair B for that branch and redeploy. Reopen it: `/me` still says
+       On and a test alert arrives. WebKit re-subscribing without a tap is unverified. (A wrong or
+       mismatched public key does not exercise this: push then reads as "not available" and the
+       device check never runs. A preview is also another origin, with its own worker,
+       subscription and localStorage, and it may share the production database.)
    14. Android Chrome: prompt, turn on, test alert, then a score alert after a sync.
    15. Desktop Chrome: turn on, test, sign out, sign in as another account. The old subscription
        is dropped and the prompt returns.
@@ -173,10 +214,8 @@ none of it happens without a yes from Matt at the time.
 8. Rollout is everyone at once, right after Matt has tested his own iPhone the same hour. There is
    no owner-only gate. The Home Screen email copy and a launch announcement come afterwards (see
    follow-ups).
-
-- Digest test: `/api/cron/weekly-digest?only=<email>` with the `CRON_SECRET` bearer.
-- A one-off League post in the feed is a row in `messages` with `kind = 'league'`, the active
-  `season_id` and an empty payload.
+9. Rollback: remove the two Vercel variables and redeploy, and the site reads "not available yet"
+   again. The migrations are additive and can stay. Reverting the code is also safe.
 
 ## Known limits and follow-ups
 
@@ -199,6 +238,16 @@ none of it happens without a yes from Matt at the time.
     cached read model size after the first production load. The data cache has a documented
     per-item limit, and the failure mode is uncached reads (slower pages), not an outage.
 - Push alerts (full reasoning in [ADR-005](decisions/ADR-005-web-push-alerts.md)):
+  - How the prompt behaves: the in-app "Get alerts on this device?" card shows only to signed-in
+    members who own a team, only on `/`, `/feed`, `/trades` and `/trades/*`. The first "Not now"
+    hides it for 14 days and the second for good, remembered per member per browser. A device whose
+    keys cannot encrypt (`push_invalid_subscription`) is removed like a 404 or 410.
+  - A member who is offline with an expired token sees no account control in the header (the
+    session state stays "loading") instead of a wrong "Sign in". This is intended: push drops a
+    device on "signed out", so a session that could not be refreshed is never read as one.
+  - In the sync cron, the 20 second delivery and 3 second tail share the route's 60 seconds with
+    the sync itself. If a sync ever takes longer than about 37 seconds, claimed score alerts can
+    be lost (delivery is at most once). The sync is unaffected.
   - Delivery is at most once. A key is claimed before the send, so a transient failure is not
     retried, and a run that crashes between saving results and notifying loses its alert.
   - Overlapping sync runs (the 30-minute cron and an admin "Sync now" together) can each send a
@@ -236,20 +285,23 @@ none of it happens without a yes from Matt at the time.
     `jmt<N>.google.com` hosts are allowed by a pattern; a `google.com` suffix would not be safe.
   - Chromium's `unsubscribe()` finishes upstream asynchronously. In a local check, an unsubscribe
     followed at once by a subscribe with a **different key** gave a subscription the push service
-    answered 410 to in about one attempt in four, sometimes for a few seconds and sometimes
-    for good. The same key at once, or a 10 second pause first, always worked. Our re-subscribe
-    after a key rotation does exactly that switch. If it hits the bad case, the device shows "on",
-    the first alert is lost, delivery removes the row on the 410, and the daily refresh (or a test
-    alert that finds no row) registers it again. A short pause or a verifying send after the
-    switch would close it; not built.
+    answered 410 to about one time in four, sometimes for a few seconds and sometimes for good.
+    The same key at once, or a 10 second pause first, was always fine. The silent re-subscribe
+    after a key rotation (and turning alerts on over a stale-key subscription) now waits 10
+    seconds between the two, so the residual risk is negligible. If it ever did hit the bad case,
+    the device would show "on" and the first alert would be lost, because delivery removes the row
+    on the 410. Registering a subscription the push service has killed for good again only repeats
+    the loop, so the recovery is different: a first test alert with no server row gets `not_found`
+    and registers the device again; a second gets `push_gone`, which ends the dead subscription
+    (`forgetDead`) and offers Turn on again. Turning alerts off and on also works.
   - **Not verified on real phones.** Nothing has been tried on a real iPhone, Android phone,
     Firefox or desktop Safari, so Apple's push service, iOS notification taps (the tap handler is
     covered only by a `node:vm` test) and WebKit's `WindowClient.navigate` are unverified, as are
     the `/sw.js` headers on Vercel.
   - What was verified in desktop Chromium (headed, a normal profile, not incognito: Chrome turns
     the Push API off there) against Google's real push service and the local stack, through the
-    app: turn on from the prompt (22 to 32 seconds for the first subscribe in a fresh profile,
-    which the old 15 second limit would have failed) and from `/me`; a test alert, a trade offer
+    app: turn on from the prompt (22 to 33 seconds in fresh Chromium profiles for the first
+    subscribe, which the old 15 second limit would have failed) and from `/me`; a test alert, a trade offer
     from a second account, a reply, a reaction, and one score alert after a real sync run, each
     arriving as a notification shown by `public/sw.js` with the right text and link; sign-out
     deleting the device row at once and a later alert not being sent. Only the desktop Chromium

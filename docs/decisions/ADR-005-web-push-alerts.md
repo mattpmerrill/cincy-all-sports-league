@@ -78,6 +78,14 @@ in its own `*.server.ts` (`createPushNotifier({ schedule: after, delivery, logge
 nothing, and a failure in them cannot change its result. The delivery is built inside the task, so
 the VAPID secrets are read after the response, like the Resend key.
 
+**The prompt.** The in-app "Get alerts on this device?" card (`push-prompt.tsx`, rules in
+`prompt-rules.ts`) shows only to signed-in members who own a team, since anyone else would be sent
+nothing, and only on `/`, `/feed`, `/trades` and `/trades/*`, where a member is already looking at
+the league. The first "Not now" hides it for 14 days and the second for good. That is remembered
+per member per browser, because a shared phone is common in a family league. On iPhone outside the
+Home Screen app it shows the install hint instead, with an "open in Safari" line for in-app
+browsers. A deploy that cannot send alerts never shows it.
+
 **Wording lives in the domain.** `domain/push` builds every message (`tradePushAlert`,
 `replyPushAlert`, `reactionPushAlert`, `scorePushAlerts`, `testPushAlert`) through one
 `pushMessage` function that collapses whitespace, strips bidi overrides, clips by code points so an
@@ -92,7 +100,8 @@ screen.
 against a device, once per run, and never for a device that took a send in the same run. Five
 counted rejections prune the device. Transient problems (429, 5xx, timeout, network) never count:
 a push-service outage must not prune healthy devices. A 404 or 410 removes the device at once, as
-does an address that is not on the allow-list of push services. Delivery refuses to POST to a host
+does `push_invalid_subscription` (stored keys that cannot encrypt) and an address that is not on
+the allow-list of push services. Delivery refuses to POST to a host
 off the allow-list in `domain/push/endpoint.ts` (https, no login or port, and either a hostname
 suffix from `PUSH_SERVICE_HOSTS` or a full-hostname match on `PUSH_SERVICE_HOST_PATTERNS`), so a
 member cannot point our server at an arbitrary address. `isAllowedPushEndpoint` is the single
@@ -112,10 +121,11 @@ overlaps an unsubscribe and a background check never runs between `pushManager.s
 marker write. `Notification.requestPermission()` is the first call in the click handler, before
 the queue, because Safari ties the prompt to the tap. Every browser or server call is bounded so
 one hung call cannot wedge the page: 15 seconds for a server call, 45 seconds for the browser's
-`pushManager.subscribe` (the first one in a fresh Chromium profile was measured at 22 to 33
-seconds, while registering with Google's push service), and a queue release of 60 seconds so a
+`pushManager.subscribe` (the first one took 22 to 33 seconds in fresh Chromium profiles,
+while registering with Google's push service), and a queue release of 60 seconds so a
 slow subscribe is never released early. A subscription that arrives after its turn-on gave up is
-ended, unless a retry has registered it. A localStorage marker (`cincy:push-device`, holding the user id
+ended, unless a retry has registered it. A re-subscribe after a key rotation waits 10 seconds
+between ending the old subscription and making the new one (see the known limit below). A localStorage marker (`cincy:push-device`, holding the user id
 and the last sync time) is the only link between a browser subscription and a member; a
 subscription with no marker, or with someone else's, is dropped. The route-change check refreshes
 the server row at most once a day. **Sign-out deletes the server row immediately**: an app-level
@@ -145,13 +155,16 @@ push services.
   go stale within hours.
 - Alert text passes, encrypted, through Apple, Google, Mozilla or Microsoft. Payloads are kept
   minimal, and the privacy page says so.
-- `after()` shares the route's 60 second `maxDuration` with the response, so delivery has a 20
-  second budget, plus a 3 second tail for recording outcomes. Sends run six at a time. The test
-  alert has its own 8 second budget because a person is waiting.
+- `after()` shares the invocation's time limit with the response, so delivery has a 20 second
+  budget, plus a 3 second tail for recording outcomes. Sends run six at a time. The test alert has
+  its own 8 second budget because a person is waiting. The 60 second `maxDuration` is set only on
+  `/api/cron/*` and `/admin/results*`; the feed and trades actions run under Vercel's default for
+  the plan (trade emails already used `after()` there). In the sync cron the delivery and its tail
+  share 60 seconds with the sync itself: if a sync ever takes longer than about 37 seconds,
+  claimed score alerts can be lost (delivery is at most once). The sync is unaffected.
 - `web-push` is bundled only for the routes that send. Next registers every Server Action for every
   route, so a static route's server graph still lists the `web-push` chunk; it is never evaluated
   there (measured with a sentinel), and the client bundle contains none of it.
-
 - A new real push host shows up as a refused host in the logs. Add it to the allow-list
   deliberately and as tightly as the two lists allow, with a test.
 
@@ -185,6 +198,19 @@ Stated plainly, none of them fixed in this change.
 - **A forged endpoint moves a row to the caller, by design.** It requires the victim's secret
   endpoint URL, the victim's browser cannot decrypt what the attacker's account sends, and nothing
   confidential leaks. Severity is low.
+- **Unsubscribe then subscribe with a different key can give a dead subscription.** Chromium
+  finishes `unsubscribe()` upstream asynchronously, and in a local check a subscribe with another
+  key straight after it was answered 410 about one time in four (sometimes briefly, sometimes for
+  good). A rotation re-subscribe does exactly that switch, so it now waits 10 seconds in between,
+  which was clean every time; the residual risk is negligible. If it ever happened, the device
+  would show "on" and the first alert would be lost when delivery removes the row on the 410.
+  Registering a subscription the push service has killed for good again only repeats the loop.
+  Recovery is: a first test alert with no server row gets `not_found` and registers again, a second
+  gets `push_gone`, which calls `forgetDead` and offers Turn on again. Turning alerts off and on
+  also works.
+- **A member who is offline with an expired token sees no account control** in the header (the
+  session state stays "loading") instead of "Sign in". That is intended: a session that could not
+  be refreshed is never read as a sign-out, because push drops a device on "signed out".
 - **Reply and reaction alerts link to `/feed`**, not to the message.
 - **Firefox `pushsubscriptionchange` is not handled.** The daily refresh covers it.
 - **Focus ring contrast.** `--ring` (the brand color) gives about 1.4:1 on the dark canvas across
@@ -198,6 +224,23 @@ Stated plainly, none of them fixed in this change.
 - **Not verified on real devices.** See "Known limits and follow-ups" in
   [docs/status.md](../status.md). Real iPhone, Android and Safari delivery, Apple's push service,
   and notification taps have not been exercised.
+
+### Also included
+
+Beyond the original ask, and easy to miss: a "Send a test alert" button and the "Also on N other
+devices" line on `/me`; a hint for iPhone in-app browsers to open the page in Safari; a "Push
+alerts" section on the privacy page; the existing "Trade alerts" email section renamed "Trade
+emails" on `/me` so two sections are not both called alerts; a `/push-badge` icon route for the
+Android badge; `main` made programmatically focusable so dismissing the prompt hands focus back;
+and the session-state mapping shared by the header and the device checks
+(`lib/supabase/session-state.ts`), which changes the header's offline behavior (see the known
+limit above). The Sign out button on `/me` stays a plain server-action form, so it works without
+JavaScript, with the device cleanup as an enhancement on top.
+
+The VAPID key-pair check has two owners on purpose: `isKeyPair` in `lib/env.server.ts` decides at
+config time whether push is available at all, and `vapidUsable` in `integrations/webpush/send.ts`
+checks again at send time as defense in depth (it also proves the keys can sign). Do not merge
+them.
 
 ### Lessons from review that shaped the design
 

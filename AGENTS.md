@@ -56,17 +56,17 @@ It doubles as a public portfolio project, so structure and tests should be exemp
 
 **File map**
 
-| Path                    | What it holds                                                                                           |
-| ----------------------- | ------------------------------------------------------------------------------------------------------- |
-| `src/app`               | Routes only                                                                                             |
-| `src/features/*`        | Vertical slices: standings, fantasy-teams, sports, auth, claims, results-admin, sync, free-agents, push |
-| `src/domain`            | Pure rules: `scoring`, `standings`, `sports`                                                            |
-| `src/data`              | Repositories and row-to-domain mappers                                                                  |
-| `src/integrations/espn` | The ESPN adapter (and `resend`, `webpush`)                                                              |
-| `src/lib`               | env, Supabase clients, logger, `Result`                                                                 |
-| `src/ui`                | shadcn/ui primitives and design-system components                                                       |
-| `supabase/`             | Migrations, pgTAP tests, seed                                                                           |
-| `docs/`                 | Architecture and ADRs                                                                                   |
+| Path               | What it holds                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| `src/app`          | Routes only                                                                                             |
+| `src/features/*`   | Vertical slices: standings, fantasy-teams, sports, auth, claims, results-admin, sync, free-agents, push |
+| `src/domain`       | Pure rules: `scoring`, `standings`, `sports`, `push`                                                    |
+| `src/data`         | Repositories and row-to-domain mappers                                                                  |
+| `src/integrations` | One adapter per vendor: `espn`, `resend`, `webpush`                                                     |
+| `src/lib`          | env, Supabase clients, logger, `Result`                                                                 |
+| `src/ui`           | shadcn/ui primitives and design-system components                                                       |
+| `supabase/`        | Migrations, pgTAP tests, seed                                                                           |
+| `docs/`            | Architecture and ADRs                                                                                   |
 
 **Vocabulary.** Use these words in code, UI and docs.
 
