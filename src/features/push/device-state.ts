@@ -106,7 +106,21 @@ export const DEVICE_COPY = {
   signedOut: "Sign in again, then turn alerts on.",
   network: "We couldn't reach the server. Check your connection and try again.",
   generic: "We couldn't turn alerts on. Try again in a moment.",
+  slowPushService:
+    "Your browser's push service is slow to answer. Give it a moment, then try again.",
 } as const;
+
+/**
+ * The error a bounded wait ends with. It has its own name so the copy can say "slow" instead of
+ * "failed": the first push subscription in a fresh browser profile can take half a minute.
+ */
+export function timeoutError(): Error {
+  const error = new Error("timeout");
+  error.name = "TimeoutError";
+  return error;
+}
+
+export const isTimeoutError = (error: unknown): boolean => errorName(error) === "TimeoutError";
 
 function errorName(error: unknown): string | null {
   if (typeof error !== "object" || error === null || !("name" in error)) return null;
@@ -124,6 +138,8 @@ export function describeSubscribeFailure(error: unknown): string {
       return DEVICE_COPY.brave;
     case "NotAllowedError":
       return DEVICE_COPY.notAllowed;
+    case "TimeoutError":
+      return DEVICE_COPY.slowPushService;
     default:
       return DEVICE_COPY.generic;
   }

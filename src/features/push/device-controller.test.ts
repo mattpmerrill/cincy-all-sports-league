@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  SUBSCRIBE_TIMEOUT_MS,
   createDeviceController,
   type DevicePort,
   type DeviceSubscription,
@@ -7,7 +8,7 @@ import {
 import { DEVICE_COPY } from "./device-state";
 import { DEVICE_REFRESH_MS, type DeviceMarker } from "./device-sync";
 import type { PushActions } from "./push-actions";
-import { createSerialQueue } from "./serial-queue";
+import { QUEUE_RELEASE_MS, createSerialQueue } from "./serial-queue";
 import type { PushSupport } from "./support";
 
 const NOW = Date.UTC(2026, 8, 29, 12);
@@ -24,6 +25,8 @@ type World = {
   userId: string | null;
   marker: DeviceMarker | null;
   subscribeError: Error | null;
+  /** How long the browser takes to hand back a subscription; null means "never". */
+  subscribeDelayMs: number | "never" | null;
   /** Whether a subscription the browser just made reports the current key. */
   freshUsesCurrentKey: boolean;
   /** Calls that never answer, for the hung-call cases. */
@@ -54,6 +57,7 @@ function setup(over: Partial<World> = {}) {
     userId: "u1",
     marker: null,
     subscribeError: null,
+    subscribeDelayMs: null,
     freshUsesCurrentKey: true,
     hang: { permission: false, subscribeAction: false },
     actionResults: { subscribe: "ok", unsubscribe: "ok" },
@@ -71,6 +75,10 @@ function setup(over: Partial<World> = {}) {
     subscribe: async () => {
       world.log.push("browser:subscribe");
       if (world.subscribeError) throw world.subscribeError;
+      if (world.subscribeDelayMs === "never") return new Promise<never>(() => undefined);
+      if (world.subscribeDelayMs !== null) {
+        await new Promise((resolve) => setTimeout(resolve, world.subscribeDelayMs as number));
+      }
       world.subscription = subscription(world, world.freshUsesCurrentKey);
       return world.subscription;
     },
@@ -457,6 +465,83 @@ describe("a call that never answers", () => {
     await released;
 
     expect(world.log).toContain("marker:clear");
+  });
+});
+
+describe("a slow push service", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("keeps the queue release longer than the longest single wait", () => {
+    expect(QUEUE_RELEASE_MS).toBeGreaterThan(SUBSCRIBE_TIMEOUT_MS);
+  });
+
+  it("a first subscribe that takes 30 seconds still succeeds", async () => {
+    vi.useFakeTimers();
+    const { world, controller } = setup({ subscribeDelayMs: 30_000 });
+
+    const outcome = controller.enable();
+    await vi.advanceTimersByTimeAsync(29_000);
+    expect(world.marker).toBeNull(); // still working, not failed
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(await outcome).toEqual({ status: "on", endpoint: ENDPOINT, deviceCount: 2 });
+    expect(world.marker).toEqual({ userId: "u1", syncedAt: NOW });
+  });
+
+  it("a subscribe that never answers ends at 45 seconds with the slow-service message, and the queue moves on", async () => {
+    vi.useFakeTimers();
+    const { world, controller } = setup({ subscribeDelayMs: "never" });
+
+    let settled = false;
+    const outcome = controller.enable().then((result) => {
+      settled = true;
+      return result;
+    });
+    await vi.advanceTimersByTimeAsync(SUBSCRIBE_TIMEOUT_MS - 1_000);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(2_000);
+
+    expect(await outcome).toEqual({ status: "error", message: DEVICE_COPY.slowPushService });
+    expect(world.log).not.toContain("action:subscribe");
+    // Later work is not stuck behind the failed turn-on.
+    world.subscribeDelayMs = null;
+    expect(await controller.read()).toEqual({
+      support: world.support,
+      endpoint: null,
+    });
+  });
+
+  it("a subscription that arrives after the timeout is ended, not left without a server row", async () => {
+    vi.useFakeTimers();
+    const { world, controller } = setup({ subscribeDelayMs: SUBSCRIBE_TIMEOUT_MS + 15_000 });
+
+    const outcome = controller.enable();
+    await vi.advanceTimersByTimeAsync(SUBSCRIBE_TIMEOUT_MS + 1_000);
+    expect(await outcome).toEqual({ status: "error", message: DEVICE_COPY.slowPushService });
+    expect(world.subscription).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(20_000); // the push service finally answers
+    expect(world.log).toContain("browser:unsubscribe");
+    expect(world.subscription).toBeNull();
+    expect(world.marker).toBeNull();
+  });
+
+  it("does not end the late subscription when a retry has already registered it", async () => {
+    vi.useFakeTimers();
+    const { world, controller } = setup({ subscribeDelayMs: SUBSCRIBE_TIMEOUT_MS + 15_000 });
+
+    const first = controller.enable();
+    await vi.advanceTimersByTimeAsync(SUBSCRIBE_TIMEOUT_MS + 1_000);
+    await first;
+
+    // The member retries; this time the browser answers quickly with the same subscription.
+    world.subscribeDelayMs = null;
+    expect((await controller.enable()).status).toBe("on");
+    world.log.length = 0;
+
+    await vi.advanceTimersByTimeAsync(20_000); // the first attempt's answer arrives late
+    expect(world.log).not.toContain("browser:unsubscribe");
+    expect(world.subscription?.endpoint).toBe(ENDPOINT);
   });
 });
 

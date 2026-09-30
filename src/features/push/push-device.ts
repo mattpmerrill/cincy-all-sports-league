@@ -7,6 +7,7 @@ import {
   type DevicePort,
   type DeviceSubscription,
 } from "./device-controller";
+import { timeoutError } from "./device-state";
 import { DEVICE_MARKER_KEY, parseDeviceMarker } from "./device-sync";
 import type { PushActions } from "./push-actions";
 import { parseDismissal, promptDismissalKey, type PromptDismissal } from "./prompt-rules";
@@ -49,7 +50,7 @@ function toDeviceSubscription(
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error("timeout")), ms);
+    const timer = setTimeout(() => reject(timeoutError()), ms);
     promise.then(
       (value) => {
         clearTimeout(timer);

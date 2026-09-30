@@ -1,4 +1,10 @@
-import { DEVICE_COPY, describeSubscribeFailure, subscriptionToInput } from "./device-state";
+import {
+  DEVICE_COPY,
+  describeSubscribeFailure,
+  isTimeoutError,
+  subscriptionToInput,
+  timeoutError,
+} from "./device-state";
 import { decideDeviceSync, type DeviceMarker, type DeviceSession } from "./device-sync";
 import type { PushActions } from "./push-actions";
 import type { PushSupport } from "./support";
@@ -58,12 +64,22 @@ const NOTHING_TO_SYNC: readonly PushSupport["status"][] = [
 /** How long any single browser or server call may take before the device code stops waiting. */
 export const CALL_TIMEOUT_MS = 15_000;
 
+/**
+ * The browser's push subscription gets a longer limit than a server call. The very first
+ * `pushManager.subscribe` in a fresh Chromium profile registers with Google's push service and
+ * was measured at 25 to 33 seconds, so 15 seconds turned a working first attempt into an error
+ * that then succeeded on the retry. The serial queue's release (`QUEUE_RELEASE_MS`) must stay
+ * longer than this.
+ */
+export const SUBSCRIBE_TIMEOUT_MS = 45_000;
+
 export function createDeviceController({
   port,
   actions,
   run,
   madeHere = new Set<string>(),
   callTimeoutMs = CALL_TIMEOUT_MS,
+  subscribeTimeoutMs = SUBSCRIBE_TIMEOUT_MS,
 }: {
   port: DevicePort;
   actions: Pick<PushActions, "subscribe" | "unsubscribe">;
@@ -77,13 +93,15 @@ export function createDeviceController({
    */
   madeHere?: Set<string>;
   callTimeoutMs?: number;
+  /** The limit for making the browser subscription only. */
+  subscribeTimeoutMs?: number;
 }) {
   const errorName = (error: unknown) => (error instanceof Error ? error.name : "NonError");
 
   /** Every await on the browser or the server is bounded, so one hung call cannot stall the queue. */
-  function bounded<T>(work: Promise<T>): Promise<T> {
+  function bounded<T>(work: Promise<T>, limitMs = callTimeoutMs): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new Error("timeout")), callTimeoutMs);
+      const timer = setTimeout(() => reject(timeoutError()), limitMs);
       work.then(
         (value) => {
           clearTimeout(timer);
@@ -121,6 +139,24 @@ export function createDeviceController({
     await quietly("browser unsubscribe", () => subscription.unsubscribe());
   }
 
+  /**
+   * Ends a subscription that arrived after its turn-on had already failed. It goes through the
+   * queue, so it cannot cut across a retry, and it leaves the subscription alone when a retry has
+   * registered the same one (the browser hands back the same subscription for the same key) or a
+   * marker says a registered device is here.
+   */
+  function undoLateSubscription(pending: Promise<DeviceSubscription>) {
+    void pending.then(
+      (late) =>
+        run(async () => {
+          if (madeHere.has(late.endpoint) || port.marker.read() !== null) return;
+          await dropInBrowser(late);
+          port.announce();
+        }).catch(() => undefined),
+      () => undefined,
+    );
+  }
+
   type Registered =
     { ok: true; endpoint: string; deviceCount: number } | { ok: false; message: string };
 
@@ -131,10 +167,14 @@ export function createDeviceController({
    */
   async function subscribeAndRegister(userId: string): Promise<Registered> {
     let subscription: DeviceSubscription;
+    const pending = port.subscribe();
     try {
-      subscription = await bounded(port.subscribe());
+      subscription = await bounded(pending, subscribeTimeoutMs);
     } catch (error) {
       port.warn("push device: subscribe failed", { errorName: errorName(error) });
+      // A slow push service can still answer after we gave up. That subscription has no server
+      // row and no marker, so it is ended here instead of waiting for device sync to drop it.
+      if (isTimeoutError(error)) undoLateSubscription(pending);
       return { ok: false, message: describeSubscribeFailure(error) };
     }
 

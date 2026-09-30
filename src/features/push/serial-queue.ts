@@ -1,5 +1,11 @@
-/** Longest a task may hold the queue before the next one is let in. */
-export const QUEUE_RELEASE_MS = 30_000;
+/**
+ * Longest a task may hold the queue before the next one is let in. It has to stay longer than the
+ * longest single bounded call (`SUBSCRIBE_TIMEOUT_MS`, 45 s), or a legitimately slow first
+ * subscribe would be released early and could overlap the next task. A task made of several slow
+ * calls can still outlast it, but only when the network is already failing, and each of its awaits
+ * is bounded on its own.
+ */
+export const QUEUE_RELEASE_MS = 60_000;
 
 /**
  * Runs tasks one at a time, in the order they were queued, and keeps going after a failure. The
