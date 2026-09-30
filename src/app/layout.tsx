@@ -1,11 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
-import { HeaderAccount } from "@/features/auth/components/header-account";
+import { PushPrompt } from "@/features/push/components/push-prompt";
+import { isPushAvailable } from "@/features/push/push.server";
 import { TradesBadge } from "@/features/trades/components/trades-badge";
 import { TradesBadgeProvider } from "@/features/trades/components/trades-badge-provider";
 import { publicEnv } from "@/lib/env";
 import { AppShell } from "@/ui/app-shell";
+import { AppHeaderAccount } from "./account-controls";
 import "./globals.css";
+import { pushActions } from "./push-actions";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
@@ -45,7 +48,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${inter.variable} ${display.variable} dark h-full`}>
       <body className="flex min-h-full flex-col">
         <TradesBadgeProvider>
-          <AppShell headerAction={<HeaderAccount />} navBadges={{ "/trades": <TradesBadge /> }}>
+          <AppShell headerAction={<AppHeaderAccount />} navBadges={{ "/trades": <TradesBadge /> }}>
+            {/*
+              `isPushAvailable` reads only the environment (no cookies), so /rules, /sports,
+              /privacy and /terms stay prerendered. The session, team and device are read in the
+              browser by the prompt itself.
+            */}
+            <PushPrompt configured={isPushAvailable()} actions={pushActions} />
             {children}
           </AppShell>
         </TradesBadgeProvider>
