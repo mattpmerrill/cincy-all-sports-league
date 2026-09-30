@@ -11,6 +11,54 @@ Firefox and desktop Safari are still unchecked. The launch was announced the sam
 post and an email to 17 members (`pnpm announce:push-alerts`; the Home Screen email template now
 says alerts are live).
 
+## While it rests (from 2026-09-30)
+
+The trades, free agents, Home Screen how-to and push alerts work all shipped in the 48 hours to
+2026-09-30, and the plan is to leave the site alone for about a week. State at the start of the
+rest:
+
+- `main` is deployed and clean, there are no side branches or worktrees, and the local Supabase
+  stack is stopped (`supabase start` brings it back). `.env.local` still points at production, so
+  use the local-stack variables from "Running it locally" for anything you run.
+- Day one of push alerts: 3 members with 3 devices turned alerts on, and one free-agent move was
+  made. Score syncs ran green every hour except one 30-minute run at 08:30 UTC where ESPN answered
+  HTTP 403 for three sports at once; the next run was fine. If 403s repeat, ESPN may be blocking
+  Vercel's addresses.
+- Nothing is scheduled to email members except the Monday digest. These pg_cron jobs run on their
+  own: `cincy-score-sync` every 30 minutes, `cincy-free-agent-refresh` daily at 09:15 UTC,
+  `cincy-push-sends-cleanup` daily at 09:40 UTC, and the weekly digest at 8am Eastern on Mondays
+  (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC).
+
+Coming back, read-only checks (Supabase SQL editor or the MCP `execute_sql`):
+
+```sql
+-- Sync health: failures in the last week, by hour.
+select date_trunc('day', started_at) d, count(*) filter (where status = 'failed') failed,
+       count(*) filter (where status = 'succeeded') ok
+from sync_runs where started_at > now() - interval '7 days' group by 1 order by 1 desc;
+-- Push adoption: members with at least one device, and devices in total.
+select count(distinct user_id) members, count(*) devices from push_subscriptions;
+-- Free agent moves so far.
+select count(*) from free_agent_moves;
+```
+
+Then look at the Vercel logs for `push delivery finished` with a non-zero `rejected`, `pruned` or
+`storeErrors`, and for `push subscription refused: endpoint host not allowed` (a real push host
+missing from the allow-list). Read the feed for replies from anyone who tried alerts on Android,
+Firefox or desktop Safari: those are the platforms nobody has checked.
+
+Open items, none urgent:
+
+- Move the push private key backup from `~/.config/cincy-league/` to the password manager, then
+  delete the files.
+- Check push alerts on an Android phone, Firefox and desktop Safari, and record the result here.
+- Agent worktrees left under `.claude/worktrees/` make `pnpm lint` and `pnpm format:check` scan
+  their `.next` folders. Remove worktrees after merging, or add `.claude` to the ESLint and
+  Prettier ignores.
+- The app-wide focus ring contrast and the shared emoji-safe text clipper (both under "Known
+  limits").
+- The Home Screen how-to email and the three launch emails are done. Nothing else is queued.
+
 ## What is live
 
 | Area             | What it does                                                                                                                                                                                                | Start reading                                                                                                                  |
@@ -102,7 +150,8 @@ says alerts are live).
 
 - Admins: `pnpm make-admin <email>` after the person signs up.
 - One-off announcement email: a short script per announcement (`scripts/send-*-announcement.ts`,
-  run as `pnpm announce:trades`, `announce:free-agents`, `announce:home-screen`) names its
+  run as `pnpm announce:trades`, `announce:free-agents`, `announce:home-screen`,
+  `announce:push-alerts`) names its
   campaign, subject and renderer, and `scripts/announcement-runner.ts` does the sending: dry run
   by default, `--only you@x` for a test, `--send [--except a@x]`, per-member idempotency keys. It
   skips members who turned off league email. Templates live in
@@ -113,7 +162,7 @@ says alerts are live).
 - First free-agent load: after the free-agents deploy, run the same curl as in "Running it
   locally" against `https://www.cincysports.xyz`, once per sport (11 calls), or wait for the
   09:15 UTC pg_cron job. The pool is empty until then. Check the cached read model size after it
-  (see the last follow-up below).
+  (measured: see the read model bullet under Known limits).
 - Push alerts, key rotation: generate a new pair as in ship step 1, which invalidates every device
   subscription. Update `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` together in Vercel and
   redeploy (the public key is inlined at build time). A browser that already allowed alerts
@@ -239,9 +288,11 @@ none of it happens without a yes from Matt at the time. Run the commands from th
   - Offers voided by a move get no email.
   - The concurrent-listing guard in `make_free_agent_move` is not covered by pgTAP because it
     needs two sessions.
-  - `LeagueData.results` grows to about 1,500-2,500 rows once the pool is loaded. Measure the
-    cached read model size after the first production load. The data cache has a documented
-    per-item limit, and the failure mode is uncached reads (slower pages), not an outage.
+  - `LeagueData.results` could grow to about 1,500-2,500 rows once the pool has scores. On
+    2026-09-29, with the whole pool loaded, production held 270 result rows (about 103 kB as JSON),
+    because only sports in season have scores. Re-check when more sports are in season. The data
+    cache has a documented per-item limit, and the failure mode is uncached reads (slower pages),
+    not an outage.
 - Push alerts (full reasoning in [ADR-005](decisions/ADR-005-web-push-alerts.md)):
   - How the prompt behaves: the in-app "Get alerts on this device?" card shows only to signed-in
     members who own a team, only on `/`, `/feed`, `/trades` and `/trades/*`. The first "Not now"
@@ -281,9 +332,8 @@ none of it happens without a yes from Matt at the time. Run the commands from th
   - The prompt card is `max-w-3xl`, narrower than the widest pages. Cosmetic.
   - One shared, code-point-safe text clipper in `src/domain` should serve trades, free agents and
     push. Trades `truncate` slices by UTF-16 units and can split an emoji.
-  - Not built: updating the Home Screen email's "push alerts are coming soon" line
-    (`PUSH_ALERTS_NOTE` in `features/announcements/email/home-screen-email.tsx`), and a launch
-    announcement with the `pnpm announce:*` runner. Both are follow-ups for after launch.
+  - Announced on 2026-09-30 with a feed post and an email to 17 members
+    (`pnpm announce:push-alerts`); the Home Screen email now says alerts are live.
   - A new real push host shows up as a refused host in the logs
     (`push subscription refused: endpoint host not allowed`). Add it to
     `src/domain/push/endpoint.ts` deliberately and tightly, with a test. Chrome's numbered
@@ -299,10 +349,11 @@ none of it happens without a yes from Matt at the time. Run the commands from th
     the loop, so the recovery is different: a first test alert with no server row gets `not_found`
     and registers the device again; a second gets `push_gone`, which ends the dead subscription
     (`forgetDead`) and offers Turn on again. Turning alerts off and on also works.
-  - **Not verified on real phones.** Nothing has been tried on a real iPhone, Android phone,
-    Firefox or desktop Safari, so Apple's push service, iOS notification taps (the tap handler is
-    covered only by a `node:vm` test) and WebKit's `WindowClient.navigate` are unverified, as are
-    the `/sw.js` headers on Vercel.
+  - **Real phones.** Matt tested an iPhone by hand on 2026-09-30 and reported that everything
+    works; which of the checklist steps he ran was not recorded. The `/sw.js` headers were
+    checked on Vercel the same day. Still unverified: Android, Firefox, desktop Safari, and
+    WebKit's `WindowClient.navigate` on a notification tap (the tap handler is otherwise covered
+    only by a `node:vm` test).
   - What was verified in desktop Chromium (headed, a normal profile, not incognito: Chrome turns
     the Push API off there) against Google's real push service and the local stack, through the
     app: turn on from the prompt (22 to 33 seconds in fresh Chromium profiles for the first
