@@ -12,6 +12,10 @@ describe("isAllowedPushEndpoint", () => {
       "https://regional.push.apple.com/abc",
       "https://wns2-par02p.notify.windows.com/w/?token=BQYAAAB",
       "https://db5p.notify.windows.com/w/?token=abc",
+      // Chrome's numbered hosts, as a real desktop Chrome subscription reports them.
+      "https://jmt17.google.com/fcm/send/abc",
+      "https://jmt1.google.com/fcm/send/abc",
+      "https://jmt123.google.com/fcm/send/abc",
     ]) {
       expect(isAllowedPushEndpoint(url), url).toBe(true);
     }
@@ -43,6 +47,32 @@ describe("isAllowedPushEndpoint", () => {
     }
   });
 
+  it("admits only Chrome's numbered hosts under google.com, never the suffix", () => {
+    for (const url of [
+      "https://jmt17.google.com.evil.com/x",
+      "https://evil-jmt17.google.com/x",
+      "https://xjmt17.google.com/x",
+      "https://jmt.google.com/x",
+      "https://jmt1234.google.com/x",
+      "https://jmt17.google.com:8443/x",
+      "http://jmt17.google.com/x",
+      "https://user@jmt17.google.com/x",
+      "https://user:pass@jmt17.google.com/x",
+      "https://jmt17.google.com./x",
+      "https://sub.jmt17.google.com/x",
+      "https://jmt1a.google.com/x",
+      "https://google.com/x",
+      "https://sites.google.com/x",
+      "https://script.google.com/x",
+      "https://www.google.com/x",
+      "https://192.168.0.1/x",
+      "https://10.0.0.1/x",
+      "https://[::ffff:7f00:1]/x",
+    ]) {
+      expect(isAllowedPushEndpoint(url), url).toBe(false);
+    }
+  });
+
   it("is not fooled by letter case", () => {
     expect(isAllowedPushEndpoint("https://FCM.GoogleAPIs.com/fcm/send/abc")).toBe(true);
     expect(isAllowedPushEndpoint("https://FCM.GoogleAPIs.com.Evil.com/x")).toBe(false);
@@ -54,6 +84,7 @@ describe("pushServiceHost", () => {
     expect(pushServiceHost("https://wns2-par02p.notify.windows.com/w/?token=secret")).toBe(
       "wns2-par02p.notify.windows.com",
     );
+    expect(pushServiceHost("https://jmt17.google.com/fcm/send/secret")).toBe("jmt17.google.com");
     expect(pushServiceHost("not a url")).toBeNull();
   });
 });

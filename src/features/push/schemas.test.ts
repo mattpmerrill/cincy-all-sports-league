@@ -21,6 +21,15 @@ describe("subscriptionSchema", () => {
     );
   });
 
+  it("accepts Chrome's numbered push host and refuses a look-alike", () => {
+    const chrome = "https://jmt17.google.com/fcm/send/abc:def";
+    expect(subscriptionSchema.safeParse(sub({ endpoint: chrome })).success).toBe(true);
+    expect(refusedEndpointHost(sub({ endpoint: chrome }))).toBeNull();
+    const script = "https://script.google.com/macros/s/abc";
+    expect(subscriptionSchema.safeParse(sub({ endpoint: script })).success).toBe(false);
+    expect(refusedEndpointHost(sub({ endpoint: script }))).toBe("script.google.com");
+  });
+
   it("strips = padding from the keys, because Firefox and Safari may send it", () => {
     const parsed = subscriptionSchema.parse(
       sub({ keys: { p256dh: `${P256DH}=`, auth: `${AUTH}==` } }),

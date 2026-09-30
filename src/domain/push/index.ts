@@ -7,7 +7,12 @@ export {
 } from "./alerts";
 export { deviceLabel } from "./device-label";
 export type { DeviceLabel } from "./device-label";
-export { PUSH_SERVICE_HOSTS, isAllowedPushEndpoint, pushServiceHost } from "./endpoint";
+export {
+  PUSH_SERVICE_HOSTS,
+  PUSH_SERVICE_HOST_PATTERNS,
+  isAllowedPushEndpoint,
+  pushServiceHost,
+} from "./endpoint";
 export {
   MAX_PAYLOAD_BYTES,
   PUSH_LIMITS,
