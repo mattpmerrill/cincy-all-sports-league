@@ -25,9 +25,10 @@ import { createTradesService } from "./trades.service";
 function afterResponseNotifier(): TradeNotifier {
   const log = logger.child({ scope: "trade-alerts" });
   const pushLog = logger.child({ scope: "trade-push" });
-  // Push rides beside the email, not through it: each has its own `after()` task, so a failure in
-  // one cannot skip the other. The delivery is built inside that task, so push secrets are read
-  // after the response like the email key.
+  // Push rides beside the email, not through it: each has its own `after()` task. The email is
+  // registered first and push last, inside its own try/catch, so a push problem can never keep
+  // the email from being scheduled. The delivery is built inside the task, so push secrets are
+  // read after the response like the email key.
   const push = createPushNotifier({
     schedule: after,
     delivery: () =>
@@ -41,7 +42,6 @@ function afterResponseNotifier(): TradeNotifier {
   });
   return {
     notify(alerts) {
-      push.notify(() => toTradePushAlerts(alerts));
       after(async () => {
         try {
           const env = serverEnv();
@@ -58,6 +58,12 @@ function afterResponseNotifier(): TradeNotifier {
           log.error("trade alerts could not start", { error });
         }
       });
+      try {
+        push.notify(() => toTradePushAlerts(alerts));
+      } catch (error) {
+        // `notify` guards its own scheduling; this covers its setup. Never log the alerts.
+        pushLog.error("could not schedule trade push", { error });
+      }
     },
   };
 }
