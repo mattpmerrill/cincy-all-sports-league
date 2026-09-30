@@ -104,7 +104,6 @@ describe("no operation leaks a database error", () => {
     ["removeOwned", (r) => r.removeOwned(ACTOR, ENDPOINT)],
     ["countOwned", (r) => r.countOwned(ACTOR)],
     ["getOwned", (r) => r.getOwned(ACTOR, ENDPOINT)],
-    ["listOwned", (r) => r.listOwned(ACTOR)],
   ];
 
   it.each(operations)("%s throws only the operation and the SQLSTATE", async (name, run) => {
@@ -222,23 +221,5 @@ describe("a member's own devices", () => {
       keys: { p256dh: P256DH, auth: AUTH },
     });
     expect(await fakeDb({ data: null }).repo.getOwned(ACTOR, ENDPOINT)).toBeNull();
-  });
-
-  it("listOwned never selects the endpoint or the keys", async () => {
-    const { repo, calls } = fakeDb({
-      data: [
-        {
-          id: SUB_ID,
-          device_label: "iPhone",
-          last_registered_at: "2026-09-29T10:00:00Z",
-          last_success_at: null,
-        },
-      ],
-    });
-    expect(await repo.listOwned(ACTOR)).toEqual([
-      { id: SUB_ID, label: "iPhone", registeredAt: "2026-09-29T10:00:00Z", lastSuccessAt: null },
-    ]);
-    const selected = String(calls.find((c) => c.method === "select")?.args[0]);
-    expect(selected).not.toMatch(/endpoint|p256dh|auth\b/);
   });
 });

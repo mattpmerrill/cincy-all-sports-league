@@ -61,14 +61,6 @@ const idSchema = z.uuid();
 
 // ===== read models =====
 
-/** A member's device as the profile page shows it: no endpoint, no keys. */
-export type PushDevice = {
-  id: string;
-  label: string;
-  registeredAt: string;
-  lastSuccessAt: string | null;
-};
-
 const TARGET_COLUMNS = "id, user_id, endpoint, p256dh, auth";
 type TargetRow = Pick<
   Tables<"push_subscriptions">,
@@ -210,23 +202,6 @@ export function createPushRepository(db: DbClient) {
         .maybeSingle();
       if (error) fail("getOwned", error);
       return data ? toTarget(data) : null;
-    },
-
-    /** The member's devices, most recently registered first, without endpoints or keys. */
-    async listOwned(actorId: string): Promise<PushDevice[]> {
-      const { data, error } = await db
-        .from("push_subscriptions")
-        .select("id, device_label, last_registered_at, last_success_at")
-        .eq("user_id", actorId)
-        .order("last_registered_at", { ascending: false })
-        .order("id", { ascending: true });
-      if (error) fail("listOwned", error);
-      return data.map((row) => ({
-        id: row.id,
-        label: row.device_label,
-        registeredAt: row.last_registered_at,
-        lastSuccessAt: row.last_success_at,
-      }));
     },
   };
 }
