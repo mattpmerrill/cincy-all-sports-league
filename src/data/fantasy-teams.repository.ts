@@ -1,3 +1,5 @@
+// Reads only public rows (no secrets, no service-role calls), so it is safe to build from the
+// browser client; the push prompt does that for `getOwnedBy`.
 import { BANKED_SOURCES } from "@/domain/league";
 import type { BankedSource, TeamData } from "@/domain/league";
 import type { DbClient } from "./db-client";

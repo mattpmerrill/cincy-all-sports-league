@@ -1,6 +1,8 @@
 import type { UserRole } from "@/domain/membership/membership";
+import type { PushTopicSettings } from "@/domain/push";
 import type { DbClient } from "./db-client";
 import type { Tables } from "./database.types";
+import { PUSH_TOPIC_COLUMN } from "./push.repository";
 
 /** A member as the app sees them. Deliberately has no email: profiles are publicly readable. */
 export type Profile = {
@@ -25,15 +27,18 @@ const toProfile = (row: ProfileRow): Profile => ({
   createdAt: row.created_at,
 });
 
-/** The only profile columns an opt-in read or write may name: the two email preferences. */
+/** The only profile columns an opt-in read or write may name: the email and push preferences. */
 export const OPT_IN_COLUMNS = [
   "weekly_email_opt_in",
   "trade_emails",
+  "push_trades",
+  "push_feed",
+  "push_scores",
 ] as const satisfies readonly (keyof Tables<"profiles">)[];
 export type OptInColumn = (typeof OPT_IN_COLUMNS)[number];
 type OptInRow = Record<OptInColumn, boolean>;
 
-/** A computed key widens to a string index; this keeps the write typed to the two columns. */
+/** A computed key widens to a string index; this keeps the write typed to the opt-in columns. */
 function optInPatch(column: OptInColumn, optIn: boolean): Partial<OptInRow> {
   const patch: Partial<OptInRow> = {};
   patch[column] = optIn;
@@ -89,6 +94,26 @@ export function createProfilesRepository(db: DbClient) {
         .maybeSingle<OptInRow>();
       if (error) throw error;
       return data ? data[column] : null;
+    },
+
+    /**
+     * The member's three push switches in one select, or null when there is no such profile. These
+     * are preferences, not device state: they apply to every device the member has turned on.
+     */
+    async getPushTopics(id: string): Promise<PushTopicSettings | null> {
+      const { data, error } = await db
+        .from("profiles")
+        .select(Object.values(PUSH_TOPIC_COLUMN).join(", "))
+        .eq("id", id)
+        .maybeSingle<Record<(typeof PUSH_TOPIC_COLUMN)[keyof typeof PUSH_TOPIC_COLUMN], boolean>>();
+      if (error) throw error;
+      return data
+        ? {
+            trades: data[PUSH_TOPIC_COLUMN.trades],
+            feed: data[PUSH_TOPIC_COLUMN.feed],
+            scores: data[PUSH_TOPIC_COLUMN.scores],
+          }
+        : null;
     },
 
     /**
