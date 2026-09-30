@@ -16,9 +16,9 @@ import {
   DropdownMenuTrigger,
 } from "@/ui/dropdown-menu";
 import { UserAvatar } from "@/ui/user-avatar";
-import { signOutAction } from "../actions";
 import { FALLBACK_ACCOUNT_MENU, toAccountMenu } from "../account-menu";
 import type { AccountMenu } from "../account-menu";
+import { signOutAfter } from "../sign-out";
 
 const AUTH_PAGES = ["/login", "/signup", "/reset-password"];
 
@@ -32,8 +32,11 @@ const FOCUS_RING = "outline-none focus-visible:ring-3 focus-visible:ring-ring/60
  * asking the server would make every page dynamic. Nothing renders until the session (and, for
  * members, the profile) is known, so neither variant flashes. If the profile cannot be read, the
  * menu still renders with a generic avatar: it is the only way to reach /me and Sign out.
+ *
+ * `beforeSignOut` runs while the session is still valid, just before it ends (the layout supplies
+ * the push-alerts cleanup, since this feature cannot import that one).
  */
-export function HeaderAccount() {
+export function HeaderAccount({ beforeSignOut }: { beforeSignOut?: () => Promise<void> } = {}) {
   const pathname = usePathname();
   const [session, setSession] = useState<Session>({ status: "unknown" });
   // Keyed by user id so a stale profile never shows after an account switch or sign-out.
@@ -145,7 +148,7 @@ export function HeaderAccount() {
           </DropdownMenuItem>
         ) : null}
         <DropdownMenuSeparator />
-        <form action={signOutAction}>
+        <form action={signOutAfter(beforeSignOut)}>
           <DropdownMenuItem asChild>
             <button type="submit" className="w-full">
               Sign out
