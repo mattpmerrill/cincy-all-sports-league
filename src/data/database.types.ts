@@ -503,6 +503,9 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          push_feed: boolean
+          push_scores: boolean
+          push_trades: boolean
           role: Database["public"]["Enums"]["user_role"]
           trade_emails: boolean
           updated_at: string
@@ -513,6 +516,9 @@ export type Database = {
           created_at?: string
           display_name: string
           id: string
+          push_feed?: boolean
+          push_scores?: boolean
+          push_trades?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           trade_emails?: boolean
           updated_at?: string
@@ -523,12 +529,88 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          push_feed?: boolean
+          push_scores?: boolean
+          push_trades?: boolean
           role?: Database["public"]["Enums"]["user_role"]
           trade_emails?: boolean
           updated_at?: string
           weekly_email_opt_in?: boolean
         }
         Relationships: []
+      }
+      push_sends: {
+        Row: {
+          created_at: string
+          dedupe_key: string
+          recipient_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key: string
+          recipient_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string
+          recipient_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_sends_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          device_label: string
+          endpoint: string
+          failure_count: number
+          id: string
+          last_success_at: string | null
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          device_label?: string
+          endpoint: string
+          failure_count?: number
+          id?: string
+          last_success_at?: string | null
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          device_label?: string
+          endpoint?: string
+          failure_count?: number
+          id?: string
+          last_success_at?: string | null
+          p256dh?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       scoring_rules: {
         Row: {
@@ -1068,6 +1150,33 @@ export type Database = {
           offer_id: string
         }[]
       }
+      push_targets: {
+        Args: {
+          p_topic: Database["public"]["Enums"]["push_topic"]
+          p_user_ids: string[]
+        }
+        Returns: {
+          auth: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }[]
+      }
+      record_push_failure: {
+        Args: { p_id: string; p_max: number }
+        Returns: string
+      }
+      register_push_subscription: {
+        Args: {
+          p_actor: string
+          p_auth: string
+          p_device_label: string
+          p_endpoint: string
+          p_p256dh: string
+        }
+        Returns: string
+      }
       reject_team_claim: { Args: { claim_id: string }; Returns: undefined }
       reject_trade_offer: {
         Args: { p_actor: string; p_offer_id: string }
@@ -1146,6 +1255,7 @@ export type Database = {
       message_kind: "member" | "league"
       participant_kind: "team" | "athlete"
       playoff_scoring_mode: "cumulative" | "highest_only"
+      push_topic: "trades" | "feed" | "scores"
       reaction_emoji: "fire" | "laugh" | "skull" | "clap" | "goat"
       result_source: "espn" | "manual"
       scoring_rule_kind:
@@ -1299,6 +1409,7 @@ export const Constants = {
       message_kind: ["member", "league"],
       participant_kind: ["team", "athlete"],
       playoff_scoring_mode: ["cumulative", "highest_only"],
+      push_topic: ["trades", "feed", "scores"],
       reaction_emoji: ["fire", "laugh", "skull", "clap", "goat"],
       result_source: ["espn", "manual"],
       scoring_rule_kind: [
