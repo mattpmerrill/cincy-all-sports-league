@@ -29,6 +29,8 @@ More: [team (desktop)](docs/screenshots/team-desktop.png),
 - Free agents: swap your pick in any sport for anyone no team holds, instantly, and keep the points
   it already earned
 - A weekly standings email and trade alerts, each with its own opt-out
+- Push alerts on your phone or computer for trade offers, replies and reactions, and your team's
+  points, with a switch for each
 - Profile photos, uploaded and cropped in the browser
 - Public read access; sign-in only for claiming a team, posting, trading and administration
 
@@ -72,6 +74,9 @@ Open http://localhost:3000.
 | `CRON_SECRET`                          | server only | Shared secret guarding the sync and digest routes                                                         |
 | `RESEND_API_KEY`                       | server only | Optional locally. Resend key for the weekly digest; unset means sending returns `email_not_configured`    |
 | `DIGEST_SIGNING_SECRET`                | server only | 32+ chars. Signs unsubscribe links (rotating it breaks links already sent)                                |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | public      | Optional. Web Push public key; push alerts need it and `VAPID_PRIVATE_KEY`                                |
+| `VAPID_PRIVATE_KEY`                    | server only | Optional. Web Push private key. Generate a pair with `pnpm exec web-push generate-vapid-keys --json`      |
+| `VAPID_SUBJECT`                        | server only | Optional. Contact push services see, default `https://www.cincysports.xyz`                                |
 | `DIGEST_FROM`                          | server only | Optional. Sender, default `Cincy's All-Sports League <league@cincysports.xyz>`                            |
 
 ## Auth setup
