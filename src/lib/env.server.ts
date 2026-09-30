@@ -65,6 +65,7 @@ const vapidSchema = z.object({
 export type VapidConfig = { publicKey: string; privateKey: string; subject: string };
 
 let warnedInvalidVapid = false;
+let warnedInvalidPublicKey = false;
 
 /**
  * Push is configured only when BOTH keys are set and well formed; anything else (a half-configured
@@ -73,6 +74,15 @@ let warnedInvalidVapid = false;
  * be the private key.
  */
 export function pushConfig(): VapidConfig | null {
+  const publicKey = publicEnv().NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+  // `publicEnv()` reads a malformed public key as unset so the whole app keeps rendering, which
+  // would otherwise leave an operator wondering why push is off. Name only, never the value.
+  if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && !publicKey && !warnedInvalidPublicKey) {
+    warnedInvalidPublicKey = true;
+    logger.error("push alerts are off: invalid VAPID environment variables", {
+      names: "NEXT_PUBLIC_VAPID_PUBLIC_KEY",
+    });
+  }
   const parsed = vapidSchema.safeParse({
     // `|| undefined`: an empty line in .env.local means "not set", not "invalid".
     VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || undefined,
@@ -86,7 +96,6 @@ export function pushConfig(): VapidConfig | null {
     }
     return null;
   }
-  const publicKey = publicEnv().NEXT_PUBLIC_VAPID_PUBLIC_KEY;
   const { VAPID_PRIVATE_KEY: privateKey, VAPID_SUBJECT: subject } = parsed.data;
   return publicKey && privateKey ? { publicKey, privateKey, subject } : null;
 }
