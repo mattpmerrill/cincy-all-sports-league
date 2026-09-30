@@ -23,6 +23,7 @@ export type {
   PushAlert,
   PushMessage,
   PushNotifier,
+  PushSend,
   PushTarget,
   PushTopic,
   PushTopicSettings,

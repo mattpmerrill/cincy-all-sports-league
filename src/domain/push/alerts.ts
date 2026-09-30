@@ -1,8 +1,10 @@
-import type { ScoreUpdateItem } from "@/domain/feed";
+import { REACTIONS } from "@/domain/feed";
+import type { ReactionName, ScoreUpdateItem } from "@/domain/feed";
 import { formatPoints } from "@/domain/league/format";
+import { fromUnits, toUnits } from "@/domain/scoring";
 import { TRADE_WINDOW_HOURS } from "@/domain/trades";
 import { clipText, pushMessage } from "./payload";
-import type { PushAlert } from "./types";
+import type { PushAlert, PushSend } from "./types";
 
 /**
  * The builders decide who is told and what it says; delivery decides how. Plain text, no em
@@ -16,7 +18,10 @@ const TEAM_NAME_MAX = 40;
 const PARTICIPANT_MAX = 28;
 const SNIPPET_MAX = 100;
 const TOP_SCORERS = 3;
-/** Gains only: a smaller move is float noise from re-summing, not points anyone earned. */
+/**
+ * Gains only. Deltas from the score diff are already exact to four decimals, so this is a
+ * defensive floor against float noise from any other producer, not something the data needs.
+ */
 const GAIN_EPSILON = 1e-9;
 
 const path = (...segments: string[]) => `/${segments.map(encodeURIComponent).join("/")}`;
@@ -76,23 +81,27 @@ export function replyPushAlert(input: {
 }
 
 /**
- * To the author of a post, when someone else reacts. `glyph` comes from the caller because the
- * reaction catalog owns the emoji. `otherReactorCount` counts reactors besides the author and
- * the actor, so a busy post reads "Sam and 3 others" instead of one alert per reaction.
+ * To the author of a post, when someone else reacts. The glyph comes from the reaction catalog
+ * in domain/feed, the one owner of the emoji. `reactorIds` is everyone who has reacted to the
+ * post, duplicates and all: the builder counts distinct reactors other than the author and the
+ * actor, so a busy post reads "Sam and 3 others" instead of one alert per reaction.
  */
 export function reactionPushAlert(input: {
   actorId: string;
   actorName: string;
-  glyph: string;
+  reaction: ReactionName;
   message: AuthoredPost & { body: string; deleted: boolean };
-  otherReactorCount: number;
+  reactorIds: readonly string[];
 }): PushAlert | null {
   const { message } = input;
   const recipientId = message.authorId;
   if (recipientId === null || recipientId === input.actorId || message.deleted) return null;
 
+  const glyph = REACTIONS.find((r) => r.name === input.reaction)?.glyph ?? input.reaction;
   const who = clipText(input.actorName, NAME_MAX);
-  const others = input.otherReactorCount;
+  const others = new Set(
+    input.reactorIds.filter((id) => id !== recipientId && id !== input.actorId),
+  ).size;
   const snippet = clipText(message.body, SNIPPET_MAX);
   return {
     topic: "feed",
@@ -103,7 +112,7 @@ export function reactionPushAlert(input: {
       title:
         others > 0
           ? `${who} and ${others} other${others === 1 ? "" : "s"} reacted to your post`
-          : `${who} reacted ${input.glyph} to your post`,
+          : `${who} reacted ${glyph} to your post`,
       body: snippet ? `"${snippet}"` : "",
       url: "/feed",
       tag: `feed-reactions-${message.id}`,
@@ -142,7 +151,8 @@ export function scorePushAlerts(input: {
       );
     if (gains.length === 0) continue;
 
-    const total = gains.reduce((sum, item) => sum + item.pointsDelta, 0);
+    // Integer units, like the scoring module: 0.1 + 0.2 must read +0.3, not +0.30000000000000004.
+    const total = fromUnits(gains.reduce((sum, item) => sum + toUnits(item.pointsDelta), 0));
     const top = gains
       .slice(0, TOP_SCORERS)
       .map(
@@ -171,17 +181,16 @@ export function scorePushAlerts(input: {
 }
 
 /**
- * The "send me a test alert" button. It targets one device directly, so no topic switch applies
- * and `topic` only satisfies the type. The minute in the key is a one-per-minute throttle.
+ * The "send me a test alert" button. It targets one device directly, so it has no topic and no
+ * switch applies. The minute in the key is a one-per-minute throttle.
  */
-export function testPushAlert(input: { recipientId: string; now: Date }): PushAlert {
+export function testPushAlert(input: { recipientId: string; now: Date }): PushSend {
   return {
-    topic: "trades",
     recipientId: input.recipientId,
     dedupeKey: `test:${input.now.toISOString().slice(0, 16)}`,
     message: pushMessage({
       title: "Alerts are working",
-      body: "This device will get trade offers, replies and score updates from the league.",
+      body: "Alerts are working on this device.",
       url: "/me",
       tag: "test",
       renotify: true,

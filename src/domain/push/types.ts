@@ -30,6 +30,9 @@ export type PushAlert = {
   urgency: PushUrgency;
 };
 
+/** An alert sent straight to one device, outside the topic switches (the test alert). */
+export type PushSend = Omit<PushAlert, "topic">;
+
 /** One device of one member, as delivery needs it. Never logged. */
 export type PushTarget = {
   subscriptionId: string;

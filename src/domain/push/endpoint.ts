@@ -3,13 +3,14 @@
  * to, and a member supplies it, so anything off this list is refused: otherwise a member could
  * point the server at any host (SSRF). Matched as https plus a hostname suffix, because the
  * services hand out per-region and per-device subdomains (`updates.push.services.mozilla.com`,
- * `wns2-par02p.notify.windows.com`).
+ * `wns2-par02p.notify.windows.com`). Apple is listed as `push.apple.com` for the same reason:
+ * every host under it is Apple's, so the guard is no wider in who it trusts.
  */
 export const PUSH_SERVICE_HOSTS = [
   "fcm.googleapis.com",
   "android.googleapis.com",
   "push.services.mozilla.com",
-  "web.push.apple.com",
+  "push.apple.com",
   "notify.windows.com",
 ] as const;
 

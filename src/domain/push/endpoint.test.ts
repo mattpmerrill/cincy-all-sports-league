@@ -9,6 +9,7 @@ describe("isAllowedPushEndpoint", () => {
       "https://android.googleapis.com/gcm/send/abc123",
       "https://updates.push.services.mozilla.com/wpush/v2/gAAAAABk",
       "https://web.push.apple.com/QGvnBvUV7q",
+      "https://regional.push.apple.com/abc",
       "https://wns2-par02p.notify.windows.com/w/?token=BQYAAAB",
       "https://db5p.notify.windows.com/w/?token=abc",
     ]) {
@@ -31,6 +32,9 @@ describe("isAllowedPushEndpoint", () => {
       "https://fcm.googleapis.com:8443/fcm/send/abc",
       "https://user:pass@fcm.googleapis.com/fcm/send/abc",
       "https://googleapis.com/fcm/send/abc",
+      "https://push.apple.com.evil.com/abc",
+      "https://evilpush.apple.com/abc",
+      "https://apple.com/abc",
       "ftp://fcm.googleapis.com/x",
       "fcm.googleapis.com/fcm/send/abc",
       "",

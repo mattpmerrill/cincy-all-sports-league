@@ -14,18 +14,28 @@ export const FALLBACK_TITLE = "Cincy's All-Sports League";
 const ELLIPSIS = "…";
 
 /**
- * Collapses whitespace and control characters to single spaces, then cuts to `max` code points,
- * ending in an ellipsis when it cut. Grapheme clusters are not tracked: a cut inside a joined
- * emoji leaves a valid, if different, emoji rather than broken text.
+ * Bidi overrides and isolates can reorder the text around them (a name that flips the words after
+ * it), so they are dropped. ZWJ and ZWNJ stay: emoji sequences and some scripts need them.
+ */
+const BIDI_CONTROLS = /[\u202A-\u202E\u2066-\u2069]/g;
+
+/**
+ * Collapses whitespace and control characters to single spaces, removes bidi overrides, then cuts
+ * to `max` code points, ending in an ellipsis when it cut. Grapheme clusters are not tracked: a
+ * cut inside a joined emoji leaves a valid, if different, emoji rather than broken text. A lone
+ * surrogate in the input becomes U+FFFD, so the result always encodes to valid UTF-8 and JSON.
  */
 export function clipText(text: string, max: number): string {
-  const tidy = text.replace(/[\s\p{Cc}]+/gu, " ").trim();
+  const tidy = text
+    .replace(BIDI_CONTROLS, "")
+    .replace(/[\s\p{Cc}]+/gu, " ")
+    .trim();
   const points = Array.from(tidy);
-  if (points.length <= max) return tidy;
+  if (points.length <= max) return tidy.toWellFormed();
   return `${points
     .slice(0, Math.max(0, max - 1))
     .join("")
-    .trimEnd()}${ELLIPSIS}`;
+    .trimEnd()}${ELLIPSIS}`.toWellFormed();
 }
 
 /**
@@ -89,6 +99,10 @@ export function encodePushPayload(message: PushMessage): string {
 /**
  * The shape the service worker accepts, with the worker's own (wider) bounds: it validates by
  * hand because it cannot import this module, and a contract test keeps the two in step.
+ *
+ * Every length bound here is in CODE POINTS, not UTF-16 units (Zod counts code points, and
+ * `pushMessage` clips by them). The worker must count with `Array.from(s).length`: `s.length`
+ * counts an emoji as two and would reject an alert this module built correctly.
  */
 export const pushPayloadSchema = z.object({
   v: z.literal(PUSH_PAYLOAD_VERSION),

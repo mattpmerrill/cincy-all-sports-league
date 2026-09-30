@@ -26,6 +26,16 @@ describe("clipText", () => {
     expect(clipped.isWellFormed()).toBe(true);
   });
 
+  it("drops bidi overrides but keeps the joiners emoji sequences need", () => {
+    expect(clipText("a\u202Eb\u2066c\u2069d", 10)).toBe("abcd");
+    expect(clipText("👨\u200D👩", 10)).toBe("👨\u200D👩");
+  });
+
+  it("replaces a lone surrogate so the text always encodes", () => {
+    expect(clipText("a\uD83Db", 10)).toBe("a\uFFFDb");
+    expect(clipText(`\uD83D${"x".repeat(50)}`, 10).isWellFormed()).toBe(true);
+  });
+
   it("leaves text at the limit alone and collapses whitespace and control characters", () => {
     expect(clipText("a\n\n  b\t\u0000c", 10)).toBe("a b c");
     expect(clipText("x".repeat(10), 10)).toBe("x".repeat(10));
@@ -95,6 +105,17 @@ describe("encodePushPayload", () => {
     expect(() => encodePushPayload({ ...base, body: "x".repeat(MAX_PAYLOAD_BYTES) })).toThrow(
       /exceeds/,
     );
+  });
+});
+
+describe("pushPayloadSchema length unit", () => {
+  const ok = { v: 1, ...base };
+
+  it("counts code points, so a worker using string length would wrongly reject these", () => {
+    expect(pushPayloadSchema.safeParse({ ...ok, body: "🔥".repeat(200) }).success).toBe(true);
+    expect(pushPayloadSchema.safeParse({ ...ok, body: "🔥".repeat(201) }).success).toBe(false);
+    expect(pushPayloadSchema.safeParse({ ...ok, title: "🔥".repeat(80) }).success).toBe(true);
+    expect(pushPayloadSchema.safeParse({ ...ok, title: "🔥".repeat(81) }).success).toBe(false);
   });
 });
 

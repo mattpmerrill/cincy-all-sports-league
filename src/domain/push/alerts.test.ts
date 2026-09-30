@@ -8,8 +8,8 @@ import {
   testPushAlert,
   tradePushAlert,
 } from "./alerts";
-import { encodePushPayload, pushPayloadSchema } from "./payload";
-import type { PushAlert } from "./types";
+import { MAX_PAYLOAD_BYTES, encodePushPayload, pushPayloadSchema } from "./payload";
+import type { PushAlert, PushSend } from "./types";
 
 const ME = "user-me";
 const OTHER = "user-other";
@@ -96,9 +96,9 @@ describe("reactionPushAlert", () => {
     reactionPushAlert({
       actorId: ME,
       actorName: "Matt",
-      glyph: "🔥",
+      reaction: "fire",
       message: post(),
-      otherReactorCount: 0,
+      reactorIds: [ME],
       ...over,
     });
 
@@ -116,12 +116,22 @@ describe("reactionPushAlert", () => {
   });
 
   it("groups by count once others have reacted", () => {
-    expect(react({ otherReactorCount: 1 })?.message.title).toBe(
+    expect(react({ reactorIds: [ME, "r2"] })?.message.title).toBe(
       "Matt and 1 other reacted to your post",
     );
-    expect(react({ otherReactorCount: 3 })?.message.title).toBe(
+    expect(react({ reactorIds: [ME, "r2", "r3", "r4"] })?.message.title).toBe(
       "Matt and 3 others reacted to your post",
     );
+  });
+
+  it("counts distinct reactors, leaving out the author and the actor", () => {
+    const title = (reactorIds: string[]) => react({ reactorIds })?.message.title;
+    // Duplicates (one member, several emoji) count once; the author's own reaction never counts.
+    expect(title([ME, "r2", "r2", OTHER, "r3", "r3"])).toBe(
+      "Matt and 2 others reacted to your post",
+    );
+    expect(title([ME, OTHER, ME])).toBe("Matt reacted 🔥 to your post");
+    expect(title([])).toBe("Matt reacted 🔥 to your post");
   });
 
   it("clips the quoted snippet to 100 characters", () => {
@@ -206,23 +216,37 @@ describe("scorePushAlerts", () => {
     expect(alerts[0]?.message.body).toBe("C +12, B +0.2, A +0.1");
   });
 
+  it("sums in exact units, so 0.1 + 0.2 reads +0.3", () => {
+    const alerts = run([item("team-a", "A", 0.1), item("team-a", "B", 0.2)]);
+    expect(alerts[0]?.message.title).toBe("Team A +0.3");
+  });
+
   it("sends nothing for a run with no gains", () => {
     expect(run([])).toEqual([]);
   });
 });
 
+describe("testPushAlert", () => {
+  it("has no topic, so no switch can filter it, and makes no promise about topics", () => {
+    const alert = testPushAlert({ recipientId: ME, now: new Date("2026-09-29T10:15:00Z") });
+    expect(alert).not.toHaveProperty("topic");
+    expect(alert.message).toMatchObject({ title: "Alerts are working", url: "/me", tag: "test" });
+    expect(alert.message.body).toBe("Alerts are working on this device.");
+  });
+});
+
 describe("dedupe keys", () => {
   it("are stable across calls, so a re-run of the same event sends nothing twice", () => {
-    const reactInput = {
+    const reactInput: Parameters<typeof reactionPushAlert>[0] = {
       actorId: ME,
       actorName: "Matt",
-      glyph: "🔥",
+      reaction: "fire",
       message: post(),
-      otherReactorCount: 0,
+      reactorIds: [ME],
     };
     // Another reactor joining changes the wording but must not change the key.
     expect(reactionPushAlert(reactInput)?.dedupeKey).toBe(
-      reactionPushAlert({ ...reactInput, otherReactorCount: 4 })?.dedupeKey,
+      reactionPushAlert({ ...reactInput, reactorIds: [ME, "a", "b", "c", "d"] })?.dedupeKey,
     );
     const score = { runId: "run-9", items: [item("team-a", "A", 1)], teams };
     expect(scorePushAlerts(score)[0]?.dedupeKey).toBe(scorePushAlerts(score)[0]?.dedupeKey);
@@ -237,7 +261,7 @@ describe("dedupe keys", () => {
 
 describe("every builder's output", () => {
   const longName = "N".repeat(80);
-  const cases: [string, () => PushAlert | null | PushAlert[]][] = [
+  const cases: [string, () => PushAlert | PushSend | null | PushAlert[]][] = [
     [
       "tradePushAlert",
       () =>
@@ -267,9 +291,9 @@ describe("every builder's output", () => {
         reactionPushAlert({
           actorId: ME,
           actorName: longName,
-          glyph: "🐐",
+          reaction: "goat",
           message: post(),
-          otherReactorCount: 0,
+          reactorIds: [ME],
         }),
     ],
     [
@@ -278,9 +302,31 @@ describe("every builder's output", () => {
         reactionPushAlert({
           actorId: ME,
           actorName: "Matt",
-          glyph: "🐐",
+          reaction: "goat",
           message: post(),
-          otherReactorCount: 2,
+          reactorIds: [ME, "r2", "r3"],
+        }),
+    ],
+    [
+      "reactionPushAlert (emoji-heavy name and 12 other reactors)",
+      () =>
+        reactionPushAlert({
+          actorId: ME,
+          actorName: "😀".repeat(30),
+          reaction: "skull",
+          message: { ...post(), body: "🔥".repeat(300) },
+          reactorIds: [ME, ...Array.from({ length: 12 }, (_, i) => `r${i}`)],
+        }),
+    ],
+    [
+      "replyPushAlert (160 emoji body)",
+      () =>
+        replyPushAlert({
+          actorId: ME,
+          replyId: "r",
+          parent: { id: "p", authorId: OTHER },
+          replierName: "😀".repeat(30),
+          replyBody: "🔥".repeat(160),
         }),
     ],
     [
@@ -298,15 +344,18 @@ describe("every builder's output", () => {
     ],
   ];
 
-  it.each(cases)("%s has no em dash and passes the worker's payload schema", (_name, build) => {
-    const built = build();
-    const alerts = Array.isArray(built) ? built : built ? [built] : [];
-    expect(alerts.length).toBeGreaterThan(0);
-    for (const { message } of alerts) {
-      expect(Object.values(message).join("\n")).not.toMatch(/[–—]/);
-      expect(pushPayloadSchema.safeParse(JSON.parse(encodePushPayload(message))).success).toBe(
-        true,
-      );
-    }
-  });
+  it.each(cases)(
+    "%s has no em dash, passes the worker's schema and fits the byte cap",
+    (_name, build) => {
+      const built = build();
+      const alerts = Array.isArray(built) ? built : built ? [built] : [];
+      expect(alerts.length).toBeGreaterThan(0);
+      for (const { message } of alerts) {
+        expect(Object.values(message).join("\n")).not.toMatch(/[–—]/);
+        const json = encodePushPayload(message);
+        expect(pushPayloadSchema.safeParse(JSON.parse(json)).success).toBe(true);
+        expect(new TextEncoder().encode(json).length).toBeLessThanOrEqual(MAX_PAYLOAD_BYTES);
+      }
+    },
+  );
 });
