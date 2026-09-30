@@ -1,7 +1,11 @@
 import * as React from "react";
 import { cn } from "cn";
 
-/** The main landmark for a screen: consistent width and gutters. `wide` suits grids and tables. */
+/**
+ * The main landmark for a screen: consistent width and gutters. `wide` suits grids and tables.
+ * It takes programmatic focus (`tabIndex={-1}`) so a dismissed banner can hand focus back to the
+ * content instead of dropping it on the page; it is never a tab stop, so it needs no ring.
+ */
 function PageMain({
   className,
   width = "narrow",
@@ -10,8 +14,9 @@ function PageMain({
   return (
     <main
       id="main"
+      tabIndex={-1}
       className={cn(
-        "mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6 md:py-10",
+        "mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-6 outline-none md:py-10",
         width === "wide" ? "max-w-5xl" : "max-w-3xl",
         className,
       )}
