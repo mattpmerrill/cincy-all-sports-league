@@ -92,19 +92,27 @@ describe("pushConfig", () => {
     });
   });
 
-  it("accepts a mailto or https subject and refuses anything else", async () => {
+  it("accepts a mailto subject", async () => {
     const keys = { publicKey: VAPID_PUBLIC, privateKey: VAPID_PRIVATE };
-    expect(
-      (await load({ ...keys, subject: "mailto:league@example.com" })).pushConfig()?.subject,
-    ).toBe("mailto:league@example.com");
-    await expect(async () =>
-      (await load({ ...keys, subject: "http://example.com" })).pushConfig(),
-    ).rejects.toThrow(/VAPID_SUBJECT/);
+    const { pushConfig } = await load({ ...keys, subject: "mailto:league@example.com" });
+    expect(pushConfig()?.subject).toBe("mailto:league@example.com");
   });
 
-  it("names a malformed private key without echoing it", async () => {
-    const { pushConfig } = await load({ publicKey: VAPID_PUBLIC, privateKey: "not-a-key" });
-    expect(pushConfig).toThrow(/VAPID_PRIVATE_KEY/);
-    expect(pushConfig).not.toThrow(/not-a-key/);
+  it.each([
+    ["VAPID_PRIVATE_KEY", { privateKey: "not-a-key-secret" }],
+    ["VAPID_SUBJECT", { privateKey: VAPID_PRIVATE, subject: "http://example.com/secret" }],
+  ])("turns push off, and only names %s in the log, when it is malformed", async (name, bad) => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { pushConfig, serverEnv } = await load({ publicKey: VAPID_PUBLIC, ...bad });
+    expect(pushConfig()).toBeNull();
+    // A second call does not repeat the warning, and the rest of the app is unaffected.
+    expect(pushConfig()).toBeNull();
+    expect(() => serverEnv()).not.toThrow();
+
+    const lines = log.mock.calls.map((call) => String(call[0]));
+    log.mockRestore();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain(name);
+    expect(lines[0]).not.toMatch(/not-a-key-secret|example\.com/);
   });
 });
