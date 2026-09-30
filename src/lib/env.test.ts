@@ -51,9 +51,22 @@ describe("VAPID public key", () => {
       parsePublicEnv({ ...valid, NEXT_PUBLIC_VAPID_PUBLIC_KEY: VAPID_PUBLIC })
         .NEXT_PUBLIC_VAPID_PUBLIC_KEY,
     ).toBe(VAPID_PUBLIC);
-    expect(() => parsePublicEnv({ ...valid, NEXT_PUBLIC_VAPID_PUBLIC_KEY: "short" })).toThrow(
-      /NEXT_PUBLIC_VAPID_PUBLIC_KEY/,
-    );
+  });
+
+  it("reads a malformed value as unset instead of throwing", () => {
+    for (const bad of ["short", "B".repeat(88), `${"B".repeat(86)}=`, "not a key!"]) {
+      expect(parsePublicEnv({ ...valid, NEXT_PUBLIC_VAPID_PUBLIC_KEY: bad })).toMatchObject({
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: undefined,
+      });
+    }
+    // The rest of the public env is still strictly validated.
+    expect(() =>
+      parsePublicEnv({
+        ...valid,
+        NEXT_PUBLIC_SUPABASE_URL: "nope",
+        NEXT_PUBLIC_VAPID_PUBLIC_KEY: "x",
+      }),
+    ).toThrow(/NEXT_PUBLIC_SUPABASE_URL/);
   });
 });
 
