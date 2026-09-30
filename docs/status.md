@@ -71,9 +71,15 @@ deployed, and production has every migration in `supabase/migrations/` applied.
 ## Operations
 
 - Admins: `pnpm make-admin <email>` after the person signs up.
-- One-off announcement email: `scripts/send-trades-announcement.ts` is the pattern (dry run by
-  default, `--only you@x` for a test, `--send [--except a@x]`, per-member idempotency keys). It
-  skips members who turned off league email.
+- One-off announcement email: a short script per announcement (`scripts/send-*-announcement.ts`,
+  run as `pnpm announce:trades`, `announce:free-agents`, `announce:home-screen`) names its
+  campaign, subject and renderer, and `scripts/announcement-runner.ts` does the sending: dry run
+  by default, `--only you@x` for a test, `--send [--except a@x]`, per-member idempotency keys. It
+  skips members who turned off league email. Templates live in
+  `src/features/announcements/email/`. Images an email needs are hosted on the site: deploy them
+  before sending. The Home Screen email's pictures are drawn in `scripts/email-visuals/` and
+  rendered into `public/email/` by `pnpm email:visuals` (its site capture hides every section that
+  shows member names or photos, because those files are public).
 - First free-agent load: after the free-agents deploy, run the same curl as in "Running it
   locally" against `https://www.cincysports.xyz`, once per sport (11 calls), or wait for the
   09:15 UTC pg_cron job. The pool is empty until then. Check the cached read model size after it
