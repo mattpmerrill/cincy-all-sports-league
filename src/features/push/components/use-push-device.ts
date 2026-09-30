@@ -20,6 +20,10 @@ export type PushDevice = {
   refresh: () => Promise<void>;
   /** Runs the device checks for a RESOLVED session; a loading session does nothing. */
   sync: (session: DeviceSession) => Promise<void>;
+  /** The push service refused this device for good: end it here and offer "Turn on" again. */
+  forgetDead: () => Promise<void>;
+  /** The server lost this device's row: register it again. Resolves to whether that worked. */
+  reRegister: () => Promise<boolean>;
 };
 
 /**
@@ -112,5 +116,24 @@ export function usePushDevice({
     [controller, refresh],
   );
 
-  return { state, deviceCount, inAppBrowser, enable, disable, refresh, sync };
+  const forgetDead = useCallback(async () => {
+    version.current += 1;
+    await controller.forgetDead();
+    version.current += 1;
+    if (mounted.current) setState({ status: "off" });
+  }, [controller]);
+
+  const reRegister = useCallback(() => controller.reRegister(), [controller]);
+
+  return {
+    state,
+    deviceCount,
+    inAppBrowser,
+    enable,
+    disable,
+    refresh,
+    sync,
+    forgetDead,
+    reRegister,
+  };
 }

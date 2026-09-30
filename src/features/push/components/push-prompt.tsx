@@ -21,6 +21,11 @@ import { IosInstallHint } from "./ios-install-hint";
 import { useBrowserSession } from "./use-browser-session";
 import { usePushDevice } from "./use-push-device";
 
+// The design system's own ring is the brand color at half strength: about 1.4:1 on the canvas, and
+// invisible against a brand-red button. A light ring on every control here keeps keyboard focus
+// visible (WCAG 2.4.7); the app-wide `--ring` token is a separate follow-up.
+const BUTTON = "min-h-11 px-4 focus-visible:border-text focus-visible:ring-text/50";
+
 /** What the rules need beyond the device: read in the browser, per member, when a prompt page opens. */
 type PromptFacts = {
   userId: string;
@@ -107,7 +112,10 @@ function ConfiguredPushPrompt({
       <PromptFrame>
         <Alert variant="info">
           Alerts are on for this device.{" "}
-          <Link href="/me" className="font-medium text-text underline underline-offset-4">
+          <Link
+            href="/me"
+            className="rounded-sm font-medium text-text underline underline-offset-4 outline-none focus-visible:ring-3 focus-visible:ring-text/60"
+          >
             Choose which ones on your profile
           </Link>
           .
@@ -181,19 +189,19 @@ function ConfiguredPushPrompt({
         <div className="flex flex-wrap items-center gap-3">
           {install ? null : (
             <Button
-              className="min-h-11 px-4 font-semibold focus-visible:border-text focus-visible:ring-text/50"
+              className={`${BUTTON} font-semibold`}
               disabled={working}
               onClick={() => void turnOn()}
             >
               {working ? "Turning on..." : "Turn on alerts"}
             </Button>
           )}
-          <Button variant="outline" className="min-h-11 px-4" disabled={working} onClick={dismiss}>
+          <Button variant="outline" className={BUTTON} disabled={working} onClick={dismiss}>
             Not now
           </Button>
           <Link
             href="/me"
-            className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-medium text-text-muted underline-offset-4 outline-none hover:text-text hover:underline focus-visible:ring-3 focus-visible:ring-ring/60"
+            className="inline-flex min-h-11 items-center rounded-md px-2 text-sm font-medium text-text-muted underline-offset-4 outline-none hover:text-text hover:underline focus-visible:ring-3 focus-visible:ring-text/60"
           >
             Settings
           </Link>

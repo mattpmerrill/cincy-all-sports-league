@@ -12,16 +12,21 @@ import { IosInstallHint } from "./ios-install-hint";
 import { TopicSwitches } from "./topic-switches";
 import { usePushDevice } from "./use-push-device";
 
-const BUTTON = "min-h-11 px-4";
-// The default button is brand red and its focus ring is brand red too, which barely shows against
-// itself; a light ring keeps keyboard focus visible on the primary buttons.
-const PRIMARY = `${BUTTON} focus-visible:border-text focus-visible:ring-text/50`;
+// The design system's own ring is the brand color at half strength: about 1.4:1 on the canvas, and
+// invisible against a brand-red button. A light ring on every control here keeps keyboard focus
+// visible (WCAG 2.4.7); the app-wide `--ring` token is a separate follow-up.
+const BUTTON = "min-h-11 px-4 focus-visible:border-text focus-visible:ring-text/50";
 
 type TestState =
   | { status: "idle" }
   | { status: "sending" }
   | { status: "sent" }
+  /** Something to tell the member that is neither a success nor a failure. */
+  | { status: "notice"; message: string }
   | { status: "failed"; message: string };
+
+const DEAD_DEVICE = "This device can't receive alerts any more. Turn them on again.";
+const SET_UP_AGAIN = "This device was set up again. Try the test once more.";
 
 /**
  * The "Push alerts" section of /me. The device row says what THIS browser can do and offers the
@@ -52,7 +57,23 @@ export function AlertsSection({
     setTest({ status: "sending" });
     try {
       const result = await actions.sendTest({ endpoint });
-      setTest(result.ok ? { status: "sent" } : { status: "failed", message: result.error.message });
+      if (result.ok) return setTest({ status: "sent" });
+      switch (result.error.code) {
+        case "invalid_subscription":
+          // The push service refused this device for good and delivery deleted its row, so
+          // "on" would be a lie: end it here and offer "Turn on" again.
+          await device.forgetDead();
+          return setTest({ status: "failed", message: DEAD_DEVICE });
+        case "not_found":
+          // The browser holds a subscription the server has no row for: register it again.
+          return setTest(
+            (await device.reRegister())
+              ? { status: "notice", message: SET_UP_AGAIN }
+              : { status: "failed", message: result.error.message },
+          );
+        default:
+          return setTest({ status: "failed", message: result.error.message });
+      }
     } catch {
       setTest({
         status: "failed",
@@ -118,7 +139,7 @@ export function AlertsSection({
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {state.status === "working" ? (
-                <Button className={PRIMARY} disabled>
+                <Button className={BUTTON} disabled>
                   Working...
                 </Button>
               ) : on ? (
@@ -126,7 +147,10 @@ export function AlertsSection({
                   <Button
                     variant="secondary"
                     className={BUTTON}
-                    onClick={() => void device.disable()}
+                    onClick={() => {
+                      setTest({ status: "idle" });
+                      void device.disable();
+                    }}
                   >
                     Turn off
                   </Button>
@@ -140,7 +164,13 @@ export function AlertsSection({
                   </Button>
                 </>
               ) : (
-                <Button className={PRIMARY} onClick={() => void device.enable()}>
+                <Button
+                  className={BUTTON}
+                  onClick={() => {
+                    setTest({ status: "idle" });
+                    void device.enable();
+                  }}
+                >
                   Turn on
                 </Button>
               )}
@@ -150,7 +180,8 @@ export function AlertsSection({
                 Test alert sent. It should show up on this device in a moment.
               </Alert>
             ) : null}
-            {on && test.status === "failed" ? <Alert variant="error">{test.message}</Alert> : null}
+            {test.status === "notice" ? <Alert variant="info">{test.message}</Alert> : null}
+            {test.status === "failed" ? <Alert variant="error">{test.message}</Alert> : null}
             {others > 0 ? (
               <p className="text-sm text-text-muted">
                 Also on {others} other {others === 1 ? "device" : "devices"}.
@@ -163,7 +194,7 @@ export function AlertsSection({
           <div className="flex flex-col gap-3">
             <Alert variant="error">{state.message}</Alert>
             <div>
-              <Button className={PRIMARY} onClick={() => void device.enable()}>
+              <Button className={BUTTON} onClick={() => void device.enable()}>
                 Try again
               </Button>
             </div>

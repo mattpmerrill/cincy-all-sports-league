@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createDeviceController,
   type DevicePort,
@@ -24,6 +24,10 @@ type World = {
   userId: string | null;
   marker: DeviceMarker | null;
   subscribeError: Error | null;
+  /** Whether a subscription the browser just made reports the current key. */
+  freshUsesCurrentKey: boolean;
+  /** Calls that never answer, for the hung-call cases. */
+  hang: { permission: boolean; subscribeAction: boolean };
   actionResults: { subscribe: "ok" | "refused" | "throws"; unsubscribe: "ok" | "throws" };
 };
 
@@ -50,6 +54,8 @@ function setup(over: Partial<World> = {}) {
     userId: "u1",
     marker: null,
     subscribeError: null,
+    freshUsesCurrentKey: true,
+    hang: { permission: false, subscribeAction: false },
     actionResults: { subscribe: "ok", unsubscribe: "ok" },
     ...over,
   };
@@ -58,13 +64,14 @@ function setup(over: Partial<World> = {}) {
     permission: () => world.permission,
     requestPermission: async () => {
       world.log.push("permission:ask");
+      if (world.hang.permission) return new Promise<never>(() => undefined);
       return world.answer;
     },
     getSubscription: async () => world.subscription,
     subscribe: async () => {
       world.log.push("browser:subscribe");
       if (world.subscribeError) throw world.subscribeError;
-      world.subscription = subscription(world);
+      world.subscription = subscription(world, world.freshUsesCurrentKey);
       return world.subscription;
     },
     signedInUserId: async () => world.userId,
@@ -86,6 +93,7 @@ function setup(over: Partial<World> = {}) {
   const actions: Pick<PushActions, "subscribe" | "unsubscribe"> = {
     subscribe: async () => {
       world.log.push("action:subscribe");
+      if (world.hang.subscribeAction) return new Promise<never>(() => undefined);
       const mode = world.actionResults.subscribe;
       if (mode === "throws") throw new Error("network");
       return mode === "ok"
@@ -185,7 +193,7 @@ describe("enable", () => {
     expect(world.log).toContain("browser:unsubscribe");
   });
 
-  it("removes a subscription made with a rotated key before subscribing again", async () => {
+  it("removes a subscription made with a rotated key, and its server row, before subscribing again", async () => {
     const { world, controller } = setup();
     world.subscription = subscription(world, false);
 
@@ -193,6 +201,7 @@ describe("enable", () => {
 
     expect(world.log).toEqual([
       "permission:ask",
+      "action:unsubscribe",
       "browser:unsubscribe",
       "browser:subscribe",
       "action:subscribe",
@@ -409,5 +418,100 @@ describe("release (sign-out)", () => {
     const started = Date.now();
     await hung.release(30);
     expect(Date.now() - started).toBeLessThan(1000);
+  });
+});
+
+describe("a call that never answers", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("an ignored permission prompt does not hold the queue: later work still runs", async () => {
+    const { world, controller } = setup({ hang: { permission: true, subscribeAction: false } });
+    world.subscription = subscription(world);
+
+    void controller.enable(); // the member never answers the prompt
+    const read = await controller.read();
+
+    expect(read.endpoint).toBe(ENDPOINT);
+  });
+
+  it("a hung register call ends the turn-on with an error and undoes the subscription", async () => {
+    vi.useFakeTimers();
+    const { world, controller } = setup({ hang: { permission: false, subscribeAction: true } });
+
+    const outcome = controller.enable();
+    await vi.advanceTimersByTimeAsync(16_000);
+
+    expect(await outcome).toEqual({ status: "error", message: DEVICE_COPY.network });
+    expect(world.log).toContain("browser:unsubscribe");
+  });
+
+  it("a hung register call does not keep a later sign-out cleanup from running", async () => {
+    vi.useFakeTimers();
+    const { world, controller } = setup({ hang: { permission: false, subscribeAction: true } });
+    void controller.enable();
+    await vi.advanceTimersByTimeAsync(0);
+    world.subscription = subscription(world);
+
+    const released = controller.release(4_000);
+    await vi.advanceTimersByTimeAsync(20_000);
+    await released;
+
+    expect(world.log).toContain("marker:clear");
+  });
+});
+
+describe("a key mismatch the browser keeps reporting", () => {
+  it("is not resubscribed again in the same session", async () => {
+    const { world, controller } = setup({ freshUsesCurrentKey: false });
+    world.subscription = subscription(world, false);
+    world.marker = { userId: "u1", syncedAt: NOW - 1000 };
+
+    await controller.sync(signedIn("u1")); // a rotation: one silent resubscribe
+    expect(world.log.filter((entry) => entry === "browser:subscribe")).toHaveLength(1);
+
+    // The fresh subscription still reports a mismatch, but this page made it.
+    world.log.length = 0;
+    await controller.sync(signedIn("u1"));
+    await controller.sync(signedIn("u1"));
+    expect(world.log).toEqual([]);
+  });
+});
+
+describe("forgetDead", () => {
+  it("ends the browser subscription and forgets the marker, without asking the server", async () => {
+    const { world, controller } = setup();
+    world.subscription = subscription(world);
+    world.marker = { userId: "u1", syncedAt: NOW };
+
+    await controller.forgetDead();
+
+    expect(world.log).toEqual(["browser:unsubscribe", "marker:clear", "announce"]);
+    expect(world.log).not.toContain("action:unsubscribe");
+  });
+});
+
+describe("reRegister", () => {
+  it("registers the held subscription again and restamps the marker", async () => {
+    const { world, controller } = setup();
+    world.subscription = subscription(world);
+
+    expect(await controller.reRegister()).toBe(true);
+    expect(world.log).toEqual(["action:subscribe", "marker:write"]);
+    expect(world.marker).toEqual({ userId: "u1", syncedAt: NOW });
+  });
+
+  it("reports false, and writes nothing, when the server refuses, or nothing is held, or nobody is signed in", async () => {
+    const refused = setup();
+    refused.world.subscription = subscription(refused.world);
+    refused.world.actionResults.subscribe = "refused";
+    expect(await refused.controller.reRegister()).toBe(false);
+    expect(refused.world.marker).toBeNull();
+
+    const none = setup();
+    expect(await none.controller.reRegister()).toBe(false);
+
+    const signedOut = setup({ userId: null });
+    signedOut.world.subscription = subscription(signedOut.world);
+    expect(await signedOut.controller.reRegister()).toBe(false);
   });
 });

@@ -55,17 +55,47 @@ const NOTHING_TO_SYNC: readonly PushSupport["status"][] = [
   "ios_needs_install",
 ];
 
+/** How long any single browser or server call may take before the device code stops waiting. */
+export const CALL_TIMEOUT_MS = 15_000;
+
 export function createDeviceController({
   port,
   actions,
   run,
+  madeHere = new Set<string>(),
+  callTimeoutMs = CALL_TIMEOUT_MS,
 }: {
   port: DevicePort;
   actions: Pick<PushActions, "subscribe" | "unsubscribe">;
   /** The one queue shared by every controller, so nothing overlaps across components. */
   run: <T>(task: () => Promise<T>) => Promise<T>;
+  /**
+   * Endpoints this page subscribed itself, shared by every controller. A subscription made just
+   * now with the current key is right by construction, so if the browser still reports a key
+   * mismatch for it, that is the browser's quirk, not a rotation, and must not be answered with
+   * another subscribe (which would repeat on every route change).
+   */
+  madeHere?: Set<string>;
+  callTimeoutMs?: number;
 }) {
   const errorName = (error: unknown) => (error instanceof Error ? error.name : "NonError");
+
+  /** Every await on the browser or the server is bounded, so one hung call cannot stall the queue. */
+  function bounded<T>(work: Promise<T>): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("timeout")), callTimeoutMs);
+      work.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (error: unknown) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+    });
+  }
 
   async function quietly<T>(what: string, work: () => Promise<T>): Promise<T | undefined> {
     try {
@@ -77,11 +107,13 @@ export function createDeviceController({
   }
 
   const readSubscription = async () =>
-    (await quietly("read subscription", () => port.getSubscription())) ?? null;
+    (await quietly("read subscription", () => bounded(port.getSubscription()))) ?? null;
 
   /** Best effort: the server row also goes on the next 404 or 410, so a failure is not fatal. */
   async function forgetOnServer(endpoint: string): Promise<number | null> {
-    const result = await quietly("server unsubscribe", () => actions.unsubscribe({ endpoint }));
+    const result = await quietly("server unsubscribe", () =>
+      bounded(actions.unsubscribe({ endpoint })),
+    );
     return result?.ok ? result.value.deviceCount : null;
   }
 
@@ -100,7 +132,7 @@ export function createDeviceController({
   async function subscribeAndRegister(userId: string): Promise<Registered> {
     let subscription: DeviceSubscription;
     try {
-      subscription = await port.subscribe();
+      subscription = await bounded(port.subscribe());
     } catch (error) {
       port.warn("push device: subscribe failed", { errorName: errorName(error) });
       return { ok: false, message: describeSubscribeFailure(error) };
@@ -114,7 +146,7 @@ export function createDeviceController({
 
     let result: Awaited<ReturnType<PushActions["subscribe"]>>;
     try {
-      result = await actions.subscribe(input);
+      result = await bounded(actions.subscribe(input));
     } catch (error) {
       port.warn("push device: register failed", { errorName: errorName(error) });
       await dropInBrowser(subscription);
@@ -126,6 +158,7 @@ export function createDeviceController({
       return { ok: false, message: result.error.message };
     }
 
+    madeHere.add(subscription.endpoint);
     port.marker.write({ userId, syncedAt: port.now() });
     return { ok: true, endpoint: subscription.endpoint, deviceCount: result.value.deviceCount };
   }
@@ -142,36 +175,44 @@ export function createDeviceController({
         },
       );
 
-      return run(async (): Promise<EnableOutcome> => {
-        try {
-          const { permission } = await asked;
-          if (permission === undefined)
-            return { status: "error", message: DEVICE_COPY.noPermissionApi };
-          if (permission === null) return { status: "error", message: DEVICE_COPY.generic };
-          if (permission === "denied") return { status: "denied" };
-          if (permission === "default")
-            return { status: "error", message: DEVICE_COPY.closedPrompt };
-
-          const userId = await port.signedInUserId();
-          if (!userId) return { status: "error", message: DEVICE_COPY.signedOut };
-
-          // After a key rotation the old subscription blocks a new one (the browser refuses a
-          // second key), so it goes first.
-          const existing = await readSubscription();
-          if (existing && !existing.usesCurrentKey) await dropInBrowser(existing);
-
-          const registered = await subscribeAndRegister(userId);
-          if (!registered.ok) return { status: "error", message: registered.message };
-          port.announce();
-          return {
-            status: "on",
-            endpoint: registered.endpoint,
-            deviceCount: registered.deviceCount,
-          };
-        } catch (error) {
-          port.warn("push device: enable failed", { errorName: errorName(error) });
-          return { status: "error", message: DEVICE_COPY.generic };
+      // The permission answer is awaited BEFORE joining the queue: a prompt the member ignores
+      // (a Chrome bubble left open) must not hold everything else behind it.
+      return asked.then(({ permission }): Promise<EnableOutcome> | EnableOutcome => {
+        if (permission === undefined) {
+          return { status: "error", message: DEVICE_COPY.noPermissionApi };
         }
+        if (permission === null) return { status: "error", message: DEVICE_COPY.generic };
+        if (permission === "denied") return { status: "denied" };
+        if (permission === "default") {
+          return { status: "error", message: DEVICE_COPY.closedPrompt };
+        }
+
+        return run(async (): Promise<EnableOutcome> => {
+          try {
+            const userId = await bounded(port.signedInUserId());
+            if (!userId) return { status: "error", message: DEVICE_COPY.signedOut };
+
+            // After a key rotation the old subscription blocks a new one (the browser refuses a
+            // second key), so it goes first, and its server row with it (as `sync` does).
+            const existing = await readSubscription();
+            if (existing && !existing.usesCurrentKey && !madeHere.has(existing.endpoint)) {
+              await forgetOnServer(existing.endpoint);
+              await dropInBrowser(existing);
+            }
+
+            const registered = await subscribeAndRegister(userId);
+            if (!registered.ok) return { status: "error", message: registered.message };
+            port.announce();
+            return {
+              status: "on",
+              endpoint: registered.endpoint,
+              deviceCount: registered.deviceCount,
+            };
+          } catch (error) {
+            port.warn("push device: enable failed", { errorName: errorName(error) });
+            return { status: "error", message: DEVICE_COPY.generic };
+          }
+        });
       });
     },
 
@@ -219,7 +260,9 @@ export function createDeviceController({
           marker: port.marker.read(),
           permission: port.permission(),
           hasSubscription: subscription !== null,
-          keyMatches: subscription?.usesCurrentKey ?? false,
+          keyMatches: subscription
+            ? subscription.usesCurrentKey || madeHere.has(subscription.endpoint)
+            : false,
           now: port.now(),
         });
 
@@ -265,7 +308,7 @@ export function createDeviceController({
             if (!subscription || session.status !== "signed_in") return false;
             const input = subscriptionToInput(subscription.toJSON());
             if (input) {
-              await quietly("refresh", () => actions.subscribe(input));
+              await quietly("refresh", () => bounded(actions.subscribe(input)));
               // Stamped after an attempt, not only a success: a server that keeps refusing would
               // otherwise be asked again on every route change. The next try is tomorrow.
               port.marker.write({ userId: session.userId, syncedAt: port.now() });
@@ -273,6 +316,39 @@ export function createDeviceController({
             return false;
           }
         }
+      });
+    },
+
+    /**
+     * The push service refused this device for good (a test alert came back 404 or 410, or the
+     * subscription was invalid), and delivery already deleted the server row. So there is nothing
+     * to tell the server: end the browser subscription and forget the marker, and the member is
+     * offered "Turn on" again instead of a device that says "on" and never gets anything.
+     */
+    forgetDead(): Promise<void> {
+      return run(async () => {
+        const subscription = await readSubscription();
+        if (subscription) await dropInBrowser(subscription);
+        port.marker.clear();
+        port.announce();
+      });
+    },
+
+    /**
+     * The server has no row for a subscription this browser holds (a lost row, or a database
+     * restore). Registers it again now, which is the daily refresh on demand. Resolves to whether
+     * the server accepted it.
+     */
+    reRegister(): Promise<boolean> {
+      return run(async () => {
+        const userId = await quietly("session", () => bounded(port.signedInUserId()));
+        const subscription = await readSubscription();
+        const input = subscription ? subscriptionToInput(subscription.toJSON()) : null;
+        if (!userId || !input) return false;
+        const result = await quietly("re-register", () => bounded(actions.subscribe(input)));
+        if (!result?.ok) return false;
+        port.marker.write({ userId, syncedAt: port.now() });
+        return true;
       });
     },
 

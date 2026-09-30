@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSerialQueue } from "./serial-queue";
 
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
@@ -34,5 +34,44 @@ describe("createSerialQueue", () => {
 
     await expect(failing).rejects.toThrow("first failed");
     await expect(next).resolves.toBe("second ran");
+  });
+
+  describe("a task that never settles", () => {
+    afterEach(() => vi.useRealTimers());
+
+    it("does not block later tasks forever", async () => {
+      vi.useFakeTimers();
+      const run = createSerialQueue({ releaseAfterMs: 30_000 });
+      run(() => new Promise<never>(() => undefined)).catch(() => undefined);
+      const order: string[] = [];
+      const later = run(async () => {
+        order.push("later");
+        return "ran";
+      });
+      const another = run(async () => {
+        order.push("another");
+        return "ran too";
+      });
+
+      await vi.advanceTimersByTimeAsync(29_999);
+      expect(order).toEqual([]);
+      await vi.advanceTimersByTimeAsync(2);
+      await expect(later).resolves.toBe("ran");
+      await expect(another).resolves.toBe("ran too");
+      expect(order).toEqual(["later", "another"]);
+    });
+
+    it("counts the wait from when a task starts, not from when it was queued", async () => {
+      vi.useFakeTimers();
+      const run = createSerialQueue({ releaseAfterMs: 30_000 });
+      const slow = run(
+        () => new Promise<string>((resolve) => setTimeout(() => resolve("slow"), 20_000)),
+      );
+      const next = run(async () => "next");
+      // 20 s of waiting behind the slow task must not count against `next`.
+      await vi.advanceTimersByTimeAsync(20_001);
+      await expect(slow).resolves.toBe("slow");
+      await expect(next).resolves.toBe("next");
+    });
   });
 });

@@ -11,7 +11,7 @@ import { DEVICE_MARKER_KEY, parseDeviceMarker } from "./device-sync";
 import type { PushActions } from "./push-actions";
 import { parseDismissal, promptDismissalKey, type PromptDismissal } from "./prompt-rules";
 import { createSerialQueue } from "./serial-queue";
-import { base64UrlToBytes, detectPushSupport, sameKey } from "./support";
+import { base64UrlToBytes, detectPushSupport, usesCurrentKey } from "./support";
 
 /**
  * The browser side of the device controller: the real `navigator`, `Notification`, localStorage
@@ -29,6 +29,8 @@ const WORKER_READY_TIMEOUT_MS = 15_000;
 
 /** One queue for the whole page: the prompt, the profile section and sign-out all share it. */
 const run = createSerialQueue();
+/** Endpoints this page subscribed itself: see `createDeviceController`. */
+const madeHere = new Set<string>();
 
 function toDeviceSubscription(
   subscription: PushSubscription,
@@ -36,7 +38,10 @@ function toDeviceSubscription(
 ): DeviceSubscription {
   return {
     endpoint: subscription.endpoint,
-    usesCurrentKey: sameKey(subscription.options.applicationServerKey, base64UrlToBytes(vapidKey)),
+    usesCurrentKey: usesCurrentKey(
+      subscription.options.applicationServerKey,
+      base64UrlToBytes(vapidKey),
+    ),
     toJSON: () => subscription.toJSON(),
     unsubscribe: () => subscription.unsubscribe(),
   };
@@ -169,7 +174,7 @@ export function createBrowserDeviceController(
   actions: Pick<PushActions, "subscribe" | "unsubscribe">,
   configured: boolean,
 ): DeviceController {
-  return createDeviceController({ port: createBrowserPort(configured), actions, run });
+  return createDeviceController({ port: createBrowserPort(configured), actions, run, madeHere });
 }
 
 /** How long sign-out waits for the device cleanup before it goes ahead without it. */
