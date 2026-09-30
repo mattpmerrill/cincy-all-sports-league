@@ -1,14 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Barlow_Condensed, Inter } from "next/font/google";
-import { PushPrompt } from "@/features/push/components/push-prompt";
-import { isPushAvailable } from "@/features/push/push.server";
+import { isPushAvailable } from "@/features/push/push-availability.server";
 import { TradesBadge } from "@/features/trades/components/trades-badge";
 import { TradesBadgeProvider } from "@/features/trades/components/trades-badge-provider";
 import { publicEnv } from "@/lib/env";
 import { AppShell } from "@/ui/app-shell";
 import { AppHeaderAccount } from "./account-controls";
+import { AppPushPrompt } from "./app-push-prompt";
 import "./globals.css";
-import { pushActions } from "./push-actions";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 
@@ -54,7 +53,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               /privacy and /terms stay prerendered. The session, team and device are read in the
               browser by the prompt itself.
             */}
-            <PushPrompt configured={isPushAvailable()} actions={pushActions} />
+            <AppPushPrompt configured={isPushAvailable()} />
             {children}
           </AppShell>
         </TradesBadgeProvider>

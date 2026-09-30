@@ -5,13 +5,14 @@ import { claimFormPath, preselectedTeamId } from "@/features/claims/claim-links"
 import { ClaimTeamPanel } from "@/features/claims/components/claim-team-panel";
 import { getClaimsService } from "@/features/claims/claims.server";
 import { AlertsSection } from "@/features/push/components/alerts-section";
-import { getPushService } from "@/features/push/push.server";
+import { loadPushSettings } from "@/features/push/push.server";
 import { AvatarEditor } from "@/features/profile/components/avatar-editor";
 import { DisplayNameForm } from "@/features/profile/components/display-name-form";
 import { TradeEmailsForm } from "@/features/profile/components/trade-emails-form";
 import { WeeklyEmailForm } from "@/features/profile/components/weekly-email-form";
 import { getProfileService } from "@/features/profile/profile.server";
 import { isAdminRole } from "@/domain/membership/membership";
+import { Alert } from "@/ui/alert";
 import { Badge } from "@/ui/badge";
 import { PageHeader, PageMain, PageSection } from "@/ui/page";
 import { UserAvatar } from "@/ui/user-avatar";
@@ -37,7 +38,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
     getClaimsService().then((service) => service.getMyClaims(user.id)),
     profileService.getWeeklyEmail(user),
     profileService.getTradeEmails(user),
-    getPushService().then((service) => service.getSettings(user)),
+    loadPushSettings(user),
   ]);
 
   return (
@@ -88,7 +89,12 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
         title="Push alerts"
         description="Alerts on your phone or computer, even when the app is closed."
       >
-        <AlertsSection settings={pushSettings} actions={pushActions} />
+        {pushSettings.ok ? (
+          <AlertsSection settings={pushSettings.value} actions={pushActions} />
+        ) : (
+          // A failed read costs this section only: the rest of the page, Sign out included, stays.
+          <Alert variant="error">{pushSettings.error.message}</Alert>
+        )}
       </PageSection>
 
       <PageSection

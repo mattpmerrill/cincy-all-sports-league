@@ -65,10 +65,14 @@ export default function PrivacyPage() {
 
       <LegalSection title="Push alerts">
         <p>
-          If you turn on push alerts, we store your device&apos;s push address and a short device
-          name, such as &quot;iPhone&quot;. We never show either to anyone. We delete them when you
-          turn alerts off, when you sign out (once the push service confirms), and when your account
-          is deleted.
+          If you turn on push alerts, we store your device&apos;s push address, the keys that
+          encrypt alerts for it, and a short device name, such as &quot;iPhone&quot;. We never show
+          any of it to anyone. We delete it when you turn alerts off, when you sign out on that
+          device, and when your account is deleted. If a device stops accepting alerts, we delete it
+          automatically.
+        </p>
+        <p>
+          We also keep a short record of which alerts were sent, for 90 days, so none is sent twice.
         </p>
         <p>
           The text of an alert passes through Apple, Google, Mozilla or Microsoft, whichever runs
