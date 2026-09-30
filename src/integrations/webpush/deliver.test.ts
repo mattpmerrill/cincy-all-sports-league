@@ -267,6 +267,19 @@ describe("failures never escape", () => {
     },
   );
 
+  it("logs the run summary as a warning when a store call failed, and as info otherwise", async () => {
+    const clean = setup();
+    await clean.delivery.deliver([alert("u1")]);
+    expect(clean.lines.find((l) => l.msg === "push delivery finished")?.level).toBe("info");
+
+    const broken = setup();
+    broken.store.recordSuccess.mockRejectedValue(new Error("db down"));
+    await broken.delivery.deliver([alert("u1")]);
+    const summary = broken.lines.find((l) => l.msg === "push delivery finished");
+    expect(summary?.level).toBe("warn");
+    expect(summary?.fields.storeErrors).toBe(1);
+  });
+
   it("still delivers the other topics when one topic's lookup fails", async () => {
     const { delivery, store, sendPush } = setup({ targets: [device(1, "u2")] });
     store.listTargets.mockImplementation(async (ids, topic) => {

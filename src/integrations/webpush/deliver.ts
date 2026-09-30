@@ -353,8 +353,11 @@ export function createPushDelivery(deps: PushDeliveryDeps): PushDelivery {
         // Sends still in flight cannot be cancelled, but from here on they change nothing.
         if (!finished.ok) run.expired = true;
         await finish(run);
-        if (finished.ok) run.log.info("push delivery finished", run.stats);
-        else run.log.warn("push delivery ran out of time", { budgetMs, ...run.stats });
+        // A store that failed mid-run is worth noticing in the logs, so it is a warning then.
+        if (finished.ok) {
+          const level = run.stats.storeErrors > 0 ? "warn" : "info";
+          run.log[level]("push delivery finished", run.stats);
+        } else run.log.warn("push delivery ran out of time", { budgetMs, ...run.stats });
       } catch (error) {
         run.log.error("push delivery failed", { ...run.stats, error: loggable(error) });
       }

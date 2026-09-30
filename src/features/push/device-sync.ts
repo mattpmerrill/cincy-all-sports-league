@@ -51,9 +51,9 @@ export type DeviceSyncInput = {
 export type DeviceSyncDecision =
   /** Unsubscribe in the browser and clear the marker: the subscription is not this member's. */
   | "drop_browser_subscription"
-  /** Unsubscribe in the browser and clear the marker; the server row goes on the next 404 or 410. */
+  /** Permission was taken away: delete the server row (when a subscription exists), end the browser subscription, clear the marker. */
   | "forget_server"
-  /** The VAPID key changed: unsubscribe so the member is asked again. */
+  /** The VAPID key changed: end the old subscription and, with permission granted, subscribe again silently. */
   | "resubscribe_needed"
   /** Register again to heal an expired or lost server row. */
   | "refresh_server"
@@ -64,11 +64,11 @@ export type DeviceSyncDecision =
  * order is the priority: whether the session is known, then who owns the subscription, then its
  * health.
  *
- * `forget_server` is browser-only work plus the lazy prune: the marker stores no endpoint (a
- * denied browser has usually dropped the subscription, so there is none to read one from), so the
- * server row is not named here and is removed when the push service answers 404 or 410 on the
- * next send. The sign-out wrapper Phase 5 adds (unsubscribe on the server while still signed in,
- * then in the browser) closes the common case; this is the backstop for the rest.
+ * `forget_server` deletes the server row when the browser still holds a subscription to name it
+ * by. The marker stores no endpoint, and a browser that took permission away has usually dropped
+ * the subscription too, so in that case there is nothing to name: the row is then removed lazily,
+ * when the push service answers 404 or 410 on the next send. Signing out deletes the row at once
+ * (the sign-out wrapper in `app/`), so this is the backstop for the rest.
  */
 export function decideDeviceSync(input: DeviceSyncInput): DeviceSyncDecision {
   const { session, marker } = input;
