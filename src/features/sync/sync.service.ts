@@ -9,7 +9,13 @@ import type { Logger } from "@/lib/logger";
 import { mapPool } from "@/lib/map-pool";
 import { err, ok, type AppError, type Result } from "@/lib/result";
 import { easternDate } from "@/lib/time";
-import { buildMoversPost, buildScoreUpdatePost, type LeaguePost } from "@/domain/feed";
+import {
+  buildMoversPost,
+  buildScoreUpdatePost,
+  type LeaguePost,
+  type ScoreUpdateItem,
+} from "@/domain/feed";
+import { scorePushAlerts, type PushNotifier } from "@/domain/push";
 import { planSportSync, type SyncPlan } from "./plan";
 import type { ProviderError, ResultsProvider } from "./results-provider";
 import { refreshRoster, type RosterDeps } from "./roster";
@@ -55,6 +61,11 @@ export type SyncDeps = {
   league: { load(): Promise<LeagueData | null> };
   /** Drops the cached public read model (`revalidateLeague`). Injected so tests need no Next. */
   invalidate: () => void;
+  /**
+   * Score alerts for the regular league run only. Free-agent runs and the pre-move refresh never
+   * use it: unheld participants score nobody.
+   */
+  notifier: PushNotifier;
   logger: Logger;
   newCorrelationId: () => string;
 };
@@ -279,14 +290,18 @@ export function createSyncService(deps: SyncDeps) {
     seasonId: string,
     today: string,
     data: LeagueData,
-    changes: readonly ParticipantChange[],
+    items: readonly ScoreUpdateItem[] | null,
     log: Logger,
   ): Promise<void> {
-    try {
-      const scorePost = buildScoreUpdatePost(computeScoreChanges(data, changes));
-      if (scorePost) await deps.posts.write(seasonId, scorePost);
-    } catch (error) {
-      log.error("score update post failed", { error });
+    // Null means the changes could not be computed (already logged): no score post, but the
+    // daily movers post below does not depend on them.
+    if (items) {
+      try {
+        const scorePost = buildScoreUpdatePost(items);
+        if (scorePost) await deps.posts.write(seasonId, scorePost);
+      } catch (error) {
+        log.error("score update post failed", { error });
+      }
     }
     try {
       if (await deps.posts.hasMoversPost(seasonId, today)) return;
@@ -301,6 +316,34 @@ export function createSyncService(deps: SyncDeps) {
       if (moversPost) await deps.posts.write(seasonId, moversPost);
     } catch (error) {
       log.error("movers post failed", { error });
+    }
+  }
+
+  /**
+   * One alert per owner per run, built after the response from the same items as the feed post.
+   * The run's correlation id is the dedupe key's run id, so a re-run of the same sync cannot
+   * alert twice. A notifier problem is logged and never fails the sync.
+   */
+  function notifyScores(
+    runId: string,
+    data: LeagueData,
+    items: readonly ScoreUpdateItem[],
+    log: Logger,
+  ) {
+    try {
+      deps.notifier.notify(() =>
+        scorePushAlerts({
+          runId,
+          items,
+          teams: data.teams.map((t) => ({
+            slug: t.slug,
+            name: t.name,
+            ownerId: t.owner?.id ?? null,
+          })),
+        }),
+      );
+    } catch (error) {
+      log.error("could not schedule score alerts", { error });
     }
   }
 
@@ -463,7 +506,15 @@ export function createSyncService(deps: SyncDeps) {
         const data = await loadLeague(log);
         snapshot = await writeSnapshot(first.seasonId, today, data, log);
         if (data && data !== "failed") {
-          await postLeagueUpdates(first.seasonId, today, data, changeSink, log);
+          // Computed once: the feed post and the push alerts must describe the same changes.
+          let items: ScoreUpdateItem[] | null = null;
+          try {
+            items = computeScoreChanges(data, changeSink);
+          } catch (error) {
+            log.error("score changes could not be computed", { error });
+          }
+          await postLeagueUpdates(first.seasonId, today, data, items, log);
+          if (items && items.length > 0) notifyScores(correlationId, data, items, log);
         }
         deps.invalidate();
       }

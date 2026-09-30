@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LeaguePost } from "@/domain/feed";
 import type { LeagueData } from "@/domain/league";
+import type { PushNotifier } from "@/domain/push";
 import type { ParticipantResultRow, ResultUpsert } from "@/data/participant-results.repository";
 import type { SportTarget } from "@/data/sport-targets.repository";
 import type { SyncRunRow } from "@/data/sync-runs.repository";
@@ -140,7 +141,10 @@ function harness(opts: {
   moversAlreadyPosted?: boolean;
   leagueData?: LeagueData;
   failPosts?: boolean;
+  notifier?: PushNotifier;
 }) {
+  // Records the deferred builds without running them, like `after()` before the response ends.
+  const pushBuilds: Parameters<PushNotifier["notify"]>[0][] = [];
   const leaguePosts: LeaguePost[] = [];
   const runs = {
     started: [] as string[],
@@ -213,10 +217,12 @@ function harness(opts: {
     },
     league: { load: async () => opts.leagueData ?? league },
     invalidate,
+    notifier: opts.notifier ?? { notify: (build) => void pushBuilds.push(build) },
     logger: createLogger({ test: true }),
     newCorrelationId: () => "corr-1",
   };
   return {
+    pushBuilds,
     service: createSyncService(deps),
     deps,
     runs,
@@ -493,6 +499,93 @@ describe("league posts", () => {
     const report = await h.service.syncLeague({ now: NOW });
     expect(report).toMatchObject({ changed: true, snapshot: "written" });
     expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("score push alerts", () => {
+  const owner = (id: string) => ({ id, displayName: id, avatarUrl: null });
+  /** Two owners each hold the same participant (as in the WNBA), so one result scores for both. */
+  const owned: LeagueData = {
+    ...league,
+    teams: league.teams.map((t) => ({
+      ...t,
+      owner: owner(t.id === "t1" ? "u1" : "u2"),
+      picks: t.picks.map((pick) => ({
+        ...pick,
+        participant: { ...pick.participant, id: "nfl-p1" },
+      })),
+    })),
+  };
+
+  it("notifies once for a changed run, with one alert per owner built from the same run", async () => {
+    const h = harness({ targets: [target("nfl")], leagueData: owned });
+    await h.service.syncLeague({ now: NOW });
+    expect(h.pushBuilds).toHaveLength(1);
+
+    const alerts = await h.pushBuilds[0]?.();
+    expect(alerts?.map((a) => [a.recipientId, a.dedupeKey, a.topic])).toEqual([
+      ["u1", "score:corr-1:a", "scores"],
+      ["u2", "score:corr-1:b", "scores"],
+    ]);
+  });
+
+  it("does not notify when nothing changed, or when the league has no owner to tell", async () => {
+    const same = harness({
+      targets: [target("nfl")],
+      leagueData: owned,
+      existing: [
+        {
+          id: "r1",
+          participantId: "nfl-p1",
+          ruleId: "win",
+          quantity: 3,
+          eventLabel: "",
+          source: "espn",
+          isLocked: false,
+          updatedAt: "2026-09-28T00:00:00Z",
+        },
+      ],
+    });
+    await same.service.syncLeague({ now: NOW });
+    expect(same.pushBuilds).toHaveLength(0);
+
+    // Unowned teams still score; there is just nobody to alert.
+    const unowned = harness({ targets: [target("nfl")] });
+    await unowned.service.syncLeague({ now: NOW });
+    expect(await unowned.pushBuilds[0]?.()).toEqual([]);
+  });
+
+  it("never fails the sync, or the league posts, when the notifier throws", async () => {
+    const h = harness({
+      targets: [target("nfl")],
+      leagueData: owned,
+      notifier: {
+        notify: () => {
+          throw new Error("after() is unavailable");
+        },
+      },
+    });
+    const report = await h.service.syncLeague({ now: NOW });
+    expect(report).toMatchObject({ changed: true, snapshot: "written" });
+    expect(h.leaguePosts).toHaveLength(1);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays silent for the free-agent jobs and the pre-move refresh", async () => {
+    const h = harness({
+      targets: [
+        target("ncaaf", { freeAgents: freeAgents(3) }),
+        target("nfl", {
+          participants: [{ id: "nfl-p1", name: "Team", shortName: "T", externalId: "1" }],
+        }),
+      ],
+      leagueData: owned,
+      facts: (_sport, request) => recordsFor(request),
+    });
+    await h.service.syncFreeAgents({ now: NOW, sport: "ncaaf" });
+    await h.service.refreshFreeAgents({ now: NOW, sport: "ncaaf" });
+    await h.service.refreshParticipants({ sport: "nfl", participantIds: ["nfl-p1"], now: NOW });
+    expect(h.pushBuilds).toHaveLength(0);
   });
 });
 
