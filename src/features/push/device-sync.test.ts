@@ -11,14 +11,15 @@ const HOUR = 60 * 60 * 1000;
 
 // A healthy device: alerts on for u1, synced an hour ago.
 const healthy: DeviceSyncInput = {
-  userId: "u1",
+  session: { status: "signed_in", userId: "u1" },
   marker: { userId: "u1", syncedAt: NOW - HOUR },
   permission: "granted",
   hasSubscription: true,
   keyMatches: true,
-  lastSyncedAt: NOW - HOUR,
   now: NOW,
 };
+const signedOut = { status: "signed_out" } as const;
+const signedInAs = (userId: string) => ({ status: "signed_in", userId }) as const;
 const decide = (over: Partial<DeviceSyncInput> = {}) => decideDeviceSync({ ...healthy, ...over });
 
 describe("decideDeviceSync", () => {
@@ -28,25 +29,45 @@ describe("decideDeviceSync", () => {
 
   describe("whose subscription is it", () => {
     it("drops the browser subscription when signed out", () => {
-      expect(decide({ userId: null })).toBe("drop_browser_subscription");
+      expect(decide({ session: signedOut })).toBe("drop_browser_subscription");
     });
 
     it("drops it when the marker belongs to another member (a shared phone)", () => {
-      expect(decide({ userId: "u2" })).toBe("drop_browser_subscription");
+      expect(decide({ session: signedInAs("u2") })).toBe("drop_browser_subscription");
     });
 
     it("drops one it cannot prove is this member's (no marker)", () => {
-      expect(decide({ marker: null, lastSyncedAt: null })).toBe("drop_browser_subscription");
+      expect(decide({ marker: null })).toBe("drop_browser_subscription");
     });
 
     it("does nothing when there is no subscription to drop", () => {
-      expect(decide({ userId: null, hasSubscription: false })).toBe("none");
-      expect(decide({ userId: "u2", hasSubscription: false })).toBe("none");
+      expect(decide({ session: signedOut, hasSubscription: false })).toBe("none");
+      expect(decide({ session: signedInAs("u2"), hasSubscription: false })).toBe("none");
       expect(decide({ marker: null, hasSubscription: false })).toBe("none");
     });
 
     it("checks ownership before permission, so a signed-out device is dropped, not 'forgotten'", () => {
-      expect(decide({ userId: null, permission: "denied" })).toBe("drop_browser_subscription");
+      expect(decide({ session: signedOut, permission: "denied" })).toBe(
+        "drop_browser_subscription",
+      );
+    });
+  });
+
+  describe("while the session is still loading", () => {
+    const loading = { status: "loading" } as const;
+
+    it("never touches a subscription, with or without one (a Home Screen cold start)", () => {
+      expect(decide({ session: loading })).toBe("none");
+      expect(decide({ session: loading, hasSubscription: false })).toBe("none");
+    });
+
+    it("does nothing whoever the marker names, and whatever else looks wrong", () => {
+      const other = { userId: "u2", syncedAt: NOW - HOUR };
+      expect(decide({ session: loading, marker: other })).toBe("none");
+      expect(decide({ session: loading, marker: null })).toBe("none");
+      expect(decide({ session: loading, permission: "denied" })).toBe("none");
+      expect(decide({ session: loading, keyMatches: false })).toBe("none");
+      expect(decide({ session: loading, marker: { userId: "u1", syncedAt: 0 } })).toBe("none");
     });
   });
 
@@ -62,18 +83,22 @@ describe("decideDeviceSync", () => {
 
   it("asks to resubscribe when the VAPID key changed, ahead of a refresh", () => {
     expect(decide({ keyMatches: false })).toBe("resubscribe_needed");
-    expect(decide({ keyMatches: false, lastSyncedAt: null })).toBe("resubscribe_needed");
+    expect(decide({ keyMatches: false, marker: { userId: "u1", syncedAt: 0 } })).toBe(
+      "resubscribe_needed",
+    );
   });
 
   describe("refreshing the server", () => {
-    it("re-registers once more than 24 hours have passed", () => {
-      expect(decide({ lastSyncedAt: NOW - DEVICE_REFRESH_MS })).toBe("none");
-      expect(decide({ lastSyncedAt: NOW - DEVICE_REFRESH_MS - 1 })).toBe("refresh_server");
-    });
+    const syncedAgo = (ms: number) => ({ userId: "u1", syncedAt: NOW - ms });
 
-    it("re-registers when it has never synced", () => {
-      expect(decide({ lastSyncedAt: null })).toBe("refresh_server");
+    it("re-registers once more than 24 hours have passed since the marker's stamp", () => {
+      expect(decide({ marker: syncedAgo(DEVICE_REFRESH_MS) })).toBe("none");
+      expect(decide({ marker: syncedAgo(DEVICE_REFRESH_MS + 1) })).toBe("refresh_server");
     });
+  });
+
+  it("treats an unreadable permission (no Notification API) as not denied", () => {
+    expect(decide({ permission: undefined })).toBe("none");
   });
 });
 

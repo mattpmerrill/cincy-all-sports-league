@@ -8,7 +8,14 @@ import { err, ok, type AppError, type Result } from "@/lib/result";
 import type { ParsedPushSubscription } from "./schemas";
 
 export type PushError = AppError<
-  "not_configured" | "not_found" | "rate_limited" | "send_failed" | "invalid_subscription"
+  | "not_configured"
+  | "not_found"
+  | "rate_limited"
+  | "send_failed"
+  | "invalid_subscription"
+  // Never returned by the service: the action layer's validation refuses an address off the
+  // allow-list before the service runs. Listed here because the client sees it as a PushError.
+  | "unsupported_push_service"
 >;
 
 export type PushSettings = {
@@ -122,7 +129,10 @@ export function createPushService({
 
       const alert = testPushAlert({ recipientId: actor.id, now: now() });
       if (!(await subscriptions.claim(alert.recipientId, alert.dedupeKey))) {
-        return err("rate_limited", "A test alert was just sent. Give it a minute and try again.");
+        return err(
+          "rate_limited",
+          "You just tried a test alert. Give it a minute, then try again.",
+        );
       }
 
       const correlationId = newCorrelationId();

@@ -3,6 +3,7 @@ import {
   PROMPT_SNOOZE_MS,
   isPromptPath,
   parseDismissal,
+  promptDismissalKey,
   recordDismissal,
   shouldShowPrompt,
   type PromptContext,
@@ -62,7 +63,7 @@ describe("shouldShowPrompt", () => {
   });
 
   describe("after Not now", () => {
-    const at = (msAgo: number, count = 1) => ({ count, at: NOW - msAgo });
+    const at = (msAgo: number, count = 1) => ({ userId: "u1", count, at: NOW - msAgo });
 
     it("stays away for 14 days after the first, then comes back", () => {
       expect(show({ dismissal: at(1000) })).toBe(false);
@@ -77,37 +78,60 @@ describe("shouldShowPrompt", () => {
     });
 
     it("tolerates a little clock skew but ignores a stamp far in the future", () => {
-      expect(show({ dismissal: { count: 1, at: NOW + 1000 } })).toBe(false);
-      expect(show({ dismissal: { count: 1, at: NOW + 400 * DAY } })).toBe(true);
+      expect(show({ dismissal: { userId: "u1", count: 1, at: NOW + 1000 } })).toBe(false);
+      expect(show({ dismissal: { userId: "u1", count: 1, at: NOW + 400 * DAY } })).toBe(true);
       // Ignoring the stamp never forgives a second dismissal.
-      expect(show({ dismissal: { count: 2, at: NOW + 400 * DAY } })).toBe(false);
+      expect(show({ dismissal: { userId: "u1", count: 2, at: NOW + 400 * DAY } })).toBe(false);
     });
   });
 });
 
 describe("dismissal storage", () => {
   it("counts up to the point it is permanent, and stamps the time", () => {
-    const first = recordDismissal(null, NOW);
-    expect(first).toEqual({ count: 1, at: NOW });
-    expect(recordDismissal(first, NOW + 1)).toEqual({ count: 2, at: NOW + 1 });
-    expect(recordDismissal({ count: 2, at: NOW }, NOW + 2).count).toBe(2);
+    const first = recordDismissal(null, "u1", NOW);
+    expect(first).toEqual({ userId: "u1", count: 1, at: NOW });
+    expect(recordDismissal(first, "u1", NOW + 1)).toEqual({ userId: "u1", count: 2, at: NOW + 1 });
+    expect(recordDismissal({ userId: "u1", count: 2, at: NOW }, "u1", NOW + 2).count).toBe(2);
   });
 
-  it("round-trips through JSON", () => {
-    const stored = JSON.stringify(recordDismissal(null, NOW));
-    expect(parseDismissal(stored)).toEqual({ count: 1, at: NOW });
+  it("round-trips through JSON for the same member", () => {
+    const stored = JSON.stringify(recordDismissal(null, "u1", NOW));
+    expect(parseDismissal(stored, "u1")).toEqual({ userId: "u1", count: 1, at: NOW });
+  });
+
+  describe("on a shared device", () => {
+    const aForever = { userId: "a", count: 2, at: NOW };
+
+    it("keys the record by member, so one member's storage is never another's", () => {
+      expect(promptDismissalKey("a")).not.toBe(promptDismissalKey("b"));
+    });
+
+    it("does not read another member's record, even if it sits under this member's key", () => {
+      expect(parseDismissal(JSON.stringify(aForever), "b")).toBeNull();
+    });
+
+    it("A's permanent dismissal does not hide the prompt from B", () => {
+      const forB = parseDismissal(JSON.stringify(aForever), "b");
+      expect(show({ dismissal: forB })).toBe(true);
+      expect(show({ dismissal: aForever })).toBe(false);
+    });
+
+    it("starts B's count from one, whatever record it was handed", () => {
+      expect(recordDismissal(aForever, "b", NOW)).toEqual({ userId: "b", count: 1, at: NOW });
+    });
   });
 
   it.each([
     ["nothing stored", null],
     ["not JSON", "{oops"],
     ["a string", '"yes"'],
-    ["a zero count", '{"count":0,"at":1}'],
-    ["a negative time", '{"count":1,"at":-5}'],
-    ["a fractional count", '{"count":1.5,"at":5}'],
+    ["a zero count", '{"userId":"u1","count":0,"at":1}'],
+    ["a negative time", '{"userId":"u1","count":1,"at":-5}'],
+    ["a fractional count", '{"userId":"u1","count":1.5,"at":5}'],
+    ["no member", '{"count":1,"at":5}'],
     ["missing fields", "{}"],
     ["null", "null"],
   ])("reads %s as never dismissed", (_name, raw) => {
-    expect(parseDismissal(raw)).toBeNull();
+    expect(parseDismissal(raw, "u1")).toBeNull();
   });
 });

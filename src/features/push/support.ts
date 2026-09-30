@@ -13,7 +13,8 @@ export type PushSupportEnv = {
   hasServiceWorker: boolean;
   hasPushManager: boolean;
   hasNotification: boolean;
-  permission: NotificationPermission;
+  /** Undefined where there is no `Notification` at all (an iOS Safari tab). */
+  permission: NotificationPermission | undefined;
   /** The public VAPID key the build was given, if any. */
   vapidKey: string | null | undefined;
   /**
@@ -55,7 +56,8 @@ export function detectPushSupport(env: PushSupportEnv): PushSupport {
     return { status: "unsupported" };
   }
   if (env.permission === "denied") return { status: "denied" };
-  return { status: "ready", permission: env.permission };
+  // Undefined only if the caller has `Notification` but could not read it; nothing was decided.
+  return { status: "ready", permission: env.permission ?? "default" };
 }
 
 /**

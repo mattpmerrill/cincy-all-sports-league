@@ -12,6 +12,7 @@ import {
   topicSchema,
 } from "@/features/push/schemas";
 import { logger, newCorrelationId } from "@/lib/logger";
+import { safeErrorFields } from "@/lib/safe-error";
 import { err, type AppError, type Result } from "@/lib/result";
 
 // Transport and auth for push alerts. Each action re-checks the session (a Server Action is a
@@ -30,9 +31,9 @@ function parse<S extends z.ZodType>(schema: S, input: unknown): Result<z.output<
 }
 
 /**
- * Runs an action body, turning an unexpected failure into a logged, correlated, safe message. The
- * error is logged as is: the push repository throws only a sanitized `PushStorageError`, and
- * nothing else in these paths handles an endpoint or key.
+ * Runs an action body, turning an unexpected failure into a logged, correlated, safe message.
+ * Only the error's name and code are logged (`safeErrorFields`): a Postgres error object carries
+ * the failing row in `details`, and that row holds the endpoint and both keys.
  */
 async function guarded<T>(
   operation: string,
@@ -42,7 +43,7 @@ async function guarded<T>(
     return await work();
   } catch (error) {
     const correlationId = newCorrelationId();
-    log.error("push action failed", { operation, correlationId, error });
+    log.error("push action failed", { operation, correlationId, ...safeErrorFields(error) });
     return err("unexpected", `Something went wrong. Reference ${correlationId}.`);
   }
 }
@@ -56,7 +57,11 @@ export async function subscribePushAction(input: unknown) {
       // An address off the allow-list may be a real push service we do not know yet; the host is
       // how that gets noticed, and the only part of an endpoint that is safe to record.
       const host = refusedEndpointHost(input);
-      if (host) log.warn("push subscription refused: endpoint host not allowed", { host });
+      if (host) {
+        log.warn("push subscription refused: endpoint host not allowed", { host });
+        // Says which kind of problem it is, so the UI can be honest, and nothing about the address.
+        return err("unsupported_push_service", "This browser's push service isn't supported yet.");
+      }
       return parsed;
     }
     const userAgent = (await headers()).get("user-agent");

@@ -189,10 +189,9 @@ describe("sendTest", () => {
 
   it("is rate_limited when this minute's test was already claimed", async () => {
     const { service, sendNow } = setup({ claimed: false });
-    expect(await service.sendTest(actor, ENDPOINT)).toMatchObject({
-      ok: false,
-      error: { code: "rate_limited" },
-    });
+    expect(await service.sendTest(actor, ENDPOINT)).toEqual(
+      err("rate_limited", "You just tried a test alert. Give it a minute, then try again."),
+    );
     expect(sendNow).not.toHaveBeenCalled();
   });
 

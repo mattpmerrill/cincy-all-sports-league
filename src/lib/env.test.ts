@@ -128,4 +128,28 @@ describe("pushConfig", () => {
     expect(lines[0]).toContain(name);
     expect(lines[0]).not.toMatch(/not-a-key-secret|example\.com/);
   });
+
+  it("says which variable is why push is off when the PUBLIC key is malformed, never its value", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { pushConfig } = await load({
+      publicKey: "malformed-public-secret",
+      privateKey: VAPID_PRIVATE,
+    });
+    expect(pushConfig()).toBeNull();
+    expect(pushConfig()).toBeNull();
+
+    const lines = log.mock.calls.map((call) => String(call[0]));
+    log.mockRestore();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("NEXT_PUBLIC_VAPID_PUBLIC_KEY");
+    expect(lines[0]).not.toContain("malformed-public-secret");
+  });
+
+  it("stays quiet when the public key is simply not set", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { pushConfig } = await load({ privateKey: VAPID_PRIVATE });
+    expect(pushConfig()).toBeNull();
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
 });

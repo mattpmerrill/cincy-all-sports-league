@@ -97,6 +97,11 @@ describe("detectPushSupport", () => {
       });
     });
 
+    it("needs no Notification API to say install: an iOS Safari tab has none", () => {
+      const tab = env({ ...safariTab, hasNotification: false, permission: undefined });
+      expect(detectPushSupport(tab)).toEqual({ status: "ios_needs_install" });
+    });
+
     it("reports unsupported for an installed app whose iOS has no push", () => {
       const old = env({ ...safariTab, navigatorStandalone: true, hasNotification: false });
       expect(detectPushSupport(old)).toEqual({ status: "unsupported" });

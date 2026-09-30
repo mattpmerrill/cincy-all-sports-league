@@ -7,6 +7,9 @@ const ENDPOINT_MAX_LENGTH = 1024;
 const endpointField = z
   .string()
   .max(ENDPOINT_MAX_LENGTH)
+  // The database's own check (`^https://\S+$`), mirrored so such an address gets the fixed parse
+  // error here instead of a round trip that ends in `invalid_subscription`.
+  .regex(/^https:\/\/\S+$/, "That device's push address isn't valid.")
   // The SSRF guard: our server will POST to this address, so only real push services pass.
   .refine(isAllowedPushEndpoint, "That device's push service isn't supported.");
 

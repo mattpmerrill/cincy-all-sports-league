@@ -45,6 +45,8 @@ describe("subscriptionSchema", () => {
     ["a look-alike host", "https://fcm.googleapis.com.evil.com/x"],
     ["a private address", "https://127.0.0.1/x"],
     ["not a URL", "fcm.googleapis.com"],
+    ["an address with whitespace (the database refuses it)", `${FCM} x`],
+    ["an address with a newline", `${FCM}\n`],
     ["an address over 1024 characters", `${FCM}${"a".repeat(1024)}`],
   ])("rejects an endpoint that is %s", (_name, endpoint) => {
     expect(subscriptionSchema.safeParse(sub({ endpoint })).success).toBe(false);

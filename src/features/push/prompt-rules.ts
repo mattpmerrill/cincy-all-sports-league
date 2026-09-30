@@ -1,8 +1,12 @@
 import { z } from "zod";
 import type { PushSupport } from "./support";
 
-/** localStorage key for the "Not now" record. This module owns the shape; the prompt only stores it. */
-export const PROMPT_DISMISSAL_KEY = "cincy:push-prompt";
+/**
+ * localStorage key for a member's "Not now" record. This module owns the shape; the prompt only
+ * stores it. Per member, because a shared device is common in a family league: one member's
+ * permanent "no" must not hide the prompt from the next person to sign in.
+ */
+export const promptDismissalKey = (userId: string) => `cincy:push-prompt:${userId}`;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /** After the first "Not now" the prompt stays away this long; after the second, for good. */
@@ -11,27 +15,35 @@ const MAX_DISMISSALS = 2;
 
 /** How often and when the member said "Not now". `at` is epoch milliseconds. */
 export const dismissalSchema = z.object({
+  userId: z.string().min(1).max(64),
   count: z.number().int().min(1).max(1000),
   at: z.number().int().min(0),
 });
 export type PromptDismissal = z.infer<typeof dismissalSchema>;
 
 /**
- * localStorage is the member's to edit and other code's to overwrite, so anything unreadable
- * counts as "never dismissed": the worst outcome is one extra look at a dismissible card.
+ * localStorage is the member's to edit and other code's to overwrite, so anything unreadable, or
+ * written for someone else, counts as "never dismissed": the worst outcome is one extra look at a
+ * dismissible card.
  */
-export function parseDismissal(raw: string | null): PromptDismissal | null {
+export function parseDismissal(raw: string | null, userId: string): PromptDismissal | null {
   if (raw === null) return null;
   try {
     const parsed = dismissalSchema.safeParse(JSON.parse(raw));
-    return parsed.success ? parsed.data : null;
+    return parsed.success && parsed.data.userId === userId ? parsed.data : null;
   } catch {
     return null;
   }
 }
 
-export function recordDismissal(previous: PromptDismissal | null, now: number): PromptDismissal {
-  return { count: Math.min((previous?.count ?? 0) + 1, MAX_DISMISSALS), at: now };
+export function recordDismissal(
+  previous: PromptDismissal | null,
+  userId: string,
+  now: number,
+): PromptDismissal {
+  // A record for another member is not this member's history.
+  const before = previous?.userId === userId ? previous.count : 0;
+  return { userId, count: Math.min(before + 1, MAX_DISMISSALS), at: now };
 }
 
 /** Only where a member is already looking at the league: home, the feed and the trade screens. */
