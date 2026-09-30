@@ -573,6 +573,7 @@ export type Database = {
           endpoint: string
           failure_count: number
           id: string
+          last_registered_at: string
           last_success_at: string | null
           p256dh: string
           updated_at: string
@@ -585,6 +586,7 @@ export type Database = {
           endpoint: string
           failure_count?: number
           id?: string
+          last_registered_at?: string
           last_success_at?: string | null
           p256dh: string
           updated_at?: string
@@ -597,6 +599,7 @@ export type Database = {
           endpoint?: string
           failure_count?: number
           id?: string
+          last_registered_at?: string
           last_success_at?: string | null
           p256dh?: string
           updated_at?: string

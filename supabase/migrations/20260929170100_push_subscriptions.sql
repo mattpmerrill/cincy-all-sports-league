@@ -7,7 +7,8 @@
 --
 -- The functions are SECURITY INVOKER on purpose. Their only caller is service_role, which already
 -- holds the table grants below, so DEFINER would add privilege without adding anything the caller
--- lacks. Failures are 'P0001' exceptions with a stable token the repository maps: not_found.
+-- lacks. Failures are 'P0001' exceptions with a stable token the repository maps: not_found,
+-- invalid_subscription (register_push_subscription) and invalid_max (record_push_failure).
 
 -- Mirrors PUSH_TOPICS in domain/push; a compile-time check in the data layer keeps them in step.
 create type public.push_topic as enum ('trades', 'feed', 'scores');
@@ -25,6 +26,10 @@ create table public.push_subscriptions (
   failure_count integer not null default 0 check (failure_count >= 0),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
+  -- When the member last registered this device. Separate from updated_at, which the shared
+  -- trigger stamps on EVERY update including failure counts and success stamps, so ranking the
+  -- device cap by it would evict a random device after a batch of sends.
+  last_registered_at timestamptz not null default now(),
   last_success_at timestamptz
 );
 
@@ -46,6 +51,14 @@ grant select, insert, update, delete on public.push_subscriptions to service_rol
 -- Registers (or refreshes) a device for a member. One statement moves an endpoint that already
 -- belongs to someone else (a shared device where a different member just turned alerts on) and
 -- enforces the per-member device cap, so neither can race between separate round trips.
+--
+-- Input is validated here, before the insert, and fails with the stable token invalid_subscription
+-- and no row data. A CHECK violation would instead carry "Failing row contains (...)" with the
+-- endpoint and keys in its DETAIL, which reaches PostgREST responses and the Postgres logs. The
+-- table CHECKs stay as the last line of defense.
+--
+-- Not covered by pgTAP: two concurrent registrations by the same member serialize on the profile
+-- row lock below, which needs two sessions to exercise, so it was checked by hand instead.
 create function public.register_push_subscription(
   p_actor uuid,
   p_endpoint text,
@@ -59,6 +72,7 @@ set search_path = ''
 as $$
 declare
   v_id uuid;
+  v_label text;
 begin
   -- Locks the profile row (without blocking the foreign-key check on the insert below) so two
   -- registrations by the same member serialize and the cap trim sees each other's rows.
@@ -67,27 +81,39 @@ begin
     raise exception 'not_found' using errcode = 'P0001';
   end if;
 
-  -- A re-registration replaces the keys (they change when a browser re-subscribes) and forgives
-  -- past failures. The update trigger stamps updated_at, which the cap trim below sorts by.
+  if p_endpoint is null or p_endpoint !~ '^https://\S+$' or length(p_endpoint) > 1024
+     or p_p256dh is null or p_p256dh !~ '^[A-Za-z0-9_-]{87}$'
+     or p_auth is null or p_auth !~ '^[A-Za-z0-9_-]{22}$' then
+    raise exception 'invalid_subscription' using errcode = 'P0001';
+  end if;
+
+  -- The label is cosmetic, so a bad one is repaired rather than refused: blank becomes the
+  -- default and an overlong one is clipped to the column's 40-character limit.
+  v_label := left(coalesce(nullif(btrim(p_device_label), ''), 'Device'), 40);
+  v_label := coalesce(nullif(btrim(v_label), ''), 'Device');
+
+  -- A re-registration replaces the keys (they change when a browser re-subscribes), forgives past
+  -- failures and moves last_registered_at, which the cap trim below ranks by.
   insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, device_label)
-  values (p_actor, p_endpoint, p_p256dh, p_auth, p_device_label)
+  values (p_actor, p_endpoint, p_p256dh, p_auth, v_label)
   on conflict (endpoint) do update
     set user_id = excluded.user_id,
         p256dh = excluded.p256dh,
         auth = excluded.auth,
         device_label = excluded.device_label,
-        failure_count = 0
+        failure_count = 0,
+        last_registered_at = now()
   returning id into v_id;
 
-  -- Keep this device plus the 4 most recently used others. Excluding v_id explicitly means the
-  -- device just registered survives even when timestamps tie inside one transaction.
+  -- Keep this device plus the 4 most recently registered others. Excluding v_id explicitly means
+  -- the device just registered survives even when timestamps tie inside one transaction.
   delete from public.push_subscriptions
   where user_id = p_actor
     and id <> v_id
     and id not in (
       select s.id from public.push_subscriptions s
       where s.user_id = p_actor and s.id <> v_id
-      order by s.updated_at desc, s.id
+      order by s.last_registered_at desc, s.id
       limit 4
     );
 
@@ -127,6 +153,11 @@ as $$
 declare
   v_count integer;
 begin
+  -- A null or zero limit would compare as never (or always) reached; refuse it loudly.
+  if p_max is null or p_max < 1 then
+    raise exception 'invalid_max' using errcode = 'P0001';
+  end if;
+
   update public.push_subscriptions
   set failure_count = failure_count + 1
   where id = p_id

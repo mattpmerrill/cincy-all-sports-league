@@ -16,10 +16,11 @@ alter table public.push_sends enable row level security;
 revoke all on public.push_sends from anon, authenticated, service_role;
 grant select, insert, update, delete on public.push_sends to service_role;
 
--- Keys embed run, offer or reply ids, so an old key can never collide with a new event and the
--- ledger only needs to outlive the longest alert TTL; 90 days is far beyond that and keeps it
--- small. Pure SQL, so no secret or HTTP call is involved. 09:40 UTC sits away from the 09:15
--- free-agent refresh and the half-hour score sync.
+-- The dedupe window is about spam, not alert lifetime: it only needs to outlast a burst of
+-- repeats such as a reaction toggled on and off. Some keys (reaction:{messageId}:{actorId}, test
+-- keys) can legitimately recur later, and after 90 days they are allowed to alert again. Pure
+-- SQL, so no secret or HTTP call is involved. 09:40 UTC sits away from the 09:15 free-agent
+-- refresh and the half-hour score sync.
 create extension if not exists pg_cron;
 
 -- Re-running the migration (or changing the schedule later) must not stack duplicate jobs.

@@ -3,9 +3,13 @@
 -- switches and their column grants, device registration (upsert, ownership move, cap, not_found),
 -- per-topic targeting, failure counting and pruning, send dedupe, cascade, and the cleanup job.
 -- Fixtures are self-contained.
+--
+-- Not covered here: two concurrent registrations by one member serializing on the profile row
+-- lock in register_push_subscription. That needs two concurrent sessions, so pgTAP does not cover
+-- it.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(102);
+select plan(136);
 
 create function pg_temp.set_caller(uid uuid, role_name text) returns void language plpgsql as $$
 begin
@@ -26,12 +30,28 @@ create function pg_temp.authkey(n int) returns text language sql as $$ select rp
 grant execute on function pg_temp.authkey(int) to public;
 -- Direct insert (as the test's superuser) for fixtures that need exact timestamps.
 create function pg_temp.sub(uid int, k text, age interval default interval '0') returns void language sql as $$
-  insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, created_at, updated_at)
-  values (pg_temp.u(uid), pg_temp.ep(k), pg_temp.p256(uid), pg_temp.authkey(uid), now() - age, now() - age) $$;
+  insert into public.push_subscriptions (user_id, endpoint, p256dh, auth, created_at, updated_at, last_registered_at)
+  values (pg_temp.u(uid), pg_temp.ep(k), pg_temp.p256(uid), pg_temp.authkey(uid), now() - age, now() - age, now() - age) $$;
 
--- u1..u6 are members; u7 is an id with no profile.
+-- What a caller of register_push_subscription sees on a bad input: message, detail and hint joined.
+-- Lets a test assert the error carries no part of the credentials that were passed in.
+create function pg_temp.reg_error(p_endpoint text, p_p256dh text, p_auth text) returns text language plpgsql as $$
+declare
+  v_msg text;
+  v_detail text;
+  v_hint text;
+begin
+  perform public.register_push_subscription(pg_temp.u(2), p_endpoint, p_p256dh, p_auth, 'Phone');
+  return 'no error';
+exception when others then
+  get stacked diagnostics v_msg = message_text, v_detail = pg_exception_detail, v_hint = pg_exception_hint;
+  return v_msg || '|' || coalesce(v_detail, '') || '|' || coalesce(v_hint, '');
+end $$;
+grant execute on function pg_temp.reg_error(text, text, text) to public;
+
+-- u1..u6, u8 and u9 are members; u7 is an id with no profile.
 insert into auth.users (id, email)
-select pg_temp.u(n), 'push' || n || '@example.com' from generate_series(1, 6) n;
+select pg_temp.u(n), 'push' || n || '@example.com' from unnest(array[1, 2, 3, 4, 5, 6, 8, 9]) n;
 
 -- u1 owns one device and one ledger row: the fixtures for the "owner is denied too" checks.
 select pg_temp.sub(1, 'owner-device');
@@ -284,9 +304,116 @@ select throws_ok(
   $$select public.register_push_subscription(null, pg_temp.ep('ghost'), pg_temp.p256(1), pg_temp.authkey(1), 'Phone')$$,
   'P0001', 'not_found', 'a null actor is not_found');
 select is((select count(*)::int from public.push_subscriptions where endpoint = pg_temp.ep('ghost')), 0, 'and no row was created');
+
+-- Cap order: ranked by when the device was last REGISTERED, not by updated_at, which every send
+-- outcome bumps. u8's oldest registration (d1) just had a failure and a success stamped on it, so
+-- its updated_at is the newest of all, yet it is still the device that must go.
+reset role;
+select pg_temp.sub(8, 'd1', interval '5 days');
+select pg_temp.sub(8, 'd2', interval '4 days');
+select pg_temp.sub(8, 'd3', interval '3 days');
+select pg_temp.sub(8, 'd4', interval '2 days');
+select pg_temp.sub(8, 'd5', interval '1 day');
+select pg_temp.set_caller(null, 'service_role');
+select lives_ok(
+  $$select public.record_push_failure((select id from public.push_subscriptions where endpoint = pg_temp.ep('d1')), 5)$$,
+  'a send outcome can be recorded on the long-registered device');
+select lives_ok(
+  $$update public.push_subscriptions set last_success_at = now() where endpoint = pg_temp.ep('d1')$$,
+  'and so can a success stamp');
+select ok(
+  (select updated_at > last_registered_at + interval '4 days' from public.push_subscriptions where endpoint = pg_temp.ep('d1')),
+  'so its updated_at is now far newer than its registration');
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(8), pg_temp.ep('d6'), pg_temp.p256(8), pg_temp.authkey(8), 'Phone')$$,
+  'a sixth device can be registered');
+select is(
+  (select array_agg(endpoint order by endpoint) from public.push_subscriptions where user_id = pg_temp.u(8)),
+  array[pg_temp.ep('d2'), pg_temp.ep('d3'), pg_temp.ep('d4'), pg_temp.ep('d5'), pg_temp.ep('d6')],
+  'the device registered longest ago is evicted even though it was the most recently updated');
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(8), pg_temp.ep('d2'), pg_temp.p256(8), pg_temp.authkey(8), 'Phone')$$,
+  'refreshing the oldest remaining device succeeds');
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(8), pg_temp.ep('d7'), pg_temp.p256(8), pg_temp.authkey(8), 'Phone')$$,
+  'another new device can be registered');
+select is(
+  (select array_agg(endpoint order by endpoint) from public.push_subscriptions where user_id = pg_temp.u(8)),
+  array[pg_temp.ep('d2'), pg_temp.ep('d4'), pg_temp.ep('d5'), pg_temp.ep('d6'), pg_temp.ep('d7')],
+  'a refresh counts as a registration, so the next-oldest device goes instead');
+reset role;
+
+-- Every existing row stamped with this transaction's now(): nothing to order by, so the new
+-- device must survive by being excluded from the trim rather than by winning the sort.
+select pg_temp.sub(9, 'e1');
+select pg_temp.sub(9, 'e2');
+select pg_temp.sub(9, 'e3');
+select pg_temp.sub(9, 'e4');
+select pg_temp.sub(9, 'e5');
+select pg_temp.set_caller(null, 'service_role');
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(9), pg_temp.ep('e6'), pg_temp.p256(9), pg_temp.authkey(9), 'Phone')$$,
+  'a sixth device registers when all five existing rows carry the same timestamp');
+select is((select count(*)::int from public.push_subscriptions where user_id = pg_temp.u(9)), 5, 'the member is still held at five devices');
+select is(
+  (select count(*)::int from public.push_subscriptions where user_id = pg_temp.u(9) and endpoint = pg_temp.ep('e6')),
+  1, 'and the device just registered survived the tie');
+
+-- Invalid input is refused by the function itself with a stable token and no row data.
 select throws_ok(
   $$select public.register_push_subscription(pg_temp.u(2), 'http://push.example.com/x', pg_temp.p256(1), pg_temp.authkey(1), 'Phone')$$,
-  '23514', null, 'the table checks still apply through the function');
+  'P0001', 'invalid_subscription', 'a plain http endpoint is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), 'https://push.example.com/' || repeat('a', 1000), pg_temp.p256(1), pg_temp.authkey(1), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'an endpoint over 1024 characters is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), repeat('x', 86), pg_temp.authkey(1), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a short p256dh is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), repeat('x', 88), pg_temp.authkey(1), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a long p256dh is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), repeat('x', 86) || '=', pg_temp.authkey(1), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a padded p256dh is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), pg_temp.p256(1), repeat('y', 21), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a short auth secret is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), pg_temp.p256(1), repeat('y', 23), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a long auth secret is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), null, pg_temp.authkey(1), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a null p256dh is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('inv'), pg_temp.p256(1), null, 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a null auth secret is invalid_subscription');
+select throws_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), null, pg_temp.p256(1), pg_temp.authkey(1), 'Phone')$$,
+  'P0001', 'invalid_subscription', 'a null endpoint is invalid_subscription');
+-- A CHECK violation would put "Failing row contains (...)" with these values in the DETAIL.
+select is(
+  pg_temp.reg_error('http://leak-marker.example.com/x', pg_temp.p256(1), pg_temp.authkey(1)),
+  'invalid_subscription||', 'a bad endpoint error carries no detail or hint');
+select is(
+  pg_temp.reg_error(pg_temp.ep('inv'), 'leak-marker', pg_temp.authkey(1)),
+  'invalid_subscription||', 'a bad p256dh error carries no detail or hint');
+select is(
+  pg_temp.reg_error(pg_temp.ep('inv'), pg_temp.p256(1), 'leak-marker'),
+  'invalid_subscription||', 'a bad auth error carries no detail or hint');
+select is((select count(*)::int from public.push_subscriptions where endpoint = pg_temp.ep('inv')), 0, 'and no row was created');
+
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('l1'), pg_temp.p256(1), pg_temp.authkey(1), null)$$,
+  'a null device label is accepted');
+select is((select device_label from public.push_subscriptions where endpoint = pg_temp.ep('l1')), 'Device', 'and becomes the default label');
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('l2'), pg_temp.p256(1), pg_temp.authkey(1), '   ')$$,
+  'a blank device label is accepted');
+select is((select device_label from public.push_subscriptions where endpoint = pg_temp.ep('l2')), 'Device', 'and becomes the default label');
+select lives_ok(
+  $$select public.register_push_subscription(pg_temp.u(2), pg_temp.ep('l3'), pg_temp.p256(1), pg_temp.authkey(1), repeat('L', 60))$$,
+  'an overlong device label is accepted');
+select is((select device_label from public.push_subscriptions where endpoint = pg_temp.ep('l3')), repeat('L', 40), 'and is clipped to 40 characters');
 reset role;
 
 -- ===== push_targets =====
@@ -330,6 +457,18 @@ select is(public.record_push_failure(current_setting('t.f6')::uuid, 3), 'pruned'
 select is((select count(*)::int from public.push_subscriptions where id = current_setting('t.f6')::uuid), 0, 'the pruned row is gone');
 select is(public.record_push_failure(current_setting('t.f6')::uuid, 3), 'missing', 'a device that is already gone is reported missing');
 select is(public.record_push_failure(gen_random_uuid(), 3), 'missing', 'an unknown id is reported missing');
+select throws_ok(
+  $$select public.record_push_failure((select id from public.push_subscriptions where endpoint = pg_temp.ep('t4a')), null)$$,
+  'P0001', 'invalid_max', 'a null limit is invalid_max');
+select throws_ok(
+  $$select public.record_push_failure((select id from public.push_subscriptions where endpoint = pg_temp.ep('t4a')), 0)$$,
+  'P0001', 'invalid_max', 'a zero limit is invalid_max');
+select throws_ok(
+  $$select public.record_push_failure((select id from public.push_subscriptions where endpoint = pg_temp.ep('t4a')), -1)$$,
+  'P0001', 'invalid_max', 'a negative limit is invalid_max');
+select is(
+  (select failure_count from public.push_subscriptions where endpoint = pg_temp.ep('t4a')),
+  0, 'and a refused call counts nothing');
 
 -- ===== push_sends dedupe =====
 select lives_ok(
