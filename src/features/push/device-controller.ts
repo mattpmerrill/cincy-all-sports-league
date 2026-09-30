@@ -66,12 +66,21 @@ export const CALL_TIMEOUT_MS = 15_000;
 
 /**
  * The browser's push subscription gets a longer limit than a server call. The very first
- * `pushManager.subscribe` in a fresh Chromium profile registers with Google's push service and
- * was measured at 25 to 33 seconds, so 15 seconds turned a working first attempt into an error
- * that then succeeded on the retry. The serial queue's release (`QUEUE_RELEASE_MS`) must stay
+ * `pushManager.subscribe` registers with Google's push service and took 22 to 33 seconds in fresh
+ * Chromium profiles, so 15 seconds turned a working first attempt into an error that then
+ * succeeded on the retry. The serial queue's release (`QUEUE_RELEASE_MS`) must stay
  * longer than this.
  */
 export const SUBSCRIBE_TIMEOUT_MS = 45_000;
+
+/**
+ * How long to wait between ending a subscription and subscribing again with a DIFFERENT key (a
+ * VAPID rotation). Chromium finishes an unsubscribe upstream asynchronously, and a new
+ * subscription made straight after it was seen to come back dead (the push service answers 410)
+ * about one time in four. Ten seconds was clean every time. This plus `SUBSCRIBE_TIMEOUT_MS` stays
+ * under the queue release (`QUEUE_RELEASE_MS`), and a test pins that.
+ */
+export const RESUBSCRIBE_PAUSE_MS = 10_000;
 
 export function createDeviceController({
   port,
@@ -80,6 +89,7 @@ export function createDeviceController({
   madeHere = new Set<string>(),
   callTimeoutMs = CALL_TIMEOUT_MS,
   subscribeTimeoutMs = SUBSCRIBE_TIMEOUT_MS,
+  resubscribePauseMs = RESUBSCRIBE_PAUSE_MS,
 }: {
   port: DevicePort;
   actions: Pick<PushActions, "subscribe" | "unsubscribe">;
@@ -95,6 +105,8 @@ export function createDeviceController({
   callTimeoutMs?: number;
   /** The limit for making the browser subscription only. */
   subscribeTimeoutMs?: number;
+  /** The wait between dropping a stale-key subscription and subscribing again. */
+  resubscribePauseMs?: number;
 }) {
   const errorName = (error: unknown) => (error instanceof Error ? error.name : "NonError");
 
@@ -134,6 +146,9 @@ export function createDeviceController({
     );
     return result?.ok ? result.value.deviceCount : null;
   }
+
+  /** Lets Chromium finish an unsubscribe before a subscribe with a different key (see the constant). */
+  const pause = () => new Promise<void>((resolve) => setTimeout(resolve, resubscribePauseMs));
 
   async function dropInBrowser(subscription: DeviceSubscription) {
     await quietly("browser unsubscribe", () => subscription.unsubscribe());
@@ -238,6 +253,7 @@ export function createDeviceController({
             if (existing && !existing.usesCurrentKey && !madeHere.has(existing.endpoint)) {
               await forgetOnServer(existing.endpoint);
               await dropInBrowser(existing);
+              await pause();
             }
 
             const registered = await subscribeAndRegister(userId);
@@ -335,6 +351,7 @@ export function createDeviceController({
             // Permission is already granted, so this needs no tap. Waiting for the prompt would
             // silently lose alerts for a member who had dismissed it for good.
             if (port.permission() === "granted") {
+              await pause();
               const registered = await subscribeAndRegister(session.userId);
               if (!registered.ok) port.marker.clear();
             } else {

@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+  RESUBSCRIBE_PAUSE_MS,
   SUBSCRIBE_TIMEOUT_MS,
   createDeviceController,
   type DevicePort,
@@ -47,7 +48,10 @@ function subscription(world: World, usesCurrentKey = true): DeviceSubscription {
   };
 }
 
-function setup(over: Partial<World> = {}) {
+function setup(
+  over: Partial<World> = {},
+  controllerOptions: Partial<Parameters<typeof createDeviceController>[0]> = {},
+) {
   const world: World = {
     log: [],
     support: { status: "ready", permission: "granted" },
@@ -114,8 +118,15 @@ function setup(over: Partial<World> = {}) {
       return { ok: true, value: { deviceCount: 1 } };
     },
   };
-  const controller = createDeviceController({ port, actions, run: createSerialQueue() });
-  return { world, controller };
+  // No pause in most tests; the one that is about the pause builds its own controller.
+  const controller = createDeviceController({
+    port,
+    actions,
+    run: createSerialQueue(),
+    resubscribePauseMs: 0,
+    ...controllerOptions,
+  });
+  return { world, controller, port, actions };
 }
 
 const signedIn = (userId: string) => ({ status: "signed_in", userId }) as const;
@@ -473,6 +484,8 @@ describe("a slow push service", () => {
 
   it("keeps the queue release longer than the longest single wait", () => {
     expect(QUEUE_RELEASE_MS).toBeGreaterThan(SUBSCRIBE_TIMEOUT_MS);
+    // A rotation re-subscribe waits, then subscribes: together they must fit inside one release.
+    expect(RESUBSCRIBE_PAUSE_MS + SUBSCRIBE_TIMEOUT_MS).toBeLessThan(QUEUE_RELEASE_MS);
   });
 
   it("a first subscribe that takes 30 seconds still succeeds", async () => {
@@ -542,6 +555,31 @@ describe("a slow push service", () => {
     await vi.advanceTimersByTimeAsync(20_000); // the first attempt's answer arrives late
     expect(world.log).not.toContain("browser:unsubscribe");
     expect(world.subscription?.endpoint).toBe(ENDPOINT);
+  });
+});
+
+describe("re-subscribing after a key rotation", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("waits before subscribing with the new key, and does not wedge the queue", async () => {
+    vi.useFakeTimers();
+    // Default pause, not the zero the other tests use.
+    const { world, controller } = setup({}, { resubscribePauseMs: RESUBSCRIBE_PAUSE_MS });
+    world.subscription = subscription(world, false);
+    world.marker = { userId: "u1", syncedAt: NOW - 1000 };
+
+    const syncing = controller.sync(signedIn("u1"));
+    await vi.advanceTimersByTimeAsync(RESUBSCRIBE_PAUSE_MS - 1_000);
+    expect(world.log).toContain("browser:unsubscribe");
+    expect(world.log).not.toContain("browser:subscribe");
+
+    // Work queued meanwhile waits its turn, and runs once the re-subscribe is done.
+    const read = controller.read();
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(await syncing).toBe(true);
+    expect(world.log).toContain("browser:subscribe");
+    expect((await read).endpoint).toBe(ENDPOINT);
+    expect(world.marker).toEqual({ userId: "u1", syncedAt: NOW });
   });
 });
 
