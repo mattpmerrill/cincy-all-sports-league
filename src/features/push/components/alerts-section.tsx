@@ -13,6 +13,9 @@ import { TopicSwitches } from "./topic-switches";
 import { usePushDevice } from "./use-push-device";
 
 const BUTTON = "min-h-11 px-4";
+// The default button is brand red and its focus ring is brand red too, which barely shows against
+// itself; a light ring keeps keyboard focus visible on the primary buttons.
+const PRIMARY = `${BUTTON} focus-visible:border-text focus-visible:ring-text/50`;
 
 type TestState =
   | { status: "idle" }
@@ -115,7 +118,7 @@ export function AlertsSection({
             </div>
             <div className="flex flex-wrap items-center gap-3">
               {state.status === "working" ? (
-                <Button className={BUTTON} disabled>
+                <Button className={PRIMARY} disabled>
                   Working...
                 </Button>
               ) : on ? (
@@ -137,7 +140,7 @@ export function AlertsSection({
                   </Button>
                 </>
               ) : (
-                <Button className={BUTTON} onClick={() => void device.enable()}>
+                <Button className={PRIMARY} onClick={() => void device.enable()}>
                   Turn on
                 </Button>
               )}
@@ -160,7 +163,7 @@ export function AlertsSection({
           <div className="flex flex-col gap-3">
             <Alert variant="error">{state.message}</Alert>
             <div>
-              <Button className={BUTTON} onClick={() => void device.enable()}>
+              <Button className={PRIMARY} onClick={() => void device.enable()}>
                 Try again
               </Button>
             </div>

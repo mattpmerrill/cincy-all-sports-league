@@ -181,7 +181,7 @@ function ConfiguredPushPrompt({
         <div className="flex flex-wrap items-center gap-3">
           {install ? null : (
             <Button
-              className="min-h-11 px-4 font-semibold"
+              className="min-h-11 px-4 font-semibold focus-visible:border-text focus-visible:ring-text/50"
               disabled={working}
               onClick={() => void turnOn()}
             >
