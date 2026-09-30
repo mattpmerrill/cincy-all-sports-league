@@ -51,3 +51,21 @@ export type PushTopicSettings = Record<PushTopic, boolean>;
 export type PushNotifier = {
   notify: (build: () => Promise<readonly PushAlert[]> | readonly PushAlert[]) => void;
 };
+
+/** What `record_push_failure` did: counted the failure, pruned the device at the limit, or found no row. */
+export type PushFailureOutcome = "counted" | "pruned" | "missing";
+
+/**
+ * What delivery needs from storage. It lives here, not beside the sender, so the data layer can
+ * assert it satisfies the port (`integrations` may not import `data`, and `data` may not import
+ * `integrations`): drift then fails to compile where the repository is written.
+ */
+export type PushStore = {
+  /** Devices of these members that have the topic's switch on (applied in SQL). */
+  listTargets: (recipientIds: readonly string[], topic: PushTopic) => Promise<PushTarget[]>;
+  /** True when this call won the (recipient, dedupeKey) ledger row; false when it was taken. */
+  claim: (recipientId: string, dedupeKey: string) => Promise<boolean>;
+  remove: (subscriptionId: string) => Promise<void>;
+  recordSuccess: (subscriptionIds: readonly string[], now: Date) => Promise<void>;
+  recordFailure: (subscriptionId: string, max: number) => Promise<PushFailureOutcome>;
+};

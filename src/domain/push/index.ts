@@ -21,9 +21,11 @@ export {
 export { PUSH_TOPICS, PUSH_URGENCIES } from "./types";
 export type {
   PushAlert,
+  PushFailureOutcome,
   PushMessage,
   PushNotifier,
   PushSend,
+  PushStore,
   PushTarget,
   PushTopic,
   PushTopicSettings,
