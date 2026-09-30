@@ -2,11 +2,13 @@
 
 Where the project stands and how to pick it up. Update this at the end of each working session.
 
-**As of 2026-09-30.** Everything below except Push alerts is live on https://www.cincysports.xyz,
-`main` is clean and deployed, and production has every migration in `supabase/migrations/`
-applied except the three push ones (`20260929170000` to `20260929170200`). Push alerts are built
-and reviewed on the branch `feat/push-alerts` and are not shipped: production needs keys, its
-migrations and Matt's go-ahead first (see "Ship checklist" under Operations).
+**As of 2026-09-30.** Everything below is live on https://www.cincysports.xyz, `main` is clean and
+deployed, and production has every migration in `supabase/migrations/` applied. Push alerts went
+out on 2026-09-30 in the staged order: migrations, then the code without keys, then the VAPID keys
+and a rebuild. The site reports push as configured (`configured\":true` on `/rules`) and `/sw.js`
+is served with the intended headers on Vercel. What is still open is the real-device check: Matt
+tests his own iPhone (steps 7 onward of the ship checklist) before any announcement, and nobody
+has subscribed yet.
 
 ## What is live
 
@@ -18,7 +20,7 @@ migrations and Matt's go-ahead first (see "Ship checklist" under Operations).
 | Weekly digest    | Monday 8am ET standings email via Resend, one-click unsubscribe                                                                                                                        | `features/digest`                                                                                                              |
 | Trades           | Trading block and direct offers, 24h open bidding, earned points stay, email alerts, badge, confetti                                                                                   | [ADR-003](decisions/ADR-003-trades.md), `features/trades`, "Trade flow" in [architecture](architecture.md)                     |
 | Free agents      | Drop a pick and add a free agent in any sport, instantly; daily pool load from ESPN; earned points stay                                                                                | [ADR-004](decisions/ADR-004-free-agent-moves.md), `features/free-agents`, "Free-agent flow" in [architecture](architecture.md) |
-| Push alerts      | Web Push to a phone or computer for trade offers, replies and reactions, and your team's new points; per-topic switches on /me; test alert; in-app prompt. **Built, not shipped yet.** | [ADR-005](decisions/ADR-005-web-push-alerts.md), `features/push`, "Push flow" in [architecture](architecture.md)               |
+| Push alerts      | Web Push to a phone or computer for trade offers, replies and reactions, and your team's new points; per-topic switches on /me; test alert; in-app prompt. **Live since 2026-09-30; real-device check pending.** | [ADR-005](decisions/ADR-005-web-push-alerts.md), `features/push`, "Push flow" in [architecture](architecture.md)               |
 | Profile          | Name, email preferences, profile photo upload (Storage bucket `avatars`)                                                                                                               | `src/app/me`, `features/profile`                                                                                               |
 | Navigation       | Tabs: Standings, Feed, Trades (with a Trades or Free agents switch), Sports, Rules; account menu (avatar) in the header                                                                | `ui/nav-links.tsx`, `features/auth/components/header-account.tsx`                                                              |
 
@@ -117,7 +119,9 @@ migrations and Matt's go-ahead first (see "Ship checklist" under Operations).
   re-subscribes silently the next time it opens the site, after a 10 second pause. Anyone else has
   to turn alerts on again. Save the private key in a password manager first: Vercel sensitive
   values cannot be read back. A half-rotated pair (one key changed) reads as "not available" and
-  logs the variable names.
+  logs the variable names. The production pair generated on 2026-09-30 also has an owner-only
+  backup on Matt's Mac in `~/.config/cincy-league/` (`vapid-private-key` and `vapid-public-key`,
+  mode 600); move it to the password manager and delete the files when convenient.
 - Push alerts, checking on it: delivery logs `push delivery finished` under one correlation id,
   with these counts: `alerts` (in), `noDevice`, `duplicates`, `encodeFailed`, `sent`, `removed`,
   `badEndpoint`, `rejected`, `transient`, `pruned` and `storeErrors`. It is a warning instead of
