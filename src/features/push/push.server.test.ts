@@ -66,3 +66,48 @@ describe("isPushAvailable", () => {
     expect(isPushAvailable()).toBe(false);
   });
 });
+
+describe("loadPushSettings", () => {
+  const actor = { id: "u1", displayName: "Ann", role: "member" } as const;
+
+  async function loadWith(failure: unknown) {
+    vi.resetModules();
+    vi.doMock("server-only", () => ({}));
+    vi.doMock("@/lib/supabase/server", () => ({
+      createSupabaseServerClient: async () => {
+        throw failure;
+      },
+    }));
+    vi.doMock("@/lib/supabase/admin", () => ({ createSupabaseAdminClient: () => ({}) }));
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_x");
+    vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_x");
+    vi.stubEnv("CRON_SECRET", "c".repeat(16));
+    return import("./push.server");
+  }
+
+  it("turns a throw into an error value and logs the error's name and code, never its text", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const failure = Object.assign(
+      new Error("Failing row contains (https://fcm.googleapis.com/fcm/send/SECRET-ENDPOINT)"),
+      { code: "23514", details: "Failing row contains (SECRET-KEY-MATERIAL)" },
+    );
+    const { loadPushSettings } = await loadWith(failure);
+
+    const result = await loadPushSettings(actor);
+
+    expect(result).toEqual({
+      ok: false,
+      error: {
+        code: "unexpected",
+        message: "We couldn't load your alert settings. Refresh the page to try again.",
+      },
+    });
+    const lines = log.mock.calls.map((call) => String(call[0]));
+    log.mockRestore();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("23514");
+    expect(lines[0]).toContain("correlationId");
+    expect(lines[0]).not.toMatch(/SECRET|fcm\.googleapis/);
+  });
+});

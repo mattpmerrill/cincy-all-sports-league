@@ -1,4 +1,5 @@
 import "server-only";
+import { createECDH } from "node:crypto";
 import { z } from "zod";
 import { publicEnv } from "./env";
 import { logger } from "./logger";
@@ -65,6 +66,22 @@ const vapidSchema = z.object({
 export type VapidConfig = { publicKey: string; privateKey: string; subject: string };
 
 let warnedInvalidVapid = false;
+let warnedMismatchedVapid = false;
+
+/**
+ * Whether the private key is the one the public key belongs to. Both can be well formed and still
+ * be from different pairs (one was rotated, the other not); every push service then answers 403,
+ * so such a deploy must read as "not configured" for the UI and the sender alike.
+ */
+function isKeyPair(publicKey: string, privateKey: string): boolean {
+  try {
+    const ecdh = createECDH("prime256v1");
+    ecdh.setPrivateKey(Buffer.from(privateKey, "base64url"));
+    return ecdh.getPublicKey().equals(Buffer.from(publicKey, "base64url"));
+  } catch {
+    return false;
+  }
+}
 let warnedInvalidPublicKey = false;
 
 /**
@@ -97,5 +114,15 @@ export function pushConfig(): VapidConfig | null {
     return null;
   }
   const { VAPID_PRIVATE_KEY: privateKey, VAPID_SUBJECT: subject } = parsed.data;
-  return publicKey && privateKey ? { publicKey, privateKey, subject } : null;
+  if (!publicKey || !privateKey) return null;
+  if (!isKeyPair(publicKey, privateKey)) {
+    if (!warnedMismatchedVapid) {
+      warnedMismatchedVapid = true;
+      logger.error("push alerts are off: the VAPID keys are not a pair", {
+        names: "NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY",
+      });
+    }
+    return null;
+  }
+  return { publicKey, privateKey, subject };
 }

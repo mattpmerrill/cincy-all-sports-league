@@ -1,3 +1,4 @@
+import { createECDH } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { parsePublicEnv } from "./env";
 
@@ -42,7 +43,20 @@ describe("parsePublicEnv", () => {
 
 // Real-shaped throwaway values: 87 and 43 base64url characters, never a working key pair.
 const VAPID_PUBLIC = "B".repeat(87);
-const VAPID_PRIVATE = "k".repeat(43);
+
+/** A real P-256 pair made in memory, because `pushConfig` checks that the two belong together. */
+function makePair() {
+  for (;;) {
+    const ecdh = createECDH("prime256v1");
+    ecdh.generateKeys();
+    const privateKey = ecdh.getPrivateKey().toString("base64url");
+    // A scalar with a leading zero byte encodes shorter; draw again rather than pad.
+    if (privateKey.length === 43) {
+      return { publicKey: ecdh.getPublicKey().toString("base64url"), privateKey };
+    }
+  }
+}
+const PAIR = makePair();
 
 describe("VAPID public key", () => {
   it("is optional and validated by shape", () => {
@@ -92,31 +106,46 @@ describe("pushConfig", () => {
 
   it("is null unless both keys are set", async () => {
     expect((await load({})).pushConfig()).toBeNull();
-    expect((await load({ publicKey: VAPID_PUBLIC })).pushConfig()).toBeNull();
-    expect((await load({ privateKey: VAPID_PRIVATE })).pushConfig()).toBeNull();
+    expect((await load({ publicKey: PAIR.publicKey })).pushConfig()).toBeNull();
+    expect((await load({ privateKey: PAIR.privateKey })).pushConfig()).toBeNull();
   });
 
   it("returns both keys and the site address as the default subject", async () => {
-    const { pushConfig } = await load({ publicKey: VAPID_PUBLIC, privateKey: VAPID_PRIVATE });
+    const { pushConfig } = await load({ publicKey: PAIR.publicKey, privateKey: PAIR.privateKey });
     expect(pushConfig()).toEqual({
-      publicKey: VAPID_PUBLIC,
-      privateKey: VAPID_PRIVATE,
+      publicKey: PAIR.publicKey,
+      privateKey: PAIR.privateKey,
       subject: "https://www.cincysports.xyz",
     });
   });
 
+  it("turns push off when both keys are well formed but from different pairs", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const other = makePair();
+    const { pushConfig } = await load({ publicKey: PAIR.publicKey, privateKey: other.privateKey });
+    expect(pushConfig()).toBeNull();
+    expect(pushConfig()).toBeNull();
+    // Names only, once: the values are the private key.
+    const lines = log.mock.calls.map((call) => String(call[0]));
+    log.mockRestore();
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain("VAPID_PRIVATE_KEY");
+    expect(lines[0]).not.toContain(other.privateKey);
+    expect(lines[0]).not.toContain(PAIR.publicKey);
+  });
+
   it("accepts a mailto subject", async () => {
-    const keys = { publicKey: VAPID_PUBLIC, privateKey: VAPID_PRIVATE };
+    const keys = { publicKey: PAIR.publicKey, privateKey: PAIR.privateKey };
     const { pushConfig } = await load({ ...keys, subject: "mailto:league@example.com" });
     expect(pushConfig()?.subject).toBe("mailto:league@example.com");
   });
 
   it.each([
     ["VAPID_PRIVATE_KEY", { privateKey: "not-a-key-secret" }],
-    ["VAPID_SUBJECT", { privateKey: VAPID_PRIVATE, subject: "http://example.com/secret" }],
+    ["VAPID_SUBJECT", { privateKey: PAIR.privateKey, subject: "http://example.com/secret" }],
   ])("turns push off, and only names %s in the log, when it is malformed", async (name, bad) => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const { pushConfig, serverEnv } = await load({ publicKey: VAPID_PUBLIC, ...bad });
+    const { pushConfig, serverEnv } = await load({ publicKey: PAIR.publicKey, ...bad });
     expect(pushConfig()).toBeNull();
     // A second call does not repeat the warning, and the rest of the app is unaffected.
     expect(pushConfig()).toBeNull();
@@ -133,7 +162,7 @@ describe("pushConfig", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
     const { pushConfig } = await load({
       publicKey: "malformed-public-secret",
-      privateKey: VAPID_PRIVATE,
+      privateKey: PAIR.privateKey,
     });
     expect(pushConfig()).toBeNull();
     expect(pushConfig()).toBeNull();
@@ -147,7 +176,7 @@ describe("pushConfig", () => {
 
   it("stays quiet when the public key is simply not set", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const { pushConfig } = await load({ privateKey: VAPID_PRIVATE });
+    const { pushConfig } = await load({ privateKey: PAIR.privateKey });
     expect(pushConfig()).toBeNull();
     expect(log).not.toHaveBeenCalled();
     log.mockRestore();

@@ -92,3 +92,16 @@ export function sameKey(
   const right = asBytes(b);
   return left.length === right.length && left.every((byte, i) => byte === right[i]);
 }
+
+/**
+ * Whether a subscription still uses the current VAPID key, as the device checks read it. Some
+ * browsers report no `applicationServerKey` at all, and an unknown key cannot prove a rotation:
+ * reading it as "different" (as `sameKey` does) would unsubscribe and resubscribe on every route
+ * change. A real rotation is caught anyway, when the push service answers 410.
+ */
+export function usesCurrentKey(
+  subscriptionKey: BufferSource | null | undefined,
+  currentKey: BufferSource,
+): boolean {
+  return subscriptionKey == null ? true : sameKey(subscriptionKey, currentKey);
+}

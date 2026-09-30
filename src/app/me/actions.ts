@@ -88,7 +88,7 @@ export async function setTradeEmailsAction(
   const result = await (await getProfileService()).setTradeEmails(user.value, optIn);
   if (!result.ok) return formError(result.error.message);
   revalidatePath("/me");
-  return formSuccess(optIn ? "Trade alerts are on." : "Trade alerts are off.");
+  return formSuccess(optIn ? "Trade emails are on." : "Trade emails are off.");
 }
 
 /** A new photo shows everywhere the member appears (leaderboard, feed, trades), so the league cache goes too. */

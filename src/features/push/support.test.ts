@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { base64UrlToBytes, detectPushSupport, sameKey, type PushSupportEnv } from "./support";
+import {
+  base64UrlToBytes,
+  detectPushSupport,
+  sameKey,
+  usesCurrentKey,
+  type PushSupportEnv,
+} from "./support";
 
 const CHROME_MAC =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36";
@@ -146,5 +152,20 @@ describe("sameKey", () => {
     expect(sameKey(null, key)).toBe(false);
     expect(sameKey(undefined, key)).toBe(false);
     expect(sameKey(null, null)).toBe(false);
+  });
+});
+
+describe("usesCurrentKey", () => {
+  const key = base64UrlToBytes("BAECAwQ");
+
+  it("is true for the same key and false for a different one (a rotation)", () => {
+    expect(usesCurrentKey(new Uint8Array([4, 1, 2, 3, 4]), key)).toBe(true);
+    expect(usesCurrentKey(new Uint8Array([4, 1, 2, 3, 5]), key)).toBe(false);
+  });
+
+  it("reads a browser that reports no key as current, since it cannot prove a rotation", () => {
+    // Read as "different", this made every route change unsubscribe and resubscribe.
+    expect(usesCurrentKey(null, key)).toBe(true);
+    expect(usesCurrentKey(undefined, key)).toBe(true);
   });
 });

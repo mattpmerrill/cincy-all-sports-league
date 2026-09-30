@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <LegalPage title="Privacy Policy" updated="September 28, 2026">
+    <LegalPage title="Privacy Policy" updated="September 29, 2026">
       <LegalSection title="What this site is">
         <p>
           Cincy&apos;s All-Sports League is a private fantasy league site for a family and friends
@@ -61,6 +61,24 @@ export default function PrivacyPage() {
             ESPN.
           </li>
         </LegalList>
+      </LegalSection>
+
+      <LegalSection title="Push alerts">
+        <p>
+          If you turn on push alerts, we store your device&apos;s push address, the keys that
+          encrypt alerts for it, and a short device name, such as &quot;iPhone&quot;. We never show
+          any of it to anyone. We delete it when you turn alerts off, when you sign out on that
+          device, and when your account is deleted. If a device stops accepting alerts, we delete it
+          automatically.
+        </p>
+        <p>
+          We also keep a short record of which alerts were sent, for 90 days, so none is sent twice.
+        </p>
+        <p>
+          The text of an alert passes through Apple, Google, Mozilla or Microsoft, whichever runs
+          the push service for your browser. It is encrypted on the way, so they can deliver it but
+          not read it.
+        </p>
       </LegalSection>
 
       <LegalSection title="Cookies">
