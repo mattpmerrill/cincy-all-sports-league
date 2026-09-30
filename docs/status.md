@@ -7,7 +7,9 @@ deployed, and production has every migration in `supabase/migrations/` applied. 
 out on 2026-09-30 in the staged order: migrations, then the code without keys, then the VAPID keys
 and a rebuild. The site reports push as configured (`configured\":true` on `/rules`) and `/sw.js`
 is served with the intended headers on Vercel. Matt tested it on his own iPhone on 2026-09-30 and reported that it works end to end. Android,
-Firefox and desktop Safari are still unchecked, and no announcement has gone out yet.
+Firefox and desktop Safari are still unchecked. The launch was announced the same day with a feed
+post and an email to 17 members (`pnpm announce:push-alerts`; the Home Screen email template now
+says alerts are live).
 
 ## What is live
 
