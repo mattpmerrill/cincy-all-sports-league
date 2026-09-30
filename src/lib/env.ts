@@ -12,6 +12,13 @@ const publicSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.url().default("http://localhost:3000"),
   // Google Search Console HTML-tag token. Optional; empty means no verification tag is rendered.
   NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: z.string().trim().min(1).optional(),
+  // Web Push (VAPID) public key: unpadded base64url of a 65-byte P-256 point. Public by design (the
+  // browser needs it to subscribe). Optional: without it push alerts are simply "not available".
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z0-9_-]{87}$/)
+    .optional(),
 });
 
 export type PublicEnv = z.infer<typeof publicSchema>;
@@ -35,6 +42,7 @@ export function publicEnv(): PublicEnv {
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || undefined,
     NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION:
       process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || undefined,
+    NEXT_PUBLIC_VAPID_PUBLIC_KEY: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || undefined,
   });
   return cached;
 }
