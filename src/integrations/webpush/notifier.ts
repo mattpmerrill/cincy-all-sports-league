@@ -26,14 +26,16 @@ export function createPushNotifier(deps: PushNotifierDeps): PushNotifier {
 
   return {
     notify(build) {
-      const log = deps.logger.child({ correlationId: newCorrelationId() });
+      // One id for the whole notify: the build, the delivery and any failure share it.
+      const correlationId = newCorrelationId();
+      const log = deps.logger.child({ correlationId });
       try {
         deps.schedule(async () => {
           try {
             const alerts = await build();
             // Nothing to send: never touch the environment or the database for it.
             if (alerts.length === 0) return;
-            await deps.delivery().deliver(alerts);
+            await deps.delivery().deliver(alerts, { correlationId });
           } catch (error) {
             log.error("push alerts failed", { error: loggable(error) });
           }

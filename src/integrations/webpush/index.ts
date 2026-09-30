@@ -1,5 +1,5 @@
 export { createPushDelivery } from "./deliver";
-export type { PushDelivery, PushDeliveryDeps, PushStore } from "./deliver";
+export type { PushDelivery, PushDeliveryDeps } from "./deliver";
 export { createPushNotifier } from "./notifier";
 export type { PushNotifierDeps } from "./notifier";
 export { createPushSender } from "./send";

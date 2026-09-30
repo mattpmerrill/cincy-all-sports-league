@@ -47,14 +47,14 @@ describe("createPushNotifier", () => {
     expect(delivery).not.toHaveBeenCalled();
 
     await flush();
-    expect(deliver).toHaveBeenCalledExactlyOnceWith([alert]);
+    expect(deliver).toHaveBeenCalledExactlyOnceWith([alert], { correlationId: "corr-1" });
   });
 
   it("awaits an async build", async () => {
     const { notifier, deliver, flush } = setup();
     notifier.notify(async () => [alert]);
     await flush();
-    expect(deliver).toHaveBeenCalledWith([alert]);
+    expect(deliver).toHaveBeenCalledWith([alert], { correlationId: "corr-1" });
   });
 
   it("never builds a delivery for an empty list", async () => {

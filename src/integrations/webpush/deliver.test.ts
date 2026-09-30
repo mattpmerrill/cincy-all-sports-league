@@ -65,7 +65,11 @@ function setup(
     claim?: (recipientId: string, key: string) => boolean;
     send?: (target: PushTarget) => PushSendErrorCode | null;
     budgetMs?: number;
+    tailBudgetMs?: number;
+    concurrency?: number;
+    sendDelayMs?: number;
     configured?: boolean;
+    ready?: boolean;
   } = {},
 ) {
   const { targets = [device(1)], claim = () => true, send = () => null } = options;
@@ -79,10 +83,11 @@ function setup(
     recordFailure: vi.fn<PushStore["recordFailure"]>(async () => "counted"),
   } satisfies PushStore;
   const sendPush = vi.fn(async (target: PushTarget) => {
+    if (options.sendDelayMs) await new Promise((r) => setTimeout(r, options.sendDelayMs));
     const code = send(target);
     return code ? err(code, "failed") : ok(null);
   });
-  const sender: PushSender = { sendPush };
+  const sender: PushSender = { ready: () => options.ready ?? true, sendPush };
   const { logger, lines } = recordingLogger();
   const delivery = createPushDelivery({
     store,
@@ -91,6 +96,8 @@ function setup(
     logger,
     newCorrelationId: () => "corr-1",
     budgetMs: options.budgetMs,
+    tailBudgetMs: options.tailBudgetMs,
+    concurrency: options.concurrency,
     now: () => new Date("2026-09-29T12:00:00Z"),
   });
   return { delivery, store, sendPush, lines };
@@ -184,20 +191,39 @@ describe("what a send's outcome does to the device", () => {
     expect(store.recordSuccess).not.toHaveBeenCalled();
   });
 
-  it.each([
-    "push_rejected",
-    "push_rate_limited",
-    "push_unavailable",
-    "push_timeout",
-    "push_network",
-  ] as const)("counts a failure on %s, keeping the device", async (code) => {
-    const { delivery, store } = setup({ send: () => code });
+  it("counts a rejection against the device, once", async () => {
+    const { delivery, store } = setup({ send: () => "push_rejected" });
     await delivery.deliver([alert("u1")]);
     expect(store.recordFailure).toHaveBeenCalledExactlyOnceWith("sub-1", 5);
     expect(store.remove).not.toHaveBeenCalled();
   });
 
-  it("logs when a device is pruned for repeated failures", async () => {
+  it.each(["push_rate_limited", "push_unavailable", "push_timeout", "push_network"] as const)(
+    "never counts %s: an outage says nothing about the device",
+    async (code) => {
+      const { delivery, store } = setup({ send: () => code });
+      await delivery.deliver([alert("u1")]);
+      expect(store.recordFailure).not.toHaveBeenCalled();
+      expect(store.remove).not.toHaveBeenCalled();
+      expect(store.recordSuccess).not.toHaveBeenCalled();
+    },
+  );
+
+  it("counts one failure for a device that rejected two alerts in the same run", async () => {
+    const { delivery, store } = setup({ send: () => "push_rejected" });
+    await delivery.deliver([alert("u1"), alert("u1", { dedupeKey: "trade:2" })]);
+    expect(store.recordFailure).toHaveBeenCalledExactlyOnceWith("sub-1", 5);
+  });
+
+  it("never counts a device that took another alert in the same run", async () => {
+    let call = 0;
+    const { delivery, store } = setup({ send: () => (call++ === 0 ? "push_rejected" : null) });
+    await delivery.deliver([alert("u1"), alert("u1", { dedupeKey: "trade:2" })]);
+    expect(store.recordFailure).not.toHaveBeenCalled();
+    expect(store.recordSuccess).toHaveBeenCalledWith(["sub-1"], expect.any(Date));
+  });
+
+  it("logs when a device is pruned for repeated rejections", async () => {
     const { delivery, store, lines } = setup({ send: () => "push_rejected" });
     store.recordFailure.mockResolvedValue("pruned");
     await delivery.deliver([alert("u1")]);
@@ -305,7 +331,7 @@ describe("logs", () => {
     });
     await delivery.deliver([alert("u1")]);
 
-    const warned = lines.find((l) => l.msg === "push send failed");
+    const warned = lines.find((l) => l.msg === "push send rejected");
     expect(warned?.fields).toEqual({
       correlationId: "corr-1",
       topic: "trades",
@@ -381,6 +407,137 @@ describe("sendNow", () => {
     const { delivery, sendPush } = setup({ budgetMs: 20 });
     sendPush.mockImplementation(() => new Promise(() => {}));
     expect(await delivery.sendNow(device(1), testAlert)).toMatchObject({
+      ok: false,
+      error: { code: "push_timeout" },
+    });
+  });
+});
+
+describe("the time budget", () => {
+  it("starts nothing new after it is spent and ignores late results", async () => {
+    // Ten devices, two at a time, 50 ms each, 120 ms to spend: some sends never get to start.
+    const targets = Array.from({ length: 10 }, (_, i) => device(i + 1));
+    const { delivery, store, sendPush, lines } = setup({
+      targets,
+      concurrency: 2,
+      sendDelayMs: 50,
+      budgetMs: 120,
+      send: (t) => (t.subscriptionId === "sub-1" ? null : "push_rejected"),
+    });
+    await delivery.deliver([alert("u1")]);
+    const startedAtReturn = sendPush.mock.calls.length;
+    expect(startedAtReturn).toBeLessThan(10);
+
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(sendPush).toHaveBeenCalledTimes(startedAtReturn);
+    // Rejections that landed after the deadline are not evidence about those devices.
+    expect(store.recordFailure).not.toHaveBeenCalled();
+    expect(store.remove).not.toHaveBeenCalled();
+    expect(lines.some((l) => l.msg === "push delivery ran out of time")).toBe(true);
+  });
+
+  it("claims nothing once it is spent", async () => {
+    const { delivery, store } = setup({ budgetMs: 20 });
+    store.listTargets.mockImplementation(async (ids) => {
+      await new Promise((r) => setTimeout(r, 60));
+      return [device(1, ids[0] ?? "u1")];
+    });
+    await delivery.deliver([alert("u1")]);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(store.claim).not.toHaveBeenCalled();
+  });
+
+  it("does not let a hung store call hold delivery open past the tail budget", async () => {
+    const { delivery, store, lines } = setup({ tailBudgetMs: 30 });
+    store.recordSuccess.mockImplementation(() => new Promise(() => {}));
+    const started = Date.now();
+    await delivery.deliver([alert("u1")]);
+    expect(Date.now() - started).toBeLessThan(1_000);
+    expect(lines.some((l) => l.msg === "push outcomes were not recorded in time")).toBe(true);
+  });
+
+  it("bounds a hung recordFailure the same way", async () => {
+    const { delivery, store, lines } = setup({ tailBudgetMs: 30, send: () => "push_rejected" });
+    store.recordFailure.mockImplementation(() => new Promise(() => {}));
+    await delivery.deliver([alert("u1")]);
+    expect(lines.some((l) => l.msg === "push outcomes were not recorded in time")).toBe(true);
+  });
+});
+
+describe("the endpoint allow-list", () => {
+  const rogue: PushTarget = { ...device(9), endpoint: "https://evil.example/steal/SECRET-PATH" };
+
+  it("removes a device whose host is not a push service and never sends to it", async () => {
+    const { delivery, store, sendPush, lines } = setup({ targets: [rogue] });
+    await delivery.deliver([alert("u1")]);
+    expect(sendPush).not.toHaveBeenCalled();
+    expect(store.claim).not.toHaveBeenCalled();
+    expect(store.remove).toHaveBeenCalledExactlyOnceWith("sub-9");
+    const removed = lines.find((l) => l.msg === "push device removed");
+    expect(removed?.fields).toMatchObject({
+      subscriptionId: "sub-9",
+      host: "evil.example",
+      code: "push_endpoint_not_allowed",
+    });
+    expect(JSON.stringify(lines)).not.toContain("SECRET-PATH");
+  });
+
+  it("still sends to the member's other, allowed devices", async () => {
+    const { delivery, store, sendPush } = setup({ targets: [rogue, device(1)] });
+    await delivery.deliver([alert("u1")]);
+    expect(store.remove).toHaveBeenCalledWith("sub-9");
+    expect(sendPush).toHaveBeenCalledExactlyOnceWith(
+      device(1),
+      expect.any(String),
+      expect.anything(),
+    );
+  });
+
+  it("sendNow refuses it with a typed error, removes it and sends nothing", async () => {
+    const { delivery, store, sendPush } = setup();
+    const testAlert = testPushAlert({ recipientId: "u1", now: new Date() });
+    expect(await delivery.sendNow(rogue, testAlert)).toMatchObject({
+      ok: false,
+      error: { code: "push_endpoint_not_allowed" },
+    });
+    expect(sendPush).not.toHaveBeenCalled();
+    expect(store.remove).toHaveBeenCalledWith("sub-9");
+  });
+});
+
+describe("unusable VAPID keys", () => {
+  it("is caught before anything is claimed, and logged once", async () => {
+    const { delivery, store, sendPush, lines } = setup({ ready: false });
+    await delivery.deliver([alert("u1"), alert("u2")]);
+    for (const fn of Object.values(store)) expect(fn).not.toHaveBeenCalled();
+    expect(sendPush).not.toHaveBeenCalled();
+    expect(lines.filter((l) => l.level === "error")).toHaveLength(1);
+  });
+
+  it("makes sendNow report not configured without sending", async () => {
+    const { delivery, sendPush } = setup({ ready: false });
+    const testAlert = testPushAlert({ recipientId: "u1", now: new Date() });
+    expect(await delivery.sendNow(device(1), testAlert)).toMatchObject({
+      ok: false,
+      error: { code: "push_not_configured" },
+    });
+    expect(sendPush).not.toHaveBeenCalled();
+  });
+});
+
+describe("correlation and budget overrides", () => {
+  it("logs under the correlation id it is given", async () => {
+    const { delivery, lines } = setup();
+    await delivery.deliver([alert("u1")], { correlationId: "from-notifier" });
+    expect(lines.length).toBeGreaterThan(0);
+    expect(lines.every((l) => l.fields.correlationId === "from-notifier")).toBe(true);
+  });
+
+  it("lets sendNow use a smaller budget than delivery's", async () => {
+    const { delivery, sendPush } = setup({ budgetMs: 60_000 });
+    sendPush.mockImplementation(() => new Promise(() => {}));
+    const testAlert = testPushAlert({ recipientId: "u1", now: new Date() });
+    expect(await delivery.sendNow(device(1), testAlert, { budgetMs: 20 })).toMatchObject({
       ok: false,
       error: { code: "push_timeout" },
     });

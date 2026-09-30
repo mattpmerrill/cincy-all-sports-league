@@ -54,6 +54,7 @@ const message = pushMessage({
 const decodeJwt = (jwt: string) => {
   const [header, payload, signature] = jwt.split(".");
   return {
+    header: JSON.parse(Buffer.from(header ?? "", "base64url").toString()) as unknown,
     payload: JSON.parse(Buffer.from(payload ?? "", "base64url").toString()) as {
       aud: string;
       sub: string;
@@ -98,7 +99,8 @@ describe("a real push request", () => {
     if (!match) throw new Error("no VAPID Authorization header");
     const [, jwt = "", key = ""] = match;
     expect(key).toBe(vapid.publicKey);
-    const { payload, signedText, signature } = decodeJwt(jwt);
+    const { header, payload, signedText, signature } = decodeJwt(jwt);
+    expect(header).toEqual({ typ: "JWT", alg: "ES256" });
     expect(payload.aud).toBe(origin);
     expect(payload.sub).toBe("https://www.cincysports.xyz");
     const now = Date.now() / 1000;

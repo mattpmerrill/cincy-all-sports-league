@@ -6,6 +6,7 @@ import { err, ok, type AppError, type Result } from "@/lib/result";
 
 export type PushSendErrorCode =
   | "push_not_configured" // no (or unusable) VAPID keys: local dev, or a deploy missing them
+  | "push_endpoint_not_allowed" // never returned here: delivery refuses off-list hosts before sending
   | "push_gone" // 404/410: the browser dropped the subscription, so the row should go too
   | "push_invalid_subscription" // the stored keys cannot be used to encrypt
   | "push_rejected" // any other 4xx (403 after a key mismatch, 413): retrying cannot help
@@ -19,6 +20,11 @@ export type PushSendError = AppError<PushSendErrorCode>;
 export type PushSendOptions = { ttlSeconds: number; urgency: PushUrgency };
 
 export type PushSender = {
+  /**
+   * Whether the keys can sign and belong together. Delivery asks before it claims anything, so a
+   * broken pair cannot use up dedupe keys for alerts that were never sent.
+   */
+  ready: () => boolean;
   /**
    * Encrypts `payload` for the device and POSTs it to the device's push service. `payload` is the
    * JSON from `encodePushPayload`. Never throws for an expected failure.
@@ -102,13 +108,19 @@ export function createPushSender(options: PushSenderOptions): PushSender {
   const { config } = options;
   let usable: boolean | undefined;
 
+  const ready = (): boolean => {
+    if (!config) return false;
+    usable ??= vapidUsable(config);
+    return usable;
+  };
+
   return {
+    ready,
     async sendPush(target, payload, sendOptions) {
       if (!config) {
         return err("push_not_configured", "Push alerts are not configured (VAPID keys).");
       }
-      usable ??= vapidUsable(config);
-      if (!usable) return err("push_not_configured", "The VAPID keys are not usable.");
+      if (!ready()) return err("push_not_configured", "The VAPID keys are not usable.");
 
       let request: { url: string; headers: Record<string, string>; body: Uint8Array<ArrayBuffer> };
       try {
