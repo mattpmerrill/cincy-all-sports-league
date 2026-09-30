@@ -26,7 +26,7 @@ export type HomeScreenEmailProps = Pick<LaunchEmailProps, "displayName" | "siteU
 
 export const HOME_SCREEN_SUBJECT = "Put Cincy's League on your phone's Home Screen";
 export const HOME_SCREEN_PREHEADER =
-  "One tap to standings, trades and free agents. It takes about a minute, and push alerts are coming soon.";
+  "One tap to standings, trades and free agents. It takes about a minute, and on iPhone it is how you get push alerts.";
 
 /**
  * A step and the picture that shows it. The pictures live on the site (public/email, made by
@@ -121,8 +121,8 @@ export const HOME_SCREEN_TIPS: readonly Tip[] = [
 ];
 
 export const PUSH_ALERTS_NOTE = {
-  title: "Push alerts are coming soon",
-  body: "Soon the league will be able to buzz your phone when something happens. On iPhone, alerts only work for apps on your Home Screen, so setting this up now means you're ready the day we switch them on.",
+  title: "Push alerts are live",
+  body: "The league can now buzz your phone when something happens. On iPhone, alerts only work for apps on your Home Screen, so add it first, then turn alerts on from your profile.",
 };
 
 function Picture({ siteUrl, step }: { siteUrl: string; step: IllustratedStep }) {
@@ -225,8 +225,8 @@ export function HomeScreenEmail({ displayName, siteUrl }: HomeScreenEmailProps) 
             <Text style={{ ...para, paddingTop: "20px" }}>{`Hi ${displayName},`}</Text>
             <Text style={{ ...para, paddingTop: "8px" }}>
               You can add Cincy&apos;s League to your phone&apos;s Home Screen so it opens full
-              screen, like any other app, in one tap. It takes about a minute, and push alerts are
-              coming soon, so it&apos;s worth doing now.
+              screen, like any other app, in one tap. It takes about a minute, and on an iPhone it
+              is how you get push alerts.
             </Text>
 
             <SectionTitle>On an iPhone (use Safari)</SectionTitle>

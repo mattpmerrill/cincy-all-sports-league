@@ -11,11 +11,17 @@ import {
   HOME_SCREEN_TIPS,
   HomeScreenEmail,
   type HomeScreenEmailProps,
-  type IllustratedStep,
   IPHONE_STEPS,
   PUSH_ALERTS_NOTE,
 } from "./home-screen-email";
 import type { LaunchEmailProps, LaunchStep } from "./parts";
+import {
+  PUSH_ALERT_TYPES,
+  PUSH_ALERTS_NOTES,
+  PUSH_ALERTS_STEPS,
+  PushAlertsLaunchEmail,
+  type PushAlertsLaunchEmailProps,
+} from "./push-alerts-launch-email";
 import {
   LAUNCH_NOTES,
   LAUNCH_STEPS,
@@ -88,7 +94,7 @@ export async function renderFreeAgentsLaunchEmail(
   return { html, text };
 }
 
-const textSteps = (steps: readonly IllustratedStep[]) =>
+const textSteps = (steps: readonly LaunchStep[]) =>
   steps.map((s, i) => `${i + 1}. ${s.title}. ${s.body}`);
 
 /** Same content as the HTML, without the pictures: every step is written out in words. */
@@ -96,7 +102,7 @@ function renderHomeScreenText({ displayName, siteUrl }: HomeScreenEmailProps): s
   return [
     `Hi ${displayName},`,
     "",
-    "You can add Cincy's League to your phone's Home Screen so it opens full screen, like any other app, in one tap. It takes about a minute, and push alerts are coming soon, so it's worth doing now.",
+    "You can add Cincy's League to your phone's Home Screen so it opens full screen, like any other app, in one tap. It takes about a minute, and on an iPhone it is how you get push alerts.",
     "",
     "ON AN IPHONE (USE SAFARI)",
     ...textSteps(IPHONE_STEPS),
@@ -122,4 +128,41 @@ export async function renderHomeScreenEmail(
 ): Promise<{ html: string; text: string }> {
   const html = await render(createElement(HomeScreenEmail, props));
   return { html, text: renderHomeScreenText(props) };
+}
+
+/** Two numbered lists and lead-in notes, so this one does not use the generic launch text. */
+function renderPushAlertsText({
+  displayName,
+  hasTeam,
+  siteUrl,
+}: PushAlertsLaunchEmailProps): string {
+  return [
+    `Hi ${displayName},`,
+    "",
+    "Big news: you can now get push alerts from the league on your phone or computer. Here's what you can get and how to turn them on.",
+    "",
+    "WHAT YOU CAN GET ALERTS FOR",
+    ...textSteps(PUSH_ALERT_TYPES),
+    "",
+    "HOW TO TURN THEM ON",
+    ...textSteps(PUSH_ALERTS_STEPS),
+    "",
+    "GOOD TO KNOW",
+    ...PUSH_ALERTS_NOTES.map((n) => `* ${n.lead} ${n.body}`),
+    ...(hasTeam
+      ? []
+      : ["", `You'll need your team first. Claim it on your profile: ${siteUrl}/me`]),
+    "",
+    `Turn on alerts: ${siteUrl}/me`,
+    `Stuck? Ask in the league feed: ${siteUrl}/feed`,
+    "",
+    "You're getting this one-time announcement because you have an account with Cincy's All-Sports League.",
+  ].join("\n");
+}
+
+export async function renderPushAlertsLaunchEmail(
+  props: PushAlertsLaunchEmailProps,
+): Promise<{ html: string; text: string }> {
+  const html = await render(createElement(PushAlertsLaunchEmail, props));
+  return { html, text: renderPushAlertsText(props) };
 }

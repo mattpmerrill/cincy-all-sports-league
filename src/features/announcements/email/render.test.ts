@@ -3,9 +3,11 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FREE_AGENTS_NOTES, FREE_AGENTS_STEPS } from "./free-agents-launch-email";
 import { ANDROID_STEPS, HOME_SCREEN_TIPS, IPHONE_STEPS, imageUrl } from "./home-screen-email";
+import { PUSH_ALERT_TYPES, PUSH_ALERTS_NOTES, PUSH_ALERTS_STEPS } from "./push-alerts-launch-email";
 import {
   renderFreeAgentsLaunchEmail,
   renderHomeScreenEmail,
+  renderPushAlertsLaunchEmail,
   renderTradesLaunchEmail,
 } from "./render";
 
@@ -126,7 +128,7 @@ describe("renderHomeScreenEmail", () => {
     const { text } = await renderHomeScreenEmail(props);
     for (const step of steps) expect(text).toContain(step.title);
     for (const tip of HOME_SCREEN_TIPS) expect(text).toContain(tip.lead);
-    expect(text).toContain("PUSH ALERTS ARE COMING SOON");
+    expect(text).toContain("PUSH ALERTS ARE LIVE");
     expect(text).toContain(`Open Cincy's League: ${siteUrl}`);
   });
 
@@ -136,5 +138,59 @@ describe("renderHomeScreenEmail", () => {
       expect(output).not.toContain("\u2014");
       expect(output).not.toContain("\u2013");
     }
+  });
+});
+
+describe("renderPushAlertsLaunchEmail", () => {
+  it("points the button at the profile page, where the Alerts section lives", async () => {
+    const { html, text } = await renderPushAlertsLaunchEmail({
+      displayName: "Coop",
+      hasTeam: true,
+      siteUrl,
+    });
+    expect(html).toContain(`href="${siteUrl}/me"`);
+    expect(html).toContain("Hi Coop,");
+    expect(text).toContain(`Turn on alerts: ${siteUrl}/me`);
+    expect(html).not.toContain("Claim it on your profile");
+  });
+
+  it("names every alert type and every step, in both versions", async () => {
+    const { html, text } = await renderPushAlertsLaunchEmail({
+      displayName: "Coop",
+      hasTeam: true,
+      siteUrl,
+    });
+    const plain = (value: string) =>
+      value.replace(/["'\u2019]/g, "").replace(/&(?:quot|#x27|#39);/g, "");
+    for (const item of [...PUSH_ALERT_TYPES, ...PUSH_ALERTS_STEPS]) {
+      expect(plain(html)).toContain(plain(item.title));
+      expect(text).toContain(item.title);
+    }
+    for (const note of PUSH_ALERTS_NOTES) expect(text).toContain(note.lead);
+  });
+
+  it("tells a member without a team to claim one first, in both versions", async () => {
+    const { html, text } = await renderPushAlertsLaunchEmail({
+      displayName: "Sam",
+      hasTeam: false,
+      siteUrl,
+    });
+    expect(html).toContain("Claim it on your profile");
+    expect(text).toContain(`${siteUrl}/me`);
+  });
+
+  it("does not claim more than has been checked, and keeps human copy free of em dashes", async () => {
+    const { html, text } = await renderPushAlertsLaunchEmail({
+      displayName: "Coop",
+      hasTeam: false,
+      siteUrl,
+    });
+    for (const output of [html, text]) {
+      expect(output).not.toContain("\u2014");
+      expect(output).not.toContain("\u2013");
+      expect(output.toLowerCase()).not.toContain("coming soon");
+    }
+    // Only iPhone and desktop Chrome have been verified; Android and other browsers are "should work".
+    expect(text).toContain("should work too");
   });
 });
