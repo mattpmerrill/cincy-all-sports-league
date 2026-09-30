@@ -7,6 +7,7 @@ import { createProfilesRepository } from "@/data/profiles.repository";
 import { logger } from "@/lib/logger";
 import { PROFILE_UPDATED_EVENT } from "@/lib/profile-events";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { nextSessionState, type BrowserSessionState } from "@/lib/supabase/session-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,8 +23,6 @@ import { signOutAfter } from "../sign-out";
 
 const AUTH_PAGES = ["/login", "/signup", "/reset-password"];
 
-type Session = { status: "unknown" } | { status: "out" } | { status: "in"; userId: string };
-
 const FOCUS_RING = "outline-none focus-visible:ring-3 focus-visible:ring-ring/60";
 
 /**
@@ -38,10 +37,10 @@ const FOCUS_RING = "outline-none focus-visible:ring-3 focus-visible:ring-ring/60
  */
 export function HeaderAccount({ beforeSignOut }: { beforeSignOut?: () => Promise<void> } = {}) {
   const pathname = usePathname();
-  const [session, setSession] = useState<Session>({ status: "unknown" });
+  const [session, setSession] = useState<BrowserSessionState>({ status: "loading" });
   // Keyed by user id so a stale profile never shows after an account switch or sign-out.
   const [loaded, setLoaded] = useState<{ userId: string; account: AccountMenu } | null>(null);
-  const userId = session.status === "in" ? session.userId : null;
+  const userId = session.status === "signed_in" ? session.userId : null;
   const account = loaded && loaded.userId === userId ? loaded.account : null;
   // Bumped when the member edits their profile elsewhere on the page, so the photo here follows.
   const [profileVersion, setProfileVersion] = useState(0);
@@ -56,8 +55,8 @@ export function HeaderAccount({ beforeSignOut }: { beforeSignOut?: () => Promise
     const supabase = createSupabaseBrowserClient();
     // Fires once with the current session, then on every sign-in and sign-out. Only state is set
     // here: awaiting Supabase calls inside this callback can deadlock the auth client.
-    const { data } = supabase.auth.onAuthStateChange((_event, next) =>
-      setSession(next ? { status: "in", userId: next.user.id } : { status: "out" }),
+    const { data } = supabase.auth.onAuthStateChange((event, next) =>
+      setSession((prev) => nextSessionState(prev, { source: "event", event, session: next })),
     );
     return () => data.subscription.unsubscribe();
   }, []);
@@ -69,16 +68,15 @@ export function HeaderAccount({ beforeSignOut }: { beforeSignOut?: () => Promise
     let active = true;
     void createSupabaseBrowserClient()
       .auth.getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
-        const next = data.session;
-        setSession((prev) => {
-          if (!next) return prev.status === "out" ? prev : { status: "out" };
-          return prev.status === "in" && prev.userId === next.user.id
-            ? prev
-            : { status: "in", userId: next.user.id };
-        });
-      });
+        // A session that could not be refreshed (offline, an auth outage) is not a sign-out: the
+        // shared mapping keeps the state instead of showing "Sign in" to a signed-in member.
+        setSession((prev) =>
+          nextSessionState(prev, { source: "read", session: data.session, error }),
+        );
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
@@ -103,9 +101,9 @@ export function HeaderAccount({ beforeSignOut }: { beforeSignOut?: () => Promise
     };
   }, [userId, profileVersion]);
 
-  if (session.status === "unknown") return null;
+  if (session.status === "loading") return null;
 
-  if (session.status === "out") {
+  if (session.status === "signed_out") {
     if (AUTH_PAGES.some((p) => pathname.startsWith(p))) return null;
     const next = encodeURIComponent(pathname);
     return (

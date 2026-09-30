@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { nextSessionState } from "@/lib/supabase/session-state";
 import type { DeviceSession } from "../device-sync";
 
 /**
@@ -10,8 +11,11 @@ import type { DeviceSession } from "../device-sync";
  * header's account menu (a feature may not import another): the root layout stays static, so the
  * session is read here in the browser, and it starts as `loading`, never as "signed out".
  *
- * Signing in or out runs as a Server Action that sets the cookie and then navigates on the
- * client, so the auth client never sees an event; the cookie is re-read on every route change.
+ * What a signal means is decided by `nextSessionState`, shared with the header: a session the
+ * auth client could not refresh (offline, an auth outage) is NOT a sign-out, and reading it as one
+ * would drop this device's push subscription. Signing in or out runs as a Server Action that sets
+ * the cookie and then navigates on the client, so the auth client never sees an event; the cookie
+ * is re-read on every route change.
  */
 export function useBrowserSession(): DeviceSession {
   const pathname = usePathname();
@@ -20,8 +24,8 @@ export function useBrowserSession(): DeviceSession {
   useEffect(() => {
     const supabase = createSupabaseBrowserClient();
     // Only state is set inside the callback: awaiting Supabase calls in it can deadlock the client.
-    const { data } = supabase.auth.onAuthStateChange((_event, next) =>
-      setSession(next ? { status: "signed_in", userId: next.user.id } : { status: "signed_out" }),
+    const { data } = supabase.auth.onAuthStateChange((event, next) =>
+      setSession((prev) => nextSessionState(prev, { source: "event", event, session: next })),
     );
     return () => data.subscription.unsubscribe();
   }, []);
@@ -30,18 +34,13 @@ export function useBrowserSession(): DeviceSession {
     let active = true;
     void createSupabaseBrowserClient()
       .auth.getSession()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (!active) return;
-        const next = data.session;
-        // Keeps the same object when nothing changed, so effects keyed on it do not re-run.
-        setSession((prev) => {
-          if (!next) return prev.status === "signed_out" ? prev : { status: "signed_out" };
-          return prev.status === "signed_in" && prev.userId === next.user.id
-            ? prev
-            : { status: "signed_in", userId: next.user.id };
-        });
+        setSession((prev) =>
+          nextSessionState(prev, { source: "read", session: data.session, error }),
+        );
       })
-      // Stays `loading`, which does nothing: the safe reading of a session we could not read.
+      // Stays as it was: the safe reading of a session we could not read.
       .catch(() => undefined);
     return () => {
       active = false;
