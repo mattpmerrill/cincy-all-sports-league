@@ -3,16 +3,19 @@ import { after } from "next/server";
 import { createFantasyTeamsRepository } from "@/data/fantasy-teams.repository";
 import { createLeagueRepository } from "@/data/league.repository";
 import { createTradeRecipientsRepository } from "@/data/trade-recipients.repository";
+import { createPushRepository } from "@/data/push.repository";
 import { createTradesRepository } from "@/data/trades.repository";
 import { createEmailSender } from "@/integrations/resend";
+import { createPushDelivery, createPushNotifier } from "@/integrations/webpush";
 import { publicEnv } from "@/lib/env";
-import { serverEnv } from "@/lib/env.server";
+import { pushConfig, serverEnv } from "@/lib/env.server";
 import { logger, newCorrelationId } from "@/lib/logger";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { renderTradeEmail } from "./email/render";
 import { createTradeAlertSender } from "./trade-alerts";
 import type { TradeNotifier } from "./trade-alerts";
+import { toTradePushAlerts } from "./trade-push";
 import { createTradesService } from "./trades.service";
 
 /**
@@ -21,6 +24,22 @@ import { createTradesService } from "./trades.service";
  */
 function afterResponseNotifier(): TradeNotifier {
   const log = logger.child({ scope: "trade-alerts" });
+  const pushLog = logger.child({ scope: "trade-push" });
+  // Push rides beside the email, not through it: each has its own `after()` task. The email is
+  // registered first and push last, inside its own try/catch, so a push problem can never keep
+  // the email from being scheduled. The delivery is built inside the task, so push secrets are
+  // read after the response like the email key.
+  const push = createPushNotifier({
+    schedule: after,
+    delivery: () =>
+      createPushDelivery({
+        store: createPushRepository(createSupabaseAdminClient()),
+        config: pushConfig(),
+        logger: pushLog,
+        newCorrelationId,
+      }),
+    logger: pushLog,
+  });
   return {
     notify(alerts) {
       after(async () => {
@@ -39,6 +58,12 @@ function afterResponseNotifier(): TradeNotifier {
           log.error("trade alerts could not start", { error });
         }
       });
+      try {
+        push.notify(() => toTradePushAlerts(alerts));
+      } catch (error) {
+        // `notify` guards its own scheduling; this covers its setup. Never log the alerts.
+        pushLog.error("could not schedule trade push", { error });
+      }
     },
   };
 }

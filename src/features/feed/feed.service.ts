@@ -3,6 +3,8 @@ import type { MessagesRepository } from "@/data/messages.repository";
 import type { ReactionsRepository } from "@/data/reactions.repository";
 import type { Message, ReactionName, ReactionRow } from "@/domain/feed";
 import { isAdminRole, type Actor } from "@/domain/membership/membership";
+import { reactionPushAlert, replyPushAlert, type PushNotifier } from "@/domain/push";
+import type { Logger } from "@/lib/logger";
 import { err, ok, type AppError, type Result } from "@/lib/result";
 
 export type FeedDeps = {
@@ -12,8 +14,14 @@ export type FeedDeps = {
   >;
   reactions: Pick<ReactionsRepository, "listForMessages" | "add" | "remove">;
   teams: Pick<FantasyTeamsRepository, "getOwnedBy">;
+  /** Push alerts for replies and reactions. Runs after the response and never changes a result. */
+  notifier: PushNotifier;
+  logger: Logger;
   now?: () => Date;
 };
+
+/** Who writes or reacts: the name goes into the alert other members read. */
+export type FeedActor = Actor & { displayName: string };
 
 export type FeedError = AppError<"rate_limited" | "not_allowed" | "not_found" | "invalid">;
 
@@ -30,8 +38,22 @@ export function createFeedService({
   messages,
   reactions,
   teams,
+  notifier,
+  logger,
   now = () => new Date(),
 }: FeedDeps) {
+  /**
+   * Alerts go out after the response, so a notifier problem is logged and dropped: a message that
+   * was posted or a reaction that was saved is never undone by an alert failure.
+   */
+  function notify(build: Parameters<PushNotifier["notify"]>[0]) {
+    try {
+      notifier.notify(build);
+    } catch (error) {
+      logger.error("could not schedule feed push alerts", { error });
+    }
+  }
+
   /** Posting rights: an approved team in the active season. RLS enforces the same rule. */
   async function canPost(userId: string): Promise<boolean> {
     return (await teams.getOwnedBy(userId)) !== null;
@@ -43,7 +65,7 @@ export function createFeedService({
   }
 
   async function write(
-    actor: Actor,
+    actor: FeedActor,
     body: string,
     parentId: string | null,
   ): Promise<Result<Message, FeedError>> {
@@ -51,12 +73,35 @@ export function createFeedService({
     const season = await requireSeason();
     if (!season.ok) return season;
 
+    let parentAuthorId: string | null = null;
     if (parentId) {
       const parent = await messages.getById(parentId);
       if (!parent || parent.deleted) return err("not_found", "That message no longer exists.");
       if (parent.parentId) return err("invalid", "You can't reply to a reply.");
+      parentAuthorId = parent.author?.id ?? null;
     }
-    return messages.insertMember({ seasonId: season.value, authorId: actor.id, body, parentId });
+    const inserted = await messages.insertMember({
+      seasonId: season.value,
+      authorId: actor.id,
+      body,
+      parentId,
+    });
+    if (inserted.ok && parentId) {
+      const reply = inserted.value;
+      // The builder returns null for a league post (no author) and for a reply to yourself.
+      notify(() =>
+        [
+          replyPushAlert({
+            actorId: actor.id,
+            replyId: reply.id,
+            parent: { id: parentId, authorId: parentAuthorId },
+            replierName: actor.displayName,
+            replyBody: reply.body,
+          }),
+        ].filter((alert) => alert !== null),
+      );
+    }
+    return inserted;
   }
 
   return {
@@ -85,11 +130,11 @@ export function createFeedService({
 
     getMessage: (id: string) => messages.getById(id),
 
-    post: (actor: Actor, body: string) => write(actor, body, null),
-    reply: (actor: Actor, parentId: string, body: string) => write(actor, body, parentId),
+    post: (actor: FeedActor, body: string) => write(actor, body, null),
+    reply: (actor: FeedActor, parentId: string, body: string) => write(actor, body, parentId),
 
     async setReaction(
-      actor: Actor,
+      actor: FeedActor,
       messageId: string,
       emoji: ReactionName,
       on: boolean,
@@ -98,7 +143,30 @@ export function createFeedService({
       // Undoing your own reaction never needs a team, so an owner who lost theirs is not stuck.
       if (!on) return reactions.remove(row);
       if (!(await canPost(actor.id))) return err("not_allowed", NOT_OWNER);
-      return reactions.add(row);
+      const added = await reactions.add(row);
+      if (added.ok) {
+        // Both reads wait for the deferred build: the action's response never pays for them, and
+        // a failing read is the notifier's to log, not this action's to report.
+        notify(async () => {
+          const message = await messages.getById(messageId);
+          if (!message) return [];
+          const everyReaction = await reactions.listForMessages([messageId]);
+          const alert = reactionPushAlert({
+            actorId: actor.id,
+            actorName: actor.displayName,
+            reaction: emoji,
+            message: {
+              id: message.id,
+              authorId: message.author?.id ?? null,
+              body: message.body,
+              deleted: message.deleted,
+            },
+            reactorIds: everyReaction.map((r) => r.userId),
+          });
+          return alert ? [alert] : [];
+        });
+      }
+      return added;
     },
 
     /** Authors remove their own messages; admins remove anyone's. League posts: admins only. */

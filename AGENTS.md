@@ -38,7 +38,7 @@ non-negotiable; **SHOULD** needs a written reason to skip.
 - **Errors are values.** Expected failures return a typed `Result` with a stable `code`.
   Unexpected ones throw and are logged with a correlation id. Never swallow an error or turn every
   error into `null`. Never show users a stack trace, SQL or a provider payload.
-- **Secrets stay server-side.** `SUPABASE_SECRET_KEY` and `CRON_SECRET` are read only through
+- **Secrets stay server-side.** `SUPABASE_SECRET_KEY`, `CRON_SECRET` and `VAPID_PRIVATE_KEY` are read only through
   `lib/env.server.ts` and never imported into client code. `NEXT_PUBLIC_` means public. Never
   commit `.env*` (except `.env.example`) and never log secrets or personal data.
 - **Tokens-only styling.** Colors, radii, shadows and z-indexes come from the design tokens in
@@ -56,17 +56,17 @@ It doubles as a public portfolio project, so structure and tests should be exemp
 
 **File map**
 
-| Path                    | What it holds                                                                                     |
-| ----------------------- | ------------------------------------------------------------------------------------------------- |
-| `src/app`               | Routes only                                                                                       |
-| `src/features/*`        | Vertical slices: standings, fantasy-teams, sports, auth, claims, results-admin, sync, free-agents |
-| `src/domain`            | Pure rules: `scoring`, `standings`, `sports`                                                      |
-| `src/data`              | Repositories and row-to-domain mappers                                                            |
-| `src/integrations/espn` | The ESPN adapter                                                                                  |
-| `src/lib`               | env, Supabase clients, logger, `Result`                                                           |
-| `src/ui`                | shadcn/ui primitives and design-system components                                                 |
-| `supabase/`             | Migrations, pgTAP tests, seed                                                                     |
-| `docs/`                 | Architecture and ADRs                                                                             |
+| Path               | What it holds                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------- |
+| `src/app`          | Routes only                                                                                             |
+| `src/features/*`   | Vertical slices: standings, fantasy-teams, sports, auth, claims, results-admin, sync, free-agents, push |
+| `src/domain`       | Pure rules: `scoring`, `standings`, `sports`, `push`                                                    |
+| `src/data`         | Repositories and row-to-domain mappers                                                                  |
+| `src/integrations` | One adapter per vendor: `espn`, `resend`, `webpush`                                                     |
+| `src/lib`          | env, Supabase clients, logger, `Result`                                                                 |
+| `src/ui`           | shadcn/ui primitives and design-system components                                                       |
+| `supabase/`        | Migrations, pgTAP tests, seed                                                                           |
+| `docs/`            | Architecture and ADRs                                                                                   |
 
 **Vocabulary.** Use these words in code, UI and docs.
 
@@ -78,6 +78,7 @@ It doubles as a public portfolio project, so structure and tests should be exemp
 - **Result**: a recorded fact about a participant (wins, a round reached, a finish, a rank).
 - **Scoring rule**: how a kind of result converts to points for a sport in a season.
 - **Season**: one league year (for example 2026-27) with its own rules and playoff scoring mode.
+- **Alert**: a push notification or email the league sends a member about an event.
 
 **Commands** (run with pnpm)
 

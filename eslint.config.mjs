@@ -100,6 +100,7 @@ export default defineConfig([
       "src/app/layout.tsx",
       "src/app/manifest.ts",
       "src/app/icon.tsx",
+      "src/app/push-badge/route.tsx",
       "src/app/apple-icon.tsx",
       "src/app/opengraph-image.tsx",
       // Email clients can't read CSS variables; the palette mirrors the tokens with literals.

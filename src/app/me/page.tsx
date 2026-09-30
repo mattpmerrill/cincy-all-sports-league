@@ -1,20 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { signOutAction } from "@/features/auth/actions";
 import { requireUserOrRedirect } from "@/features/auth/guards";
 import { claimFormPath, preselectedTeamId } from "@/features/claims/claim-links";
 import { ClaimTeamPanel } from "@/features/claims/components/claim-team-panel";
 import { getClaimsService } from "@/features/claims/claims.server";
+import { AlertsSection } from "@/features/push/components/alerts-section";
+import { loadPushSettings } from "@/features/push/push.server";
 import { AvatarEditor } from "@/features/profile/components/avatar-editor";
 import { DisplayNameForm } from "@/features/profile/components/display-name-form";
 import { TradeEmailsForm } from "@/features/profile/components/trade-emails-form";
 import { WeeklyEmailForm } from "@/features/profile/components/weekly-email-form";
 import { getProfileService } from "@/features/profile/profile.server";
 import { isAdminRole } from "@/domain/membership/membership";
+import { Alert } from "@/ui/alert";
 import { Badge } from "@/ui/badge";
 import { PageHeader, PageMain, PageSection } from "@/ui/page";
-import { SubmitButton } from "@/ui/submit-button";
 import { UserAvatar } from "@/ui/user-avatar";
+import { ProfileSignOutButton } from "../account-controls";
+import { pushActions } from "../push-actions";
 import {
   claimTeamAction,
   removeAvatarAction,
@@ -31,24 +34,16 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
   // Keep the picked team through sign-in, so a claim link from the leaderboard still lands on it.
   const user = await requireUserOrRedirect(typeof team === "string" ? claimFormPath(team) : "/me");
   const profileService = await getProfileService();
-  const [{ state, claimable }, weeklyEmail, tradeEmails] = await Promise.all([
+  const [{ state, claimable }, weeklyEmail, tradeEmails, pushSettings] = await Promise.all([
     getClaimsService().then((service) => service.getMyClaims(user.id)),
     profileService.getWeeklyEmail(user),
     profileService.getTradeEmails(user),
+    loadPushSettings(user),
   ]);
 
   return (
     <PageMain>
-      <PageHeader
-        title="You"
-        actions={
-          <form action={signOutAction}>
-            <SubmitButton variant="outline" className="h-9" pendingLabel="Signing out...">
-              Sign out
-            </SubmitButton>
-          </form>
-        }
-      />
+      <PageHeader title="You" actions={<ProfileSignOutButton />} />
 
       <div className="flex items-center gap-4">
         <UserAvatar displayName={user.displayName} avatarUrl={user.avatarUrl} size="lg" />
@@ -91,6 +86,18 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
       </PageSection>
 
       <PageSection
+        title="Push alerts"
+        description="Alerts on your phone or computer, even when the app is closed."
+      >
+        {pushSettings.ok ? (
+          <AlertsSection settings={pushSettings.value} actions={pushActions} />
+        ) : (
+          // A failed read costs this section only: the rest of the page, Sign out included, stays.
+          <Alert variant="error">{pushSettings.error.message}</Alert>
+        )}
+      </PageSection>
+
+      <PageSection
         title="Weekly email"
         description="Standings and the biggest movers, every Monday morning."
       >
@@ -98,7 +105,7 @@ export default async function MePage({ searchParams }: PageProps<"/me">) {
       </PageSection>
 
       <PageSection
-        title="Trade alerts"
+        title="Trade emails"
         description="An email when someone makes an offer on your players, and when your offers are answered."
       >
         <TradeEmailsForm optedIn={tradeEmails} action={setTradeEmailsAction} />

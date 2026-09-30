@@ -1,12 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Message } from "@/domain/feed";
-import type { Actor } from "@/domain/membership/membership";
+import type { Message, ReactionRow } from "@/domain/feed";
+import type { PushAlert, PushNotifier } from "@/domain/push";
+import { createLogger } from "@/lib/logger";
 import { err, ok } from "@/lib/result";
-import { createFeedService, type FeedDeps } from "./feed.service";
+import { createFeedService, type FeedActor, type FeedDeps } from "./feed.service";
 
-const member: Actor = { id: "u-member", role: "member" };
-const other: Actor = { id: "u-other", role: "member" };
-const admin: Actor = { id: "u-admin", role: "admin" };
+const member: FeedActor = { id: "u-member", role: "member", displayName: "Member" };
+const other: FeedActor = { id: "u-other", role: "member", displayName: "Other" };
+const admin: FeedActor = { id: "u-admin", role: "admin", displayName: "Admin" };
 
 const message = (over: Partial<Message> = {}): Message => ({
   id: "m1",
@@ -25,6 +26,9 @@ function setup(
     owners?: string[];
     stored?: Message[];
     insert?: FeedDeps["messages"]["insertMember"];
+    add?: FeedDeps["reactions"]["add"];
+    notifier?: PushNotifier;
+    reactionRows?: ReactionRow[];
   } = {},
 ) {
   const owners = new Set(opts.owners ?? [member.id, other.id]);
@@ -34,23 +38,48 @@ function setup(
     opts.insert ??
       (async (input) => ok(message({ id: "new", body: input.body, parentId: input.parentId }))),
   );
-  const add = vi.fn<FeedDeps["reactions"]["add"]>(async () => ok(null));
+  const add = vi.fn<FeedDeps["reactions"]["add"]>(opts.add ?? (async () => ok(null)));
   const remove = vi.fn<FeedDeps["reactions"]["remove"]>(async () => ok(null));
+  const getById = vi.fn<FeedDeps["messages"]["getById"]>(
+    async (id) => stored.find((m) => m.id === id) ?? null,
+  );
+  const listForMessages = vi.fn<FeedDeps["reactions"]["listForMessages"]>(
+    async () => opts.reactionRows ?? [],
+  );
+  // Records the deferred builds without running them, like `after()` before the response ends.
+  const builds: Parameters<PushNotifier["notify"]>[0][] = [];
+  const notifier: PushNotifier = opts.notifier ?? { notify: (build) => void builds.push(build) };
   const service = createFeedService({
     messages: {
       getActiveSeasonId: async () => "season",
-      getById: async (id) => stored.find((m) => m.id === id) ?? null,
+      getById,
       listPage: async () => ({ messages: stored, hasMore: false }),
       insertMember,
       softDelete,
     },
-    reactions: { listForMessages: async () => [], add, remove },
+    reactions: { listForMessages, add, remove },
     teams: {
       getOwnedBy: async (id) => (owners.has(id) ? { id: "t", name: "T", slug: "t" } : null),
     },
+    notifier,
+    logger: createLogger(),
     now: () => new Date("2026-09-29T13:00:00Z"),
   });
-  return { service, insertMember, softDelete, add, remove };
+  const alertsFrom = async (index: number): Promise<readonly PushAlert[]> => {
+    const build = builds[index];
+    return build ? build() : [];
+  };
+  return {
+    service,
+    insertMember,
+    softDelete,
+    add,
+    remove,
+    getById,
+    listForMessages,
+    builds,
+    alertsFrom,
+  };
 }
 
 describe("posting", () => {
@@ -133,6 +162,129 @@ describe("reactions", () => {
     expect(add).not.toHaveBeenCalled();
     expect((await service.setReaction(member, "m1", "fire", false)).ok).toBe(true);
     expect(remove).toHaveBeenCalledWith({ messageId: "m1", userId: member.id, emoji: "fire" });
+  });
+});
+
+describe("reply alerts", () => {
+  it("builds one alert for the author when someone else replies", async () => {
+    const { service, builds, alertsFrom } = setup();
+    expect((await service.reply(other, "m1", "nice try")).ok).toBe(true);
+    expect(builds).toHaveLength(1);
+    expect(await alertsFrom(0)).toEqual([
+      expect.objectContaining({
+        topic: "feed",
+        recipientId: member.id,
+        dedupeKey: "reply:new",
+        message: expect.objectContaining({ title: "Other replied to your post", body: "nice try" }),
+      }),
+    ]);
+  });
+
+  it("tells nobody about a reply to your own post", async () => {
+    const { service, alertsFrom } = setup();
+    await service.reply(member, "m1", "talking to myself");
+    expect(await alertsFrom(0)).toEqual([]);
+  });
+
+  it("tells nobody about a reply to a league post", async () => {
+    const { service, alertsFrom } = setup({
+      stored: [message({ id: "league", kind: "league", author: null })],
+    });
+    await service.reply(member, "league", "big update");
+    expect(await alertsFrom(0)).toEqual([]);
+  });
+
+  it("does not notify for a top-level post or a refused reply", async () => {
+    const { service, builds } = setup({
+      stored: [message(), message({ id: "gone", deleted: true, body: "" })],
+    });
+    await service.post(member, "hello");
+    await service.reply(member, "gone", "x");
+    expect(builds).toHaveLength(0);
+  });
+
+  it("does not notify when the reply could not be saved", async () => {
+    const { service, builds } = setup({ insert: async () => err("rate_limited", "Easy there.") });
+    await service.reply(other, "m1", "again");
+    expect(builds).toHaveLength(0);
+  });
+});
+
+describe("reaction alerts", () => {
+  it("reads the post and its reactions only when the deferred build runs", async () => {
+    const { service, builds, getById, listForMessages, alertsFrom } = setup({
+      reactionRows: [{ messageId: "m1", userId: other.id, emoji: "fire" }],
+    });
+    getById.mockClear();
+    expect((await service.setReaction(other, "m1", "fire", true)).ok).toBe(true);
+    expect(builds).toHaveLength(1);
+    expect(getById).not.toHaveBeenCalled();
+    expect(listForMessages).not.toHaveBeenCalled();
+
+    const alerts = await alertsFrom(0);
+    expect(getById).toHaveBeenCalledWith("m1");
+    expect(listForMessages).toHaveBeenCalledWith(["m1"]);
+    expect(alerts).toEqual([
+      expect.objectContaining({
+        recipientId: member.id,
+        dedupeKey: "reaction:m1:u-other",
+        message: expect.objectContaining({ title: expect.stringContaining("Other reacted") }),
+      }),
+    ]);
+  });
+
+  it("counts the post's other reactors so a busy post reads as one alert", async () => {
+    const { service, alertsFrom } = setup({
+      reactionRows: [
+        { messageId: "m1", userId: "u-a", emoji: "fire" },
+        { messageId: "m1", userId: "u-b", emoji: "laugh" },
+        { messageId: "m1", userId: other.id, emoji: "fire" },
+        { messageId: "m1", userId: member.id, emoji: "fire" },
+      ],
+    });
+    await service.setReaction(other, "m1", "fire", true);
+    expect(await alertsFrom(0)).toEqual([
+      expect.objectContaining({
+        message: expect.objectContaining({ title: "Other and 2 others reacted to your post" }),
+      }),
+    ]);
+  });
+
+  it("tells nobody about a reaction to your own post, a league post or a removed post", async () => {
+    const { service, alertsFrom } = setup({
+      stored: [
+        message(),
+        message({ id: "league", kind: "league", author: null }),
+        message({ id: "gone", deleted: true, body: "" }),
+      ],
+    });
+    await service.setReaction(member, "m1", "fire", true);
+    await service.setReaction(other, "league", "fire", true);
+    await service.setReaction(other, "gone", "fire", true);
+    expect(await alertsFrom(0)).toEqual([]);
+    expect(await alertsFrom(1)).toEqual([]);
+    expect(await alertsFrom(2)).toEqual([]);
+  });
+
+  it("does not notify when a reaction is removed or the add failed", async () => {
+    const { service, builds } = setup({ add: async () => err("not_found", "Gone.") });
+    await service.setReaction(other, "m1", "fire", false);
+    expect(await service.setReaction(other, "m1", "fire", true)).toMatchObject({ ok: false });
+    expect(builds).toHaveLength(0);
+  });
+});
+
+describe("a throwing notifier", () => {
+  const throwing: PushNotifier = {
+    notify: () => {
+      throw new Error("after() is unavailable");
+    },
+  };
+
+  it("never changes the result of a reply or a reaction", async () => {
+    const { service } = setup({ notifier: throwing });
+    expect((await service.reply(other, "m1", "hi")).ok).toBe(true);
+    expect((await service.setReaction(other, "m1", "fire", true)).ok).toBe(true);
   });
 });
 

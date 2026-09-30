@@ -78,9 +78,10 @@ test("a sport's free agents page renders without Add buttons for a visitor", asy
   await page.goto("/free-agents/mlb");
   await expect(page.getByRole("heading", { level: 1, name: "MLB free agents" })).toBeVisible();
   // Structure only, so it holds whether or not the pool has been loaded: the search box and the
-  // count are there either way (an empty pool reads "Every MLB team is taken.").
+  // count render in both states. An empty pool shows the count ("0 free agents") and also an
+  // "Every MLB team is taken." notice, so only the count is asserted (the notice would match twice).
   await expect(page.getByLabel("Search MLB free agents")).toBeVisible();
-  await expect(page.getByText(/^\d+ free agents?$|^Every MLB team is taken\.$/)).toBeVisible();
+  await expect(page.getByText(/^\d+ free agents?$/)).toBeVisible();
   await expect(page.getByRole("button", { name: /^Add / })).toHaveCount(0);
 });
 

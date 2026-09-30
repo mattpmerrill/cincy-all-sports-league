@@ -18,15 +18,15 @@ and dependency-cruiser blocks import cycles, so violations fail `pnpm check`.
        lib  <----------+   env, Supabase clients, logger, Result
 ```
 
-| Layer          | May import                          | Notes                                                         |
-| -------------- | ----------------------------------- | ------------------------------------------------------------- |
-| `app`          | features, ui, domain, lib           | Routes only. Never touches `data` or `integrations` directly. |
-| `features`     | data, integrations, ui, domain, lib | Never another feature.                                        |
-| `data`         | domain, lib                         | The only place queries are built. Maps rows to domain types.  |
-| `integrations` | domain, lib                         | One adapter per vendor. Only features import them.            |
-| `ui`           | domain, lib                         | Props in, markup out.                                         |
-| `domain`       | domain only                         | No React, Next, Supabase or Node.                             |
-| `lib`          | lib only                            | Generic plumbing with no business meaning.                    |
+| Layer          | May import                          | Notes                                                                                                                                                      |
+| -------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app`          | features, ui, domain, lib           | Routes only. Never touches `data` or `integrations` directly.                                                                                              |
+| `features`     | data, integrations, ui, domain, lib | Never another feature.                                                                                                                                     |
+| `data`         | domain, lib                         | The only place queries are built. Maps rows to domain types.                                                                                               |
+| `integrations` | domain, lib                         | One adapter per vendor (`espn`, `resend`, `webpush`). Only features import them.                                                                           |
+| `ui`           | domain, lib                         | Props in, markup out.                                                                                                                                      |
+| `domain`       | domain only                         | No React, Next, Supabase or Node. Also declares ports (`PushNotifier`, `PushStore`) that `integrations` and `data` implement without importing each other. |
+| `lib`          | lib only                            | Generic plumbing with no business meaning.                                                                                                                 |
 
 ## Request flow
 
@@ -135,6 +135,52 @@ A pg_cron job calls `/api/cron/free-agents?sport=<code>` once per sport at 09:15
 or deletes a participant and a re-run inserts nothing) and then, for college sports, scoring of
 the free agents in chunks. Pro sports, WTA and PGA free agents are scored in the regular
 30-minute sync. Anyone no team holds is a free agent, derived per request (`domain/free-agents`).
+
+## Push flow
+
+Push alerts tell a member about a trade, a reply or reaction, or new points, on a device where they
+turned alerts on. Delivery runs after the response, and a failure never changes an action's result.
+See [ADR-005](decisions/ADR-005-web-push-alerts.md).
+
+```
+trade service | feed service | sync service        (each builds alerts with domain/push builders)
+  -> PushNotifier.notify(build)          port in domain/push; returns at once, never throws
+  -> after()                             the response is already sent; build() runs now
+  -> deliver(alerts)                     integrations/webpush, one correlation id per notify
+       push_targets(recipients, topic)   SQL applies the member's per-topic switch
+       claim (recipient, dedupe key)     push_sends ledger: at most once, before any send
+       sendPush                          encrypt + VAPID JWT (web-push), our fetch, timeouts,
+                                         redirect: "error", retry only 429 and 5xx
+       record                            404/410 or bad address: remove the device
+                                         real rejection (400, 401, 403, 413): count, prune at 5
+                                         outage (429, 5xx, timeout, network): log only
+```
+
+Each triggering feature composes its own notifier in its `*.server.ts`, because features cannot
+import each other. Delivery has a 20 second budget plus a 3 second tail, since `after()` shares the
+route's 60 seconds. With no valid VAPID pair, `deliver` logs once and touches nothing.
+
+The device side is in the browser and stays in `features/push`:
+
+```
+prompt (home, feed, trades) or the /me Alerts section
+  -> enable(): Notification.requestPermission() first, in the click handler
+  -> serial queue: register /sw.js (only here) -> pushManager.subscribe(VAPID public key)
+  -> subscribePushAction: session re-checked, address checked against the push-service
+     allow-list, keys validated -> register_push_subscription (moves the endpoint to this
+     member, keeps the 5 newest devices) -> marker { userId, syncedAt } in localStorage
+on every route change (device sync, only once the session is known):
+  someone else's or no marker ... drop the browser subscription
+  permission denied ............. forget it
+  VAPID key changed ............. re-subscribe silently if permission is granted
+  more than a day since last .... register again (heals a lost row)
+sign out: wrapper in app/ deletes the server row and ends the browser subscription first
+```
+
+The worker (`public/sw.js`) has no `fetch` handler. It validates each payload by hand against the
+same rules as `pushPayloadSchema`, always shows a notification (a generic one for a payload it
+refuses), and opens or focuses a same-origin page on tap. The root layout gets only
+`isPushAvailable()`, which reads the environment and no cookies, so static pages stay static.
 
 ## Conventions
 

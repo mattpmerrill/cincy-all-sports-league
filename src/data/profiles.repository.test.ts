@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { DbClient } from "./db-client";
-import { createProfilesRepository } from "./profiles.repository";
+import { PUSH_TOPIC_COLUMN, createProfilesRepository } from "./profiles.repository";
 
 describe("email opt-ins", () => {
   it("reads the named column, and null when there is no profile", async () => {
@@ -43,5 +43,39 @@ describe("email opt-ins", () => {
       false,
     );
     expect(update).toHaveBeenLastCalledWith({ trade_emails: true });
+  });
+});
+
+describe("push switches", () => {
+  const db = (data: unknown) => {
+    const select = vi.fn();
+    const client = {
+      from: () => ({
+        select: (columns: string) => {
+          select(columns);
+          return { eq: () => ({ maybeSingle: async () => ({ data, error: null }) }) };
+        },
+      }),
+    } as unknown as DbClient;
+    return { select, repo: createProfilesRepository(client) };
+  };
+
+  it("reads all three columns in one select and maps them to topics", async () => {
+    const { select, repo } = db({ push_trades: true, push_feed: false, push_scores: true });
+    expect(await repo.getPushTopics("u1")).toEqual({ trades: true, feed: false, scores: true });
+    expect(select).toHaveBeenCalledTimes(1);
+    expect(select).toHaveBeenCalledWith("push_trades, push_feed, push_scores");
+  });
+
+  it("is null when there is no profile", async () => {
+    expect(await db(null).repo.getPushTopics("u1")).toBeNull();
+  });
+
+  it("names one profiles column per topic", () => {
+    expect(PUSH_TOPIC_COLUMN).toEqual({
+      trades: "push_trades",
+      feed: "push_feed",
+      scores: "push_scores",
+    });
   });
 });
