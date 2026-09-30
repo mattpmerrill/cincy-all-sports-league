@@ -124,14 +124,6 @@ migrations and Matt's go-ahead first (see "Ship checklist" under Operations).
 
 ### Ship checklist for push alerts (needs Matt's explicit go-ahead)
 
-**Do not ship yet: a blocker was found in the last check.** Desktop Chromium's real push address
-is on `jmt17.google.com`, which is not in `PUSH_SERVICE_HOSTS` (`src/domain/push/endpoint.ts`).
-The subscribe action refuses it ("This browser's push service isn't supported yet."), and
-delivery would delete such a device, so alerts cannot be turned on in current Chrome or Chromium.
-Real Chrome on Android very likely uses the same host. Decide how the allow-list should cover it
-(add the host, or a wider Google suffix, with a test), then re-run the real-browser check below.
-Delete this paragraph once it is fixed.
-
 Every step here touches production configuration, the production database or the live site, so
 none of it happens without a yes from Matt at the time.
 
@@ -238,25 +230,33 @@ none of it happens without a yes from Matt at the time.
   - Not built: updating the Home Screen email's "push alerts are coming soon" line
     (`PUSH_ALERTS_NOTE` in `features/announcements/email/home-screen-email.tsx`), and a launch
     announcement with the `pnpm announce:*` runner. Both are follow-ups for after launch.
-  - **Not verified on real devices.** Nothing has been tried on a real iPhone, Android phone,
-    Firefox or Safari, so Apple's push service, real notification taps (the tap handler is covered
-    only by a `node:vm` test) and WebKit's `WindowClient.navigate` are unverified, as are the
-    `/sw.js` headers on Vercel. What was tried: in headed desktop Chromium (a normal profile, not
-    incognito, because Chrome turns the Push API off there), a real `pushManager.subscribe` against
-    Google's push service, then our own sender sending a real score alert built by
-    `scorePushAlerts`. The push service answered 201 and `public/sw.js` showed the notification.
-    That check bypassed the app's Server Actions, because the app refuses that browser's push
-    address (see the blocker under the ship checklist). So the app's own path (subscribe action,
-    a real trade offer, a real reaction) has not run end to end against a real push service. Also
-    seen: the very first subscribe in a fresh Chromium profile took 25 to 33 seconds, longer than
-    the device code's 15 second limit, so the first attempt showed "We couldn't turn alerts on"
-    and worked on the next try. Browser coverage in the e2e suite used an in-memory subscription
-    stub for the "on" path, because headless Chromium has no push service: it proves the order of
-    operations, the real Server Actions, RLS and service-role writes, the marker, sign-out cleanup,
-    silent re-subscribe and every UI state, but not a real push-service subscription through the
-    app. Delivery and encryption are covered by a local mock push service that decrypts the body,
-    and the worker's push handler by a CDP test. The real-device checklist above is what closes
-    the rest of the gap.
+  - A new real push host shows up as a refused host in the logs
+    (`push subscription refused: endpoint host not allowed`). Add it to
+    `src/domain/push/endpoint.ts` deliberately and tightly, with a test. Chrome's numbered
+    `jmt<N>.google.com` hosts are allowed by a pattern; a `google.com` suffix would not be safe.
+  - Chromium's `unsubscribe()` finishes upstream asynchronously. In a local check, an unsubscribe
+    followed at once by a subscribe with a **different key** gave a subscription the push service
+    answered 410 to in about one attempt in four, sometimes for a few seconds and sometimes
+    for good. The same key at once, or a 10 second pause first, always worked. Our re-subscribe
+    after a key rotation does exactly that switch. If it hits the bad case, the device shows "on",
+    the first alert is lost, delivery removes the row on the 410, and the daily refresh (or a test
+    alert that finds no row) registers it again. A short pause or a verifying send after the
+    switch would close it; not built.
+  - **Not verified on real phones.** Nothing has been tried on a real iPhone, Android phone,
+    Firefox or desktop Safari, so Apple's push service, iOS notification taps (the tap handler is
+    covered only by a `node:vm` test) and WebKit's `WindowClient.navigate` are unverified, as are
+    the `/sw.js` headers on Vercel.
+  - What was verified in desktop Chromium (headed, a normal profile, not incognito: Chrome turns
+    the Push API off there) against Google's real push service and the local stack, through the
+    app: turn on from the prompt (22 to 32 seconds for the first subscribe in a fresh profile,
+    which the old 15 second limit would have failed) and from `/me`; a test alert, a trade offer
+    from a second account, a reply, a reaction, and one score alert after a real sync run, each
+    arriving as a notification shown by `public/sw.js` with the right text and link; sign-out
+    deleting the device row at once and a later alert not being sent. Only the desktop Chromium
+    path was proven that way.
+  - The e2e suite uses an in-memory subscription stub for the "on" path (headless Chromium has no
+    push service), plus a CDP test of the worker's push handler and a local mock push service that
+    decrypts the body. The real-device checklist above closes the rest.
 - Profile photos: not yet tried with an iPhone HEIC photo in production (Safari converts to JPEG
   on pick, so it should work).
 - `profiles.avatar_url` is writable by its owner through the API (a column grant that predates

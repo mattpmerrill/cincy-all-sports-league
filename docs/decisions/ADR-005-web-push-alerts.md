@@ -93,9 +93,14 @@ against a device, once per run, and never for a device that took a send in the s
 counted rejections prune the device. Transient problems (429, 5xx, timeout, network) never count:
 a push-service outage must not prune healthy devices. A 404 or 410 removes the device at once, as
 does an address that is not on the allow-list of push services. Delivery refuses to POST to a host
-off `PUSH_SERVICE_HOSTS` (matched as https plus a hostname suffix), so a member cannot point our
-server at an arbitrary address; the same list is enforced when an address is registered, and a
-refused host is logged by host only. If the VAPID pair is missing, malformed, or not actually a
+off the allow-list in `domain/push/endpoint.ts` (https, no login or port, and either a hostname
+suffix from `PUSH_SERVICE_HOSTS` or a full-hostname match on `PUSH_SERVICE_HOST_PATTERNS`), so a
+member cannot point our server at an arbitrary address. `isAllowedPushEndpoint` is the single
+entry point: the action's schema, the registration check and delivery all call it. A refused host
+is logged by host only. Chrome's push service answers on numbered hosts (`jmt17.google.com`), which
+the first version of the list missed, so the pattern list allows exactly `jmt` plus one to three
+digits on `google.com`. A `google.com` suffix would also admit hosts anyone can publish to (Sites,
+Apps Script), which would defeat the guard. If the VAPID pair is missing, malformed, or not actually a
 pair, push reads as "not available": the UI says so, delivery logs the variable names once and
 touches neither the store nor the network, and no other caller of `serverEnv()` is affected. A
 mismatched pair is caught before anything is claimed, because every push service would answer 403
@@ -106,7 +111,11 @@ disable, device sync, sign-out cleanup) runs through `createSerialQueue`, so a s
 overlaps an unsubscribe and a background check never runs between `pushManager.subscribe` and the
 marker write. `Notification.requestPermission()` is the first call in the click handler, before
 the queue, because Safari ties the prompt to the tap. Every browser or server call is bounded so
-one hung call cannot wedge the page. A localStorage marker (`cincy:push-device`, holding the user id
+one hung call cannot wedge the page: 15 seconds for a server call, 45 seconds for the browser's
+`pushManager.subscribe` (the first one in a fresh Chromium profile was measured at 22 to 33
+seconds, while registering with Google's push service), and a queue release of 60 seconds so a
+slow subscribe is never released early. A subscription that arrives after its turn-on gave up is
+ended, unless a retry has registered it. A localStorage marker (`cincy:push-device`, holding the user id
 and the last sync time) is the only link between a browser subscription and a member; a
 subscription with no marker, or with someone else's, is dropped. The route-change check refreshes
 the server row at most once a day. **Sign-out deletes the server row immediately**: an app-level
@@ -142,6 +151,9 @@ push services.
 - `web-push` is bundled only for the routes that send. Next registers every Server Action for every
   route, so a static route's server graph still lists the `web-push` chunk; it is never evaluated
   there (measured with a sentinel), and the client bundle contains none of it.
+
+- A new real push host shows up as a refused host in the logs. Add it to the allow-list
+  deliberately and as tightly as the two lists allow, with a test.
 
 ### Known limits
 
