@@ -20,7 +20,9 @@
     "data:resolve": "tsx scripts/resolve-espn-ids.ts",
     "make-admin": "tsx --env-file=.env.local scripts/make-admin.ts",
     "announce:trades": "tsx --env-file=.env.local scripts/send-trades-announcement.ts",
-    "announce:free-agents": "tsx --env-file=.env.local scripts/send-free-agents-announcement.ts"
+    "announce:free-agents": "tsx --env-file=.env.local scripts/send-free-agents-announcement.ts",
+    "announce:home-screen": "tsx --env-file=.env.local scripts/send-home-screen-announcement.ts",
+    "email:visuals": "tsx scripts/render-email-visuals.ts"
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",

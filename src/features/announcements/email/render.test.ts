@@ -1,6 +1,13 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FREE_AGENTS_NOTES, FREE_AGENTS_STEPS } from "./free-agents-launch-email";
-import { renderFreeAgentsLaunchEmail, renderTradesLaunchEmail } from "./render";
+import { ANDROID_STEPS, HOME_SCREEN_TIPS, IPHONE_STEPS, imageUrl } from "./home-screen-email";
+import {
+  renderFreeAgentsLaunchEmail,
+  renderHomeScreenEmail,
+  renderTradesLaunchEmail,
+} from "./render";
 
 const siteUrl = "https://www.cincysports.xyz";
 
@@ -91,6 +98,43 @@ describe("renderFreeAgentsLaunchEmail", () => {
       expect(output).not.toContain("\u2014");
       expect(output).not.toContain("\u2013");
       expect(output.toLowerCase()).not.toContain("waiver");
+    }
+  });
+});
+
+describe("renderHomeScreenEmail", () => {
+  const props = { displayName: "Coop", siteUrl };
+  const steps = [...IPHONE_STEPS, ...ANDROID_STEPS];
+
+  it("links a hosted picture for the hero and every step, each with alt text", async () => {
+    const { html } = await renderHomeScreenEmail(props);
+    expect(html).toContain(imageUrl(siteUrl, "hero"));
+    for (const step of steps) {
+      expect(html).toContain(imageUrl(siteUrl, step.image));
+      expect(step.alt.length).toBeGreaterThan(10);
+    }
+  });
+
+  it("only links pictures that exist in public/email, so nobody gets a broken image", () => {
+    const files = ["hero", ...steps.map((s) => s.image)].map((id) =>
+      path.join(process.cwd(), "public/email", `home-screen-${id}.png`),
+    );
+    expect(files.filter((file) => !existsSync(file))).toEqual([]);
+  });
+
+  it("writes every step and tip out in the plain-text version too", async () => {
+    const { text } = await renderHomeScreenEmail(props);
+    for (const step of steps) expect(text).toContain(step.title);
+    for (const tip of HOME_SCREEN_TIPS) expect(text).toContain(tip.lead);
+    expect(text).toContain("PUSH ALERTS ARE COMING SOON");
+    expect(text).toContain(`Open Cincy's League: ${siteUrl}`);
+  });
+
+  it("keeps human copy free of em dashes, in both versions", async () => {
+    const { html, text } = await renderHomeScreenEmail(props);
+    for (const output of [html, text]) {
+      expect(output).not.toContain("\u2014");
+      expect(output).not.toContain("\u2013");
     }
   });
 });

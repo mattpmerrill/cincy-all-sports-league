@@ -6,6 +6,15 @@ import {
   FreeAgentsLaunchEmail,
   type FreeAgentsLaunchEmailProps,
 } from "./free-agents-launch-email";
+import {
+  ANDROID_STEPS,
+  HOME_SCREEN_TIPS,
+  HomeScreenEmail,
+  type HomeScreenEmailProps,
+  type IllustratedStep,
+  IPHONE_STEPS,
+  PUSH_ALERTS_NOTE,
+} from "./home-screen-email";
 import type { LaunchEmailProps, LaunchStep } from "./parts";
 import {
   LAUNCH_NOTES,
@@ -77,4 +86,40 @@ export async function renderFreeAgentsLaunchEmail(
     cta: { label: "Make your first move", path: "/free-agents" },
   });
   return { html, text };
+}
+
+const textSteps = (steps: readonly IllustratedStep[]) =>
+  steps.map((s, i) => `${i + 1}. ${s.title}. ${s.body}`);
+
+/** Same content as the HTML, without the pictures: every step is written out in words. */
+function renderHomeScreenText({ displayName, siteUrl }: HomeScreenEmailProps): string {
+  return [
+    `Hi ${displayName},`,
+    "",
+    "You can add Cincy's League to your phone's Home Screen so it opens full screen, like any other app, in one tap. It takes about a minute, and push alerts are coming soon, so it's worth doing now.",
+    "",
+    "ON AN IPHONE (USE SAFARI)",
+    ...textSteps(IPHONE_STEPS),
+    "",
+    "ON AN ANDROID PHONE (USE CHROME)",
+    ...textSteps(ANDROID_STEPS),
+    "",
+    "TIPS AND TRICKS",
+    ...HOME_SCREEN_TIPS.map((t) => `* ${t.lead} ${t.body}`),
+    "",
+    `${PUSH_ALERTS_NOTE.title.toUpperCase()}`,
+    PUSH_ALERTS_NOTE.body,
+    "",
+    `Open Cincy's League: ${siteUrl}`,
+    `Stuck? Ask in the league feed: ${siteUrl}/feed`,
+    "",
+    "You're getting this one-time announcement because you have an account with Cincy's All-Sports League.",
+  ].join("\n");
+}
+
+export async function renderHomeScreenEmail(
+  props: HomeScreenEmailProps,
+): Promise<{ html: string; text: string }> {
+  const html = await render(createElement(HomeScreenEmail, props));
+  return { html, text: renderHomeScreenText(props) };
 }

@@ -1,0 +1,809 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Home Screen email visuals</title>
+<!--
+  Source for public/email/home-screen-*.png. `pnpm email:visuals` screenshots every .panel.
+  Schematic phone screens, not pixel copies: real labels only where Apple's and Google's
+  instructions name them, skeleton bars everywhere else. Colors mirror src/ui/email/palette.ts
+  (emails and their images cannot read the site's CSS variables).
+-->
+<style>
+  :root {
+    --page: #f1f1f3;
+    --ink: #17171b;
+    --brand: #c6011f;
+    --brand-tint: #fdecee;
+    --muted: #63636e;
+    --line: #e5e5ea;
+    --ios-blue: #007aff;
+    --ios-green: #34c759;
+    --sheet: #f2f2f7;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+  }
+  body {
+    background: #fff;
+    font-family: var(--font);
+    color: var(--ink);
+  }
+  svg {
+    display: block;
+  }
+
+  .panel {
+    width: 600px;
+    position: relative;
+    overflow: hidden;
+    background: var(--page);
+    padding: 30px 28px;
+  }
+  .stage {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* A phone screen fragment. The dark ring stands in for the bezel. */
+  .frag {
+    width: 380px;
+    border-radius: 30px;
+    background: #fff;
+    box-shadow:
+      0 0 0 6px #1c1c1e,
+      0 14px 34px rgba(0, 0, 0, 0.22);
+    overflow: hidden;
+    position: relative;
+  }
+  .page {
+    background: #0a0a0b url("app-screen.png") top center / 380px auto no-repeat;
+  }
+  .dim::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  /* The red ring that says "tap here". */
+  .hl {
+    position: relative;
+  }
+  .hl::after {
+    content: "";
+    position: absolute;
+    inset: -7px;
+    border: 3px solid var(--brand);
+    border-radius: inherit;
+    box-shadow: 0 0 0 7px rgba(198, 1, 31, 0.18);
+    pointer-events: none;
+  }
+
+  .sk {
+    height: 10px;
+    border-radius: 5px;
+    background: var(--line);
+  }
+  .icon-app {
+    border-radius: 22%;
+    display: block;
+  }
+
+  /* iOS Safari bar */
+  .ibar {
+    height: 76px;
+    background: rgba(255, 255, 255, 0.97);
+    border-top: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 14px;
+    position: relative;
+    z-index: 2;
+  }
+  .rbtn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--sheet);
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .url {
+    flex: 1;
+    height: 46px;
+    border-radius: 23px;
+    background: var(--sheet);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  /* Pop-over menu and list rows */
+  .menu {
+    position: absolute;
+    right: 14px;
+    bottom: 90px;
+    width: 252px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.3);
+    padding: 6px;
+    z-index: 3;
+  }
+  .row {
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 0 14px;
+    border-radius: 13px;
+    font-size: 17px;
+  }
+  .row.on {
+    background: var(--brand-tint);
+    font-weight: 600;
+  }
+  .row .ic {
+    width: 24px;
+    height: 24px;
+    flex: none;
+  }
+
+  /* iOS share sheet */
+  .sheet {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--sheet);
+    border-radius: 26px 26px 0 0;
+    padding: 16px 14px 18px;
+    z-index: 3;
+  }
+  .shead {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 2px 4px 14px;
+  }
+  .shead .t {
+    flex: 1;
+  }
+  .shead .t b {
+    display: block;
+    font-size: 16px;
+  }
+  .shead .t span {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .xbtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #e3e3e8;
+    display: grid;
+    place-items: center;
+  }
+  .group {
+    background: #fff;
+    border-radius: 16px;
+    padding: 4px;
+  }
+
+  /* iOS Add to Home Screen dialog */
+  .dlg {
+    background: var(--sheet);
+    padding: 16px 16px 22px;
+  }
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 4px 16px;
+    font-size: 17px;
+  }
+  .nav .ttl {
+    font-weight: 700;
+  }
+  .nav .cancel {
+    color: var(--ios-blue);
+  }
+  .nav .add {
+    color: #fff;
+    background: var(--ios-blue);
+    font-weight: 700;
+    border-radius: 16px;
+    padding: 6px 16px;
+  }
+  .field {
+    background: #fff;
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+  }
+  .field .txt {
+    flex: 1;
+  }
+  .field .name {
+    font-size: 18px;
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .field .site {
+    font-size: 15px;
+    color: var(--muted);
+    padding-top: 10px;
+  }
+  .toggle-row {
+    margin-top: 14px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 0 16px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 17px;
+  }
+  .switch {
+    width: 51px;
+    height: 31px;
+    border-radius: 16px;
+    background: var(--ios-green);
+    position: relative;
+  }
+  .switch::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+  }
+
+  /* iPhone Home Screen */
+  .wall {
+    height: 340px;
+    position: relative;
+    background: radial-gradient(120% 90% at 20% 0%, #4b6cb7 0%, #1d2b53 55%, #0d1224 100%);
+    padding: 30px 20px 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px 8px;
+    align-content: start;
+    justify-items: center;
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 74px;
+  }
+  .app .g {
+    width: 62px;
+    height: 62px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.2);
+  }
+  .app .l {
+    width: 46px;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.28);
+  }
+  .app.us .g {
+    background: none;
+  }
+  .app.us span {
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    margin-top: 8px;
+  }
+  .app.us .g img {
+    width: 62px;
+    height: 62px;
+    border-radius: 15px;
+    display: block;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+  }
+
+  .dock {
+    position: absolute;
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+    height: 84px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.22);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 10px;
+  }
+  .dock .g {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* Android Chrome */
+  .abar {
+    height: 64px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 10px 0 14px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    z-index: 2;
+  }
+  .apill {
+    flex: 1;
+    height: 44px;
+    border-radius: 22px;
+    background: #eef0f4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    font-size: 15.5px;
+  }
+  .abtn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    flex: none;
+  }
+  .amenu {
+    position: absolute;
+    right: 12px;
+    top: 58px;
+    width: 262px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.32);
+    padding: 8px;
+    z-index: 3;
+  }
+  .amenu .row {
+    height: 46px;
+    border-radius: 10px;
+    font-size: 16px;
+    justify-content: flex-start;
+  }
+  .adlg {
+    position: absolute;
+    left: 22px;
+    right: 22px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #fff;
+    border-radius: 28px;
+    padding: 24px 22px 18px;
+    z-index: 3;
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+  }
+  .adlg h4 {
+    font-size: 22px;
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .adlg .who {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+  .adlg .who b {
+    display: block;
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .adlg .who span {
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .adlg .btns {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 22px;
+    font-size: 15.5px;
+    font-weight: 600;
+  }
+  .adlg .btns .cancel {
+    color: #1a5fd0;
+  }
+  .adlg .btns .go {
+    background: #1a5fd0;
+    color: #fff;
+    padding: 10px 22px;
+    border-radius: 20px;
+  }
+
+  /* Hero: three plain claims on the left, the real app on the right. */
+  .hero {
+    background: var(--ink)
+      radial-gradient(80% 70% at 78% 100%, rgba(198, 1, 31, 0.55) 0%, rgba(198, 1, 31, 0) 70%);
+    height: 372px;
+    padding: 0;
+  }
+  .hero .chips {
+    position: absolute;
+    left: 28px;
+    top: 84px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .chip {
+    align-self: flex-start;
+    background: #fff;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 16px;
+    padding: 12px 18px;
+    border-radius: 24px;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .chip i {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--brand);
+  }
+  .phone {
+    position: absolute;
+    right: 36px;
+    top: 36px;
+    width: 250px;
+    height: 380px;
+    border-radius: 40px 40px 0 0;
+    border: 10px solid #2a2a2e;
+    border-bottom: none;
+    background: #0a0a0b url("app-screen.png") 0 40px / 230px auto no-repeat;
+    box-shadow: 0 -6px 40px rgba(0, 0, 0, 0.5);
+  }
+  .phone::before {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 62px;
+    height: 18px;
+    border-radius: 9px;
+    background: #000;
+  }
+</style>
+
+<svg width="0" height="0" style="position: absolute">
+  <symbol
+    id="share"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#007aff"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M12 15V3M8 7l4-4 4 4" />
+    <path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />
+  </symbol>
+  <symbol
+    id="plussq"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#17171b"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+    <path d="M12 8v8M8 12h8" />
+  </symbol>
+  <symbol id="dots" viewBox="0 0 24 24" fill="#17171b">
+    <circle cx="5" cy="12" r="2" />
+    <circle cx="12" cy="12" r="2" />
+    <circle cx="19" cy="12" r="2" />
+  </symbol>
+  <symbol id="vdots" viewBox="0 0 24 24" fill="#17171b">
+    <circle cx="12" cy="5" r="2" />
+    <circle cx="12" cy="12" r="2" />
+    <circle cx="12" cy="19" r="2" />
+  </symbol>
+  <symbol
+    id="back"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#17171b"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M15 5l-7 7 7 7" />
+  </symbol>
+  <symbol
+    id="x"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#63636e"
+    stroke-width="2.6"
+    stroke-linecap="round"
+  >
+    <path d="M7 7l10 10M17 7L7 17" />
+  </symbol>
+  <symbol id="lock" viewBox="0 0 24 24" fill="#63636e">
+    <path
+      d="M7 10V8a5 5 0 0 1 10 0v2h1a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-9a1 1 0 0 1 1-1h1zm2 0h6V8a3 3 0 0 0-6 0v2z"
+    />
+  </symbol>
+  <symbol
+    id="install"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="#17171b"
+    stroke-width="2"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+    <path d="M12 8v7M9 12.5l3 3 3-3" />
+  </symbol>
+</svg>
+
+<!-- Hero -->
+<section class="panel hero" id="hero">
+  <div class="chips">
+    <div class="chip"><i></i>One tap away</div>
+    <div class="chip"><i></i>Full screen, no browser bars</div>
+    <div class="chip"><i></i>No app store needed</div>
+  </div>
+  <div class="phone"></div>
+</section>
+
+<!-- iPhone 1: open the menu -->
+<section class="panel" id="ios-1">
+  <div class="stage">
+    <div class="frag">
+      <div class="page" style="height: 170px"></div>
+      <div class="ibar">
+        <div class="rbtn">
+          <svg width="22" height="22"><use href="#back" /></svg>
+        </div>
+        <div class="url">
+          <svg width="14" height="14"><use href="#lock" /></svg>cincysports.xyz
+        </div>
+        <div class="rbtn hl" style="border-radius: 50%">
+          <svg width="26" height="26"><use href="#dots" /></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- iPhone 2: Share -->
+<section class="panel" id="ios-2">
+  <div class="stage">
+    <div class="frag">
+      <div class="page dim" style="height: 330px"></div>
+      <div class="menu">
+        <div class="row">
+          <span class="sk" style="width: 96px"></span><span class="sk" style="width: 22px"></span>
+        </div>
+        <div class="row">
+          <span class="sk" style="width: 130px"></span><span class="sk" style="width: 22px"></span>
+        </div>
+        <div class="row on hl">
+          <span>Share</span><svg class="ic"><use href="#share" /></svg>
+        </div>
+        <div class="row">
+          <span class="sk" style="width: 110px"></span><span class="sk" style="width: 22px"></span>
+        </div>
+      </div>
+      <div class="ibar">
+        <div class="rbtn">
+          <svg width="22" height="22"><use href="#back" /></svg>
+        </div>
+        <div class="url">
+          <svg width="14" height="14"><use href="#lock" /></svg>cincysports.xyz
+        </div>
+        <div class="rbtn">
+          <svg width="26" height="26"><use href="#dots" /></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- iPhone 3: Add to Home Screen -->
+<section class="panel" id="ios-3">
+  <div class="stage">
+    <div class="frag" style="height: 372px">
+      <div class="page dim" style="height: 372px"></div>
+      <div class="sheet">
+        <div class="shead">
+          <img class="icon-app" src="app-icon.png" width="44" height="44" alt="" />
+          <div class="t"><b>Cincy's League</b><span>cincysports.xyz</span></div>
+          <div class="xbtn">
+            <svg width="14" height="14"><use href="#x" /></svg>
+          </div>
+        </div>
+        <div class="group">
+          <div class="row">
+            <span class="sk" style="width: 120px"></span
+            ><span class="sk" style="width: 22px"></span>
+          </div>
+          <div class="row">
+            <span class="sk" style="width: 150px"></span
+            ><span class="sk" style="width: 22px"></span>
+          </div>
+          <div class="row on hl">
+            <span>Add to Home Screen</span><svg class="ic"><use href="#plussq" /></svg>
+          </div>
+          <div class="row">
+            <span class="sk" style="width: 100px"></span
+            ><span class="sk" style="width: 22px"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- iPhone 4: name it and add -->
+<section class="panel" id="ios-4">
+  <div class="stage">
+    <div class="frag">
+      <div class="dlg">
+        <div class="nav">
+          <span class="cancel">Cancel</span><span class="ttl">Add to Home Screen</span
+          ><span class="add hl">Add</span>
+        </div>
+        <div class="field">
+          <img class="icon-app" src="app-icon.png" width="64" height="64" alt="" />
+          <div class="txt">
+            <div class="name">Cincy's League</div>
+            <div class="site">cincysports.xyz</div>
+          </div>
+        </div>
+        <div class="toggle-row" style="margin-top: 18px">
+          <span>Open as Web App</span>
+          <div class="switch"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- iPhone 5: done -->
+<section class="panel" id="ios-5">
+  <div class="stage">
+    <div class="frag">
+      <div class="wall">
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="app us">
+          <div class="g hl"><img src="app-icon.png" alt="" /></div>
+          <span>Cincy's League</span>
+        </div>
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="app">
+          <div class="g"></div>
+          <div class="l"></div>
+        </div>
+        <div class="dock">
+          <div class="g"></div>
+          <div class="g"></div>
+          <div class="g"></div>
+          <div class="g"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Android 1: open the menu -->
+<section class="panel" id="android-1">
+  <div class="stage">
+    <div class="frag">
+      <div class="abar">
+        <div class="apill">
+          <svg width="16" height="16"><use href="#lock" /></svg>cincysports.xyz
+        </div>
+        <div class="abtn hl">
+          <svg width="26" height="26"><use href="#vdots" /></svg>
+        </div>
+      </div>
+      <div class="page" style="height: 220px"></div>
+    </div>
+  </div>
+</section>
+
+<!-- Android 2: install -->
+<section class="panel" id="android-2">
+  <div class="stage">
+    <div class="frag">
+      <div class="abar">
+        <div class="apill">
+          <svg width="16" height="16"><use href="#lock" /></svg>cincysports.xyz
+        </div>
+        <div class="abtn">
+          <svg width="26" height="26"><use href="#vdots" /></svg>
+        </div>
+      </div>
+      <div class="page dim" style="height: 290px"></div>
+      <div class="amenu">
+        <div class="row"><span class="sk" style="width: 130px"></span></div>
+        <div class="row"><span class="sk" style="width: 100px"></span></div>
+        <div class="row on hl">
+          <svg class="ic"><use href="#install" /></svg><span>Install app</span>
+        </div>
+        <div class="row"><span class="sk" style="width: 118px"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Android 3: confirm -->
+<section class="panel" id="android-3">
+  <div class="stage">
+    <div class="frag" style="height: 300px">
+      <div class="page dim" style="height: 300px"></div>
+      <div class="adlg">
+        <h4>Install app?</h4>
+        <div class="who">
+          <img class="icon-app" src="app-icon.png" width="52" height="52" alt="" />
+          <div><b>Cincy's League</b><span>cincysports.xyz</span></div>
+        </div>
+        <div class="btns"><span class="cancel">Cancel</span><span class="go hl">Install</span></div>
+      </div>
+    </div>
+  </div>
+</section>
