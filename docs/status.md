@@ -282,7 +282,8 @@ none of it happens without a yes from Matt at the time. Run the commands from th
 
 ## Known limits and follow-ups
 
-Feature ideas that are not limits live in [backlog.md](backlog.md).
+Feature ideas that are not limits live in the
+[GitHub project](https://github.com/users/mattpmerrill/projects/2) (see [backlog.md](backlog.md)).
 
 - Trades: offers voided because a player moved in another trade get no email. A team whose offer
   was accepted cannot be deleted on its own mid-season (by design, see ADR-003). The concurrent
