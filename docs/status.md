@@ -178,6 +178,15 @@ Open items, none urgent:
   info when `storeErrors` is above zero. `push delivery ran out of time` (warn) adds the same
   counts. It never logs an endpoint, a key or alert text.
 - Digest test: `/api/cron/weekly-digest?only=<email>` with the `CRON_SECRET` bearer.
+- Replies to league email (2026-10-01): app email (digest, trade alerts, announcements) sends a
+  Reply-To from `DIGEST_REPLY_TO` (set in Vercel Production and `.env.local` to Matt's Gmail; a
+  malformed value drops the header and logs `email Reply-To is off`). Mail sent to
+  `league@cincysports.xyz` itself, including replies to Supabase auth emails (which have no
+  Reply-To setting), is forwarded to Matt's Gmail by ImprovMX: MX `mx1`/`mx2.improvmx.com` and an
+  apex SPF TXT in Vercel DNS, catch-all alias. Resend's sending records on `send.` and
+  `resend._domainkey` are separate. Delivery check: the ImprovMX dashboard logs, or its API
+  (`/v3/domains/cincysports.xyz/logs`, key `IMPROVMX_API_KEY` in `.env.local`). Its DKIM rows read
+  invalid by design: we never send through ImprovMX.
 - A one-off League post in the feed is a row in `messages` with `kind = 'league'`, the active
   `season_id` and an empty payload.
 
