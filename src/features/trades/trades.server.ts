@@ -8,7 +8,7 @@ import { createTradesRepository } from "@/data/trades.repository";
 import { createEmailSender } from "@/integrations/resend";
 import { createPushDelivery, createPushNotifier } from "@/integrations/webpush";
 import { publicEnv } from "@/lib/env";
-import { pushConfig, serverEnv } from "@/lib/env.server";
+import { emailReplyTo, pushConfig, serverEnv } from "@/lib/env.server";
 import { logger, newCorrelationId } from "@/lib/logger";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -47,7 +47,11 @@ function afterResponseNotifier(): TradeNotifier {
           const env = serverEnv();
           await createTradeAlertSender({
             recipients: createTradeRecipientsRepository(createSupabaseAdminClient()),
-            sender: createEmailSender({ apiKey: env.RESEND_API_KEY, from: env.DIGEST_FROM }),
+            sender: createEmailSender({
+              apiKey: env.RESEND_API_KEY,
+              from: env.DIGEST_FROM,
+              replyTo: emailReplyTo(),
+            }),
             renderEmail: renderTradeEmail,
             siteUrl: publicEnv().NEXT_PUBLIC_SITE_URL,
             logger: log,

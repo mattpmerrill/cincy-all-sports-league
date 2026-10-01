@@ -30,6 +30,8 @@ export type EmailSenderOptions = {
   /** Undefined means "not configured": every send returns `email_not_configured`. */
   apiKey: string | undefined;
   from: string;
+  /** Where replies go. Needed when `from` is a send-only address that cannot receive mail. */
+  replyTo?: string;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   timeoutMs?: number;
@@ -82,6 +84,8 @@ export function createEmailSender(options: EmailSenderOptions): EmailSender {
         html: email.html,
         text: email.text,
         headers: email.headers,
+        // Resend's field is snake_case. JSON.stringify drops it when undefined, so unset stays exactly as before.
+        reply_to: options.replyTo,
       });
 
       let last: EmailError = { code: "email_network", message: "Email request failed" };

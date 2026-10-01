@@ -182,3 +182,51 @@ describe("pushConfig", () => {
     log.mockRestore();
   });
 });
+
+describe("emailReplyTo", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  async function load(replyTo: string | undefined) {
+    vi.resetModules();
+    vi.doMock("server-only", () => ({}));
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", valid.NEXT_PUBLIC_SUPABASE_URL);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY", valid.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY);
+    vi.stubEnv("SUPABASE_SECRET_KEY", "sb_secret_x");
+    vi.stubEnv("CRON_SECRET", "c".repeat(16));
+    vi.stubEnv("DIGEST_REPLY_TO", replyTo ?? "");
+    return import("./env.server");
+  }
+
+  it("returns a valid address, trimmed", async () => {
+    const { emailReplyTo } = await load("  commissioner@example.com  ");
+    expect(emailReplyTo()).toBe("commissioner@example.com");
+  });
+
+  it.each([undefined, "", "   "])("reads %j as not set, without a log line", async (value) => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    const { emailReplyTo } = await load(value);
+    expect(emailReplyTo()).toBeUndefined();
+    expect(log).not.toHaveBeenCalled();
+    log.mockRestore();
+  });
+
+  it.each(["Matt <matt-secret@example.com>", "not-an-email-secret"])(
+    "drops a malformed value (%s), keeps serverEnv() working, and logs the name once, never the value",
+    async (bad) => {
+      const log = vi.spyOn(console, "log").mockImplementation(() => {});
+      const { emailReplyTo, serverEnv } = await load(bad);
+      expect(emailReplyTo()).toBeUndefined();
+      expect(emailReplyTo()).toBeUndefined();
+      expect(() => serverEnv()).not.toThrow();
+
+      const lines = log.mock.calls.map((call) => String(call[0]));
+      log.mockRestore();
+      expect(lines).toHaveLength(1);
+      expect(lines[0]).toContain("DIGEST_REPLY_TO");
+      expect(lines[0]).not.toMatch(/secret|example\.com/);
+    },
+  );
+});

@@ -64,20 +64,21 @@ Open http://localhost:3000.
 
 ### Environment variables
 
-| Name                                   | Scope       | Purpose                                                                                                   |
-| -------------------------------------- | ----------- | --------------------------------------------------------------------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | public      | Supabase project URL                                                                                      |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public      | Supabase publishable (anon-level) key; RLS applies                                                        |
-| `NEXT_PUBLIC_SITE_URL`                 | public      | Canonical origin for metadata (default `http://localhost:3000`; production `https://www.cincysports.xyz`) |
-| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | public      | Optional. Google Search Console HTML-tag token; renders the verification meta tag when set                |
-| `SUPABASE_SECRET_KEY`                  | server only | Secret key for the sync job; bypasses RLS                                                                 |
-| `CRON_SECRET`                          | server only | Shared secret guarding the sync and digest routes                                                         |
-| `RESEND_API_KEY`                       | server only | Optional locally. Resend key for the weekly digest; unset means sending returns `email_not_configured`    |
-| `DIGEST_SIGNING_SECRET`                | server only | 32+ chars. Signs unsubscribe links (rotating it breaks links already sent)                                |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | public      | Optional. Web Push public key; push alerts need it and `VAPID_PRIVATE_KEY`                                |
-| `VAPID_PRIVATE_KEY`                    | server only | Optional. Web Push private key. Generate a pair with `pnpm exec web-push generate-vapid-keys --json`      |
-| `VAPID_SUBJECT`                        | server only | Optional. Contact push services see, default `https://www.cincysports.xyz`                                |
-| `DIGEST_FROM`                          | server only | Optional. Sender, default `Cincy's All-Sports League <league@cincysports.xyz>`                            |
+| Name                                   | Scope       | Purpose                                                                                                                                              |
+| -------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | public      | Supabase project URL                                                                                                                                 |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | public      | Supabase publishable (anon-level) key; RLS applies                                                                                                   |
+| `NEXT_PUBLIC_SITE_URL`                 | public      | Canonical origin for metadata (default `http://localhost:3000`; production `https://www.cincysports.xyz`)                                            |
+| `NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION` | public      | Optional. Google Search Console HTML-tag token; renders the verification meta tag when set                                                           |
+| `SUPABASE_SECRET_KEY`                  | server only | Secret key for the sync job; bypasses RLS                                                                                                            |
+| `CRON_SECRET`                          | server only | Shared secret guarding the sync and digest routes                                                                                                    |
+| `RESEND_API_KEY`                       | server only | Optional locally. Resend key for the weekly digest; unset means sending returns `email_not_configured`                                               |
+| `DIGEST_SIGNING_SECRET`                | server only | 32+ chars. Signs unsubscribe links (rotating it breaks links already sent)                                                                           |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | public      | Optional. Web Push public key; push alerts need it and `VAPID_PRIVATE_KEY`                                                                           |
+| `VAPID_PRIVATE_KEY`                    | server only | Optional. Web Push private key. Generate a pair with `pnpm exec web-push generate-vapid-keys --json`                                                 |
+| `VAPID_SUBJECT`                        | server only | Optional. Contact push services see, default `https://www.cincysports.xyz`                                                                           |
+| `DIGEST_FROM`                          | server only | Optional. Sender, default `Cincy's All-Sports League <league@cincysports.xyz>`                                                                       |
+| `DIGEST_REPLY_TO`                      | server only | Optional. Reply-To on all app email, since the sender address cannot receive mail. Unset sends none; a malformed value is ignored and logged by name |
 
 ## Auth setup
 

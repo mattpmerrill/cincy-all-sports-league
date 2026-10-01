@@ -54,6 +54,22 @@ describe("createEmailSender", () => {
     });
   });
 
+  it("sends reply_to when a reply address is configured", async () => {
+    const { sender, fetchImpl } = setup([json(200, { id: "msg_1" })], {
+      replyTo: "commissioner@example.com",
+    });
+    await sender.sendEmail(email);
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toMatchObject({ reply_to: "commissioner@example.com" });
+  });
+
+  it("leaves reply_to out of the body entirely when none is configured", async () => {
+    const { sender, fetchImpl } = setup([json(200, { id: "msg_1" })]);
+    await sender.sendEmail(email);
+    const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    expect(Object.keys(JSON.parse(init.body as string))).not.toContain("reply_to");
+  });
+
   it("fails with email_not_configured and never touches the network without a key", async () => {
     const { sender, fetchImpl } = setup([], { apiKey: undefined });
     const result = await sender.sendEmail(email);

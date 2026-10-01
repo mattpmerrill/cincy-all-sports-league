@@ -10,8 +10,9 @@
  * Members who turned off the weekly email are skipped: they told the league not to email them.
  * Each send carries an idempotency key per member, so a re-run after a partial failure never
  * delivers twice (Resend remembers keys for 24 hours). Reads NEXT_PUBLIC_SUPABASE_URL,
- * SUPABASE_SECRET_KEY, NEXT_PUBLIC_SITE_URL, RESEND_API_KEY and DIGEST_FROM from the environment
- * (pnpm loads .env.local via --env-file), and prints the target project before sending anything.
+ * SUPABASE_SECRET_KEY, NEXT_PUBLIC_SITE_URL, RESEND_API_KEY, DIGEST_FROM and the optional
+ * DIGEST_REPLY_TO from the environment (pnpm loads .env.local via --env-file), and prints the
+ * target project before sending anything.
  */
 import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -46,6 +47,11 @@ const env = z
     NEXT_PUBLIC_SITE_URL: z.url().default("https://www.cincysports.xyz"),
     RESEND_API_KEY: z.string().min(1).optional(),
     DIGEST_FROM: z.string().min(3).default("Cincy's All-Sports League <league@cincysports.xyz>"),
+    // Same variable and rule as the app: the From address cannot receive replies.
+    DIGEST_REPLY_TO: z.preprocess(
+      (v) => v || undefined,
+      z.string().trim().pipe(z.email()).optional(),
+    ),
   })
   .parse(process.env);
 
@@ -91,7 +97,11 @@ async function run({ campaign, subject, render }: Announcement) {
       `${recipients.length} to send (${recipients.filter((m) => owners.has(m.userId)).length} own a team).`,
   );
 
-  const sender = createEmailSender({ apiKey: env.RESEND_API_KEY, from: env.DIGEST_FROM });
+  const sender = createEmailSender({
+    apiKey: env.RESEND_API_KEY,
+    from: env.DIGEST_FROM,
+    replyTo: env.DIGEST_REPLY_TO,
+  });
   const deliver = async (to: string, recipient: Recipient, key: string) => {
     const { html, text } = await render(recipient);
     const result = await sender.sendEmail({ to, subject, html, text, idempotencyKey: key });

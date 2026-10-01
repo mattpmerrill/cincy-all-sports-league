@@ -42,6 +42,29 @@ export function serverEnv(): ServerEnv {
   return cached;
 }
 
+let warnedInvalidReplyTo = false;
+
+/**
+ * The Reply-To for app email, or undefined for none. The From address cannot receive mail, so this
+ * is where replies go. Read apart from `serverEnv()` on purpose, like push: a malformed value
+ * (say the display-name form `Name <a@b.c>`) must drop the header, not make every caller of
+ * `serverEnv()` throw. It is reported once, by NAME only, because the value is a personal address.
+ */
+export function emailReplyTo(): string | undefined {
+  // An empty or blank value means "not set", not "invalid".
+  const raw = process.env.DIGEST_REPLY_TO?.trim();
+  if (!raw) return undefined;
+  const parsed = z.email().safeParse(raw);
+  if (parsed.success) return parsed.data;
+  if (!warnedInvalidReplyTo) {
+    warnedInvalidReplyTo = true;
+    logger.error("email Reply-To is off: invalid environment variable", {
+      names: "DIGEST_REPLY_TO",
+    });
+  }
+  return undefined;
+}
+
 /**
  * Parsed apart from `serverEnv()` on purpose: push is optional, so a malformed VAPID variable must
  * switch push off, not make every caller of `serverEnv()` (sync, trades, digest) throw.
