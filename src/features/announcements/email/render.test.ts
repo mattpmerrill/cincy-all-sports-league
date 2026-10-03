@@ -7,6 +7,7 @@ import { PUSH_ALERT_TYPES, PUSH_ALERTS_NOTES, PUSH_ALERTS_STEPS } from "./push-a
 import {
   renderFreeAgentsLaunchEmail,
   renderHomeScreenEmail,
+  renderProductUpdateEmail,
   renderPushAlertsLaunchEmail,
   renderTradesLaunchEmail,
 } from "./render";
@@ -192,5 +193,37 @@ describe("renderPushAlertsLaunchEmail", () => {
     }
     // Only iPhone and desktop Chrome have been verified; Android and other browsers are "should work".
     expect(text).toContain("should work too");
+  });
+});
+
+describe("renderProductUpdateEmail", () => {
+  it("lists every feature, calls out Papi, and links the Week tab in both versions", async () => {
+    const { html, text } = await renderProductUpdateEmail({
+      displayName: "Coop",
+      hasTeam: true,
+      siteUrl,
+    });
+    for (const title of ["The Week tab", "Team records", "Head to head", "A new slide-out menu"]) {
+      expect(html).toContain(title);
+      expect(text).toContain(title);
+    }
+    expect(html).toContain("Hi Coop,");
+    expect(html).toContain("Papi");
+    expect(text).toContain("Papi");
+    expect(html).toContain(`href="${siteUrl}/week"`);
+    expect(text).toContain(`See this week: ${siteUrl}/week`);
+    expect(html).not.toContain("Claim it on your profile");
+  });
+
+  it("tells a member without a team to claim one, and keeps copy free of em dashes", async () => {
+    const { html, text } = await renderProductUpdateEmail({
+      displayName: "Sam",
+      hasTeam: false,
+      siteUrl,
+    });
+    expect(html).toContain("Claim it on your profile");
+    expect(text).toContain(`${siteUrl}/me`);
+    expect(html).not.toContain("\u2014");
+    expect(text).not.toContain("\u2014");
   });
 });

@@ -16,6 +16,13 @@ import {
 } from "./home-screen-email";
 import type { LaunchEmailProps, LaunchStep } from "./parts";
 import {
+  PRODUCT_UPDATE_FEATURES,
+  PRODUCT_UPDATE_NOTES,
+  ProductUpdateEmail,
+  type ProductUpdateEmailProps,
+  SHOUT_OUT,
+} from "./product-update-email";
+import {
   PUSH_ALERT_TYPES,
   PUSH_ALERTS_NOTES,
   PUSH_ALERTS_STEPS,
@@ -165,4 +172,46 @@ export async function renderPushAlertsLaunchEmail(
 ): Promise<{ html: string; text: string }> {
   const html = await render(createElement(PushAlertsLaunchEmail, props));
   return { html, text: renderPushAlertsText(props) };
+}
+
+/** A feature list, the roll call and notes, so this one does not use the generic launch text. */
+function renderProductUpdateText({
+  displayName,
+  hasTeam,
+  siteUrl,
+}: ProductUpdateEmailProps): string {
+  return [
+    `Hi ${displayName},`,
+    "",
+    "We've been busy. Here's what's new in the app this week.",
+    "",
+    "WHAT'S NEW",
+    ...textSteps(PRODUCT_UPDATE_FEATURES),
+    "",
+    "ROLL CALL",
+    SHOUT_OUT.cheer,
+    "",
+    SHOUT_OUT.shame,
+    "",
+    "GOOD TO KNOW",
+    ...PRODUCT_UPDATE_NOTES.map((n) => `* ${n.lead} ${n.body}`),
+    ...(hasTeam
+      ? []
+      : [
+          "",
+          `You'll need your team to see it on the Week tab. Claim it on your profile: ${siteUrl}/me`,
+        ]),
+    "",
+    `See this week: ${siteUrl}/week`,
+    `Ideas or bugs? Drop them in the league feed: ${siteUrl}/feed`,
+    "",
+    "You're getting this one-time announcement because you have an account with Cincy's All-Sports League.",
+  ].join("\n");
+}
+
+export async function renderProductUpdateEmail(
+  props: ProductUpdateEmailProps,
+): Promise<{ html: string; text: string }> {
+  const html = await render(createElement(ProductUpdateEmail, props));
+  return { html, text: renderProductUpdateText(props) };
 }
