@@ -23,6 +23,7 @@
     "announce:free-agents": "tsx --env-file=.env.local scripts/send-free-agents-announcement.ts",
     "announce:home-screen": "tsx --env-file=.env.local scripts/send-home-screen-announcement.ts",
     "announce:push-alerts": "tsx --env-file=.env.local scripts/send-push-alerts-announcement.ts",
+    "announce:product-update": "tsx --env-file=.env.local scripts/send-product-update-announcement.ts",
     "email:visuals": "tsx scripts/render-email-visuals.ts"
   },
   "dependencies": {
