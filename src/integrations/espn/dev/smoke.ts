@@ -42,6 +42,14 @@ async function records() {
       console.log(`  ${name.padEnd(9)} ${r?.wins}-${r?.losses}-${r?.ties}`);
     }
   }
+  // The otLosses stat name is unconfirmed (the NHL fixture is hand-built): all zeros here while
+  // the season is under way means ESPN calls it something else.
+  const nhl = await fetchTeamRecords("nhl", 2026);
+  if (show("nhl records", nhl) && nhl.ok) {
+    for (const r of nhl.value.slice(0, 5)) {
+      console.log(`  nhl ${r.espnTeamId.padEnd(4)} ${r.wins}-${r.losses}-${r.otLosses}`);
+    }
+  }
   const mls = await fetchTeamRecords("mls", 2026, { espnTeamIds: ["182"] });
   if (show("mls records", mls) && mls.ok) console.log("  mls 182", JSON.stringify(mls.value));
   const cbb = await fetchTeamRecords("ncaab", 2026, { espnTeamIds: ["12", "2132", "150"] });
