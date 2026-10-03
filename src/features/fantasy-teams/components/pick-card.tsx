@@ -2,6 +2,7 @@ import { ChevronDown } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { formatPoints } from "@/domain/league";
 import { ParticipantImage } from "@/ui/participant-image";
+import { RecordText } from "@/ui/record-line";
 import { SportIcon } from "@/ui/sport-icon";
 import { StatusPill } from "@/ui/status-pill";
 import { cn } from "cn";
@@ -43,6 +44,11 @@ export function PickCard({
             <SportIcon sport={pick.sport} className="size-3.5" />
             {pick.sportName}
           </p>
+          {pick.record ? (
+            <p className="text-xs text-text-muted">
+              <RecordText record={pick.record} />
+            </p>
+          ) : null}
           <StatusPill status={pick.status} />
         </div>
         <p

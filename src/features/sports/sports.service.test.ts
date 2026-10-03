@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createLeagueModelSource } from "@/data/league-model";
-import { leagueData, wins } from "@/domain/league/fixtures";
+import { leagueData, record, wins } from "@/domain/league/fixtures";
 import { createSportsService } from "./sports.service";
 
 const service = () =>
@@ -14,6 +14,7 @@ const service = () =>
             { id: "c" },
           ],
           results: [wins("a-nfl", 2), wins("shared", 5, "wnba")],
+          records: [record("shared", 5, 1), record("a-nfl", 2, 1, 1)],
         }),
       now: () => new Date("2026-09-28T16:00:00Z"),
     }),
@@ -39,6 +40,16 @@ describe("sports service", () => {
       ["b", "shared", "T1"],
       ["c", "c-wnba", "3"],
     ]);
+  });
+});
+
+describe("records on sport rows", () => {
+  it("shows the pick's record on its row, once per team for a shared pick", async () => {
+    const wnba = await service().getSportView("wnba");
+    expect(wnba?.picks.map((p) => p.record?.text)).toEqual(["5-1", "5-1", undefined]);
+    const nfl = await service().getSportView("nfl");
+    expect(nfl?.picks.find((p) => p.teamName === "a")?.record?.text).toBe("2-1-1");
+    expect(nfl?.picks.find((p) => p.teamName === "b")?.record).toBeNull();
   });
 });
 

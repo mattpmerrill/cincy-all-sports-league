@@ -1,6 +1,7 @@
 import type { LeagueModelSource } from "@/data/league-model";
 import { describePickBreakdown, isRosterLocked } from "@/domain/league";
 import type { BreakdownView, OwnerData, SeasonStatus } from "@/domain/league";
+import type { RecordLine } from "@/domain/records";
 import type { RankMovement } from "@/domain/standings";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
 import type { ParticipantKind, SportCode } from "@/domain/sports/sports";
@@ -18,6 +19,8 @@ export type PickView = {
   movable: boolean;
   points: number;
   lines: BreakdownView[];
+  /** Regular-season record, or an athlete's ranking; null while there is nothing to show. */
+  record: RecordLine | null;
 };
 
 export type TeamDetail = {
@@ -58,6 +61,7 @@ export function createFantasyTeamsService({ model }: { model: LeagueModelSource 
             movable: !isRosterLocked(league.sports[pick.sport].status),
             points: pick.credited.total,
             lines: describePickBreakdown(pick),
+            record: pick.record,
           };
         })
         // Earning picks first so the page opens on what is moving the total.

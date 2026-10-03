@@ -4,6 +4,7 @@ import type { SportCode } from "@/domain/sports/sports";
 import { SPORTS } from "@/domain/sports/sports";
 import { ParticipantImage } from "@/ui/participant-image";
 import { RankBadge } from "@/ui/rank-badge";
+import { RecordText } from "@/ui/record-line";
 import { cn } from "cn";
 import type { SportPickView } from "../sports.service";
 
@@ -47,6 +48,11 @@ export function SportPickRow({
             {pick.traded ? `Now with ${pick.participant.name}` : pick.teamName}
             {!pick.traded && isMine ? " (you)" : ""}
           </span>
+          {pick.record ? (
+            <span className="truncate text-xs text-text-muted">
+              <RecordText record={pick.record} />
+            </span>
+          ) : null}
           {detail ? <span className="truncate text-xs text-text-muted">{detail}</span> : null}
         </div>
         <span
