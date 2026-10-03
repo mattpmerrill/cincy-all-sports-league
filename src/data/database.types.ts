@@ -334,6 +334,54 @@ export type Database = {
           },
         ]
       }
+      participant_records: {
+        Row: {
+          created_at: string
+          losses: number
+          ot_losses: number
+          participant_id: string
+          season_id: string
+          ties: number
+          updated_at: string
+          wins: number
+        }
+        Insert: {
+          created_at?: string
+          losses?: number
+          ot_losses?: number
+          participant_id: string
+          season_id: string
+          ties?: number
+          updated_at?: string
+          wins?: number
+        }
+        Update: {
+          created_at?: string
+          losses?: number
+          ot_losses?: number
+          participant_id?: string
+          season_id?: string
+          ties?: number
+          updated_at?: string
+          wins?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "participant_records_participant_id_fkey"
+            columns: ["participant_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "participant_records_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       participant_results: {
         Row: {
           created_at: string
