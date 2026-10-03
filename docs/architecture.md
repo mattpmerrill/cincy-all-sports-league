@@ -136,6 +136,38 @@ or deletes a participant and a re-run inserts nothing) and then, for college spo
 the free agents in chunks. Pro sports, WTA and PGA free agents are scored in the regular
 30-minute sync. Anyone no team holds is a free agent, derived per request (`domain/free-agents`).
 
+## Games flow
+
+The Week page and the team page's "This week" panel read stored games. The games are facts with no
+owner; which fantasy teams care about a game is worked out when the page renders. See
+[ADR-006](decisions/ADR-006-weekly-games-feed.md).
+
+```
+pg_cron (:10 and :40 every hour)  -> POST /api/cron/games?range=live   (yesterday + today)
+pg_cron (09:25 UTC daily)         -> POST /api/cron/games?range=weeks  (this week + next)
+  bearer CRON_SECRET, constant-time check, range parsed with Zod
+  -> refreshGames({ now, range })
+     in-season team sports only (season window touches the days), 3 sports at a time, failures isolated:
+       pro sports ........ ESPN scoreboard, one call per Eastern day (includes the postseason)
+       college sports .... ESPN team schedule, one call per HELD team (whole season in one response)
+       fetchScheduledGames  validates with Zod, maps ESPN status to GameStatus, ScheduledGame facts
+       upsertGames ........ participant ids mapped per sport, only new or changed rows written
+                            (idempotent on sport + ESPN event id)
+     if anything changed: revalidateGames() drops the cached games
+
+page -> getWeek / getTeamWeek (feature service)
+     -> cached league (current picks, season dates) + cached games for the week [from, to)
+     -> domain buildWeekSlate: games by Eastern day, the fantasy teams holding each side,
+        showdowns, per-team counts
+     -> describeStatus / describeGame: "1:00 PM", "17–14", "W 27–24"
+```
+
+The league week (Monday to Sunday, Eastern) belongs to `domain/calendar/week.ts`; a game is on the
+Eastern day it starts, so a 10:30 pm tip-off stays on its own day across both clock changes. The
+page reads two caches, `league` and `games`, so a pick change shows after the league cache turns
+over and a new score after the next refresh. `?week=` outside the season is pulled back into it,
+which also bounds the cache keys.
+
 ## Push flow
 
 Push alerts tell a member about a trade, a reply or reaction, or new points, on a device where they
