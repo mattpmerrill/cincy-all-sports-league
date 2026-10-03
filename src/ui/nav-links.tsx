@@ -1,6 +1,13 @@
 "use client";
 
-import { ArrowLeftRight, BookOpenText, LayoutGrid, MessageSquare, Trophy } from "lucide-react";
+import {
+  ArrowLeftRight,
+  BookOpenText,
+  CalendarDays,
+  LayoutGrid,
+  MessageSquare,
+  Trophy,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -8,6 +15,7 @@ import { cn } from "cn";
 
 const TABS = [
   { href: "/", label: "Standings", icon: Trophy, match: ["/", "/teams"] },
+  { href: "/week", label: "Week", icon: CalendarDays, match: ["/week"] },
   { href: "/feed", label: "Feed", icon: MessageSquare, match: ["/feed"] },
   { href: "/trades", label: "Trades", icon: ArrowLeftRight, match: ["/trades", "/free-agents"] },
   { href: "/sports", label: "Sports", icon: LayoutGrid, match: ["/sports"] },

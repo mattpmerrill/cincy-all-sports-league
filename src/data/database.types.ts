@@ -240,6 +240,109 @@ export type Database = {
           },
         ]
       }
+      games: {
+        Row: {
+          away_external_id: string
+          away_name: string
+          away_participant_id: string | null
+          away_score: number | null
+          away_short_name: string
+          away_winner: boolean | null
+          created_at: string
+          external_id: string
+          home_external_id: string
+          home_name: string
+          home_participant_id: string | null
+          home_score: number | null
+          home_short_name: string
+          home_winner: boolean | null
+          id: string
+          neutral_site: boolean
+          note: string | null
+          season_id: string
+          sport_id: string
+          starts_at: string
+          status: Database["public"]["Enums"]["game_status"]
+          status_detail: string | null
+          time_tbd: boolean
+          updated_at: string
+        }
+        Insert: {
+          away_external_id: string
+          away_name: string
+          away_participant_id?: string | null
+          away_score?: number | null
+          away_short_name: string
+          away_winner?: boolean | null
+          created_at?: string
+          external_id: string
+          home_external_id: string
+          home_name: string
+          home_participant_id?: string | null
+          home_score?: number | null
+          home_short_name: string
+          home_winner?: boolean | null
+          id?: string
+          neutral_site?: boolean
+          note?: string | null
+          season_id: string
+          sport_id: string
+          starts_at: string
+          status?: Database["public"]["Enums"]["game_status"]
+          status_detail?: string | null
+          time_tbd?: boolean
+          updated_at?: string
+        }
+        Update: {
+          away_external_id?: string
+          away_name?: string
+          away_participant_id?: string | null
+          away_score?: number | null
+          away_short_name?: string
+          away_winner?: boolean | null
+          created_at?: string
+          external_id?: string
+          home_external_id?: string
+          home_name?: string
+          home_participant_id?: string | null
+          home_score?: number | null
+          home_short_name?: string
+          home_winner?: boolean | null
+          id?: string
+          neutral_site?: boolean
+          note?: string | null
+          season_id?: string
+          sport_id?: string
+          starts_at?: string
+          status?: Database["public"]["Enums"]["game_status"]
+          status_detail?: string | null
+          time_tbd?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "games_away_participant_fkey"
+            columns: ["away_participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+          {
+            foreignKeyName: "games_home_participant_fkey"
+            columns: ["home_participant_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "participants"
+            referencedColumns: ["id", "sport_id"]
+          },
+          {
+            foreignKeyName: "games_season_id_sport_id_fkey"
+            columns: ["season_id", "sport_id"]
+            isOneToOne: false
+            referencedRelation: "season_sports"
+            referencedColumns: ["season_id", "sport_id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -1303,6 +1406,12 @@ export type Database = {
     Enums: {
       banked_source: "trade" | "free_agent"
       claim_status: "pending" | "approved" | "rejected"
+      game_status:
+        | "scheduled"
+        | "in_progress"
+        | "final"
+        | "postponed"
+        | "canceled"
       message_kind: "member" | "league"
       participant_kind: "team" | "athlete"
       playoff_scoring_mode: "cumulative" | "highest_only"
@@ -1457,6 +1566,13 @@ export const Constants = {
     Enums: {
       banked_source: ["trade", "free_agent"],
       claim_status: ["pending", "approved", "rejected"],
+      game_status: [
+        "scheduled",
+        "in_progress",
+        "final",
+        "postponed",
+        "canceled",
+      ],
       message_kind: ["member", "league"],
       participant_kind: ["team", "athlete"],
       playoff_scoring_mode: ["cumulative", "highest_only"],

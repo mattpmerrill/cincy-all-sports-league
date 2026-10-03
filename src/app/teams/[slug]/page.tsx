@@ -5,6 +5,8 @@ import { getCurrentUser } from "@/features/auth/guards";
 import { PickCard } from "@/features/fantasy-teams/components/pick-card";
 import { TeamHeader } from "@/features/fantasy-teams/components/team-header";
 import { getTeamDetail } from "@/features/fantasy-teams/fantasy-teams.server";
+import { TeamWeekCard } from "@/features/schedule/components/team-week-card";
+import { getTeamWeekOrNull } from "@/features/schedule/schedule.server";
 import { PageMain } from "@/ui/page";
 
 export async function generateMetadata({ params }: PageProps<"/teams/[slug]">): Promise<Metadata> {
@@ -14,7 +16,11 @@ export async function generateMetadata({ params }: PageProps<"/teams/[slug]">): 
 
 export default async function TeamPage({ params }: PageProps<"/teams/[slug]">) {
   const { slug } = await params;
-  const [team, user] = await Promise.all([getTeamDetail(slug), getCurrentUser()]);
+  const [team, user, week] = await Promise.all([
+    getTeamDetail(slug),
+    getCurrentUser(),
+    getTeamWeekOrNull(slug),
+  ]);
   if (!team) notFound();
 
   const isMine = user !== null && team.owner?.id === user.id;
@@ -22,6 +28,9 @@ export default async function TeamPage({ params }: PageProps<"/teams/[slug]">) {
   return (
     <PageMain width="wide">
       <TeamHeader team={team} isMine={isMine} />
+      {/* Above the picks: what is on this week is the first thing a visitor wants to know, and the
+          eleven pick cards below it are a long scroll on a phone. */}
+      {week ? <TeamWeekCard week={week} /> : null}
       <section aria-label="Picks" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {team.picks.map((pick, index) => (
           <PickCard

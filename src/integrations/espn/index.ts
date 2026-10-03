@@ -11,6 +11,12 @@ export {
   type DirectorySkip,
 } from "./directory";
 export { fetchPostseasonStages } from "./postseason";
+export {
+  fetchScheduledGames,
+  type GamesWindow,
+  type ScheduledGamesFeed,
+  type ScheduledGamesRequest,
+} from "./games";
 export { fetchWtaRankings, fetchPgaSeasonStandings } from "./rankings";
 export { fetchMajorResults, TENNIS_MAJOR_LABELS, GOLF_MAJOR_LABELS } from "./majors";
 export {
@@ -27,6 +33,8 @@ export type {
   GolfFinish,
   GolfMajorResult,
   RankedAthlete,
+  ScheduledGame,
+  ScheduledGameSide,
   TeamRecord,
   TennisFinish,
   TennisMajorResult,
