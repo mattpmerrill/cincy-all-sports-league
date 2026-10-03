@@ -34,7 +34,9 @@ export function createEspnResultsProvider(options: EspnClientOptions = {}): Resu
         records: records.value.map((r) => ({
           externalId: r.espnTeamId,
           wins: r.wins,
+          losses: r.losses,
           ties: r.ties,
+          otLosses: r.otLosses,
         })),
       };
 

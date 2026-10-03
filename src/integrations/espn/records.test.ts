@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import mlsStandings from "./__fixtures__/standings-mls-2026.json";
+import nhlStandings from "./__fixtures__/standings-nhl-handbuilt.json";
 import nfl2022 from "./__fixtures__/standings-nfl-2022.json";
 import nfl2026 from "./__fixtures__/standings-nfl-2026.json";
 import arizonaSchedule from "./__fixtures__/schedule-ncaab-arizona-2026.json";
@@ -13,18 +14,57 @@ const byId = (records: ReturnType<typeof recordsFromStandings>, id: string) =>
 describe("recordsFromStandings", () => {
   it("keeps NFL ties (2022 Colts finished 4-12-1)", () => {
     const records = recordsFromStandings(standingsSchema.parse(nfl2022));
-    expect(byId(records, "11")).toEqual({ espnTeamId: "11", wins: 4, losses: 12, ties: 1 });
+    expect(byId(records, "11")).toEqual({
+      espnTeamId: "11",
+      wins: 4,
+      losses: 12,
+      ties: 1,
+      otLosses: 0,
+    });
   });
 
   it("reads MLS draws from ESPN's `ties` stat (Chicago: 12 W, 8 L, 6 D)", () => {
     const records = recordsFromStandings(standingsSchema.parse(mlsStandings));
-    expect(byId(records, "182")).toEqual({ espnTeamId: "182", wins: 12, losses: 8, ties: 6 });
+    expect(byId(records, "182")).toEqual({
+      espnTeamId: "182",
+      wins: 12,
+      losses: 8,
+      ties: 6,
+      otLosses: 0,
+    });
   });
 
   it("matches the 2026-09-28 NFL spot check and defaults a missing ties stat to 0", () => {
     const records = recordsFromStandings(standingsSchema.parse(nfl2026));
     expect(byId(records, "12")).toMatchObject({ wins: 3, losses: 0 });
     expect(byId(records, "24")).toMatchObject({ wins: 0, losses: 3 });
+  });
+});
+
+describe("recordsFromStandings (NHL)", () => {
+  // The NHL fixture is hand-built from ESPN's known standings shape (ESPN was unreachable when it
+  // was written), so this proves our mapping of the `otLosses` stat, not ESPN's feed. Re-record
+  // it with the smoke script before trusting the stat name in production.
+  it("keeps overtime losses apart from regulation losses (3 W, 2 L, 1 OTL)", () => {
+    const records = recordsFromStandings(standingsSchema.parse(nhlStandings));
+    expect(byId(records, "1")).toEqual({
+      espnTeamId: "1",
+      wins: 3,
+      losses: 2,
+      ties: 0,
+      otLosses: 1,
+    });
+  });
+
+  it("reads teams nested two levels deep and keeps a zero-game team as zeros", () => {
+    const records = recordsFromStandings(standingsSchema.parse(nhlStandings));
+    expect(byId(records, "10")).toEqual({
+      espnTeamId: "10",
+      wins: 0,
+      losses: 0,
+      ties: 0,
+      otLosses: 0,
+    });
   });
 });
 
@@ -39,6 +79,7 @@ describe("recordFromSchedule (college)", () => {
       wins: 6,
       losses: 2,
       ties: 0,
+      otLosses: 0,
     });
   });
 
@@ -106,7 +147,7 @@ describe("fetchTeamRecords", () => {
     const result = await fetchTeamRecords("nfl", 2026, { fetchImpl, espnTeamIds: ["4"] });
     expect(result).toEqual({
       ok: true,
-      value: [{ espnTeamId: "4", wins: 2, losses: 1, ties: 0 }],
+      value: [{ espnTeamId: "4", wins: 2, losses: 1, ties: 0, otLosses: 0 }],
     });
   });
 

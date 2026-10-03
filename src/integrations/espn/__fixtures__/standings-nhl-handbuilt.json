@@ -1,0 +1,36 @@
+{
+  "children": [
+    {
+      "name": "Eastern Conference",
+      "children": [
+        {
+          "name": "Atlantic Division",
+          "standings": {
+            "entries": [
+              {
+                "team": { "id": "1" },
+                "stats": [
+                  { "name": "gamesPlayed", "value": 6.0 },
+                  { "name": "losses", "value": 2.0 },
+                  { "name": "otLosses", "value": 1.0 },
+                  { "name": "points", "value": 7.0 },
+                  { "name": "wins", "value": 3.0 }
+                ]
+              },
+              {
+                "team": { "id": "10" },
+                "stats": [
+                  { "name": "gamesPlayed", "value": 0.0 },
+                  { "name": "losses", "value": 0.0 },
+                  { "name": "otLosses", "value": 0.0 },
+                  { "name": "points", "value": 0.0 },
+                  { "name": "wins", "value": 0.0 }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -55,8 +55,8 @@ const plan = (input: Partial<PlanInput>) => {
 describe("wins and ties", () => {
   const facts = {
     records: [
-      { externalId: "12", wins: 3, ties: 1 },
-      { externalId: "2", wins: 0, ties: 0 },
+      { externalId: "12", wins: 3, losses: 0, ties: 1, otLosses: 0 },
+      { externalId: "2", wins: 0, losses: 0, ties: 0, otLosses: 0 },
     ],
   };
 
@@ -88,7 +88,7 @@ describe("wins and ties", () => {
 
   it("resets an existing row to zero when the record is corrected downward", () => {
     const result = plan({
-      facts: { records: [{ externalId: "12", wins: 0, ties: 0 }] },
+      facts: { records: [{ externalId: "12", wins: 0, losses: 0, ties: 0, otLosses: 0 }] },
       existing: [row({ id: "a", quantity: 2 })],
     });
     expect(result.upserts).toEqual([
@@ -104,7 +104,7 @@ describe("wins and ties", () => {
   it("reports picked participants the feed did not return, and those with no vendor id", () => {
     const result = plan({
       participants: [CHIEFS, BILLS, AMATEUR],
-      facts: { records: [{ externalId: "12", wins: 1, ties: 0 }] },
+      facts: { records: [{ externalId: "12", wins: 1, losses: 0, ties: 0, otLosses: 0 }] },
     });
     expect(result.unmatchedExternalIds).toEqual(["2"]);
     expect(result.missingExternalIdCount).toBe(1);
@@ -112,7 +112,7 @@ describe("wins and ties", () => {
 
   it("ignores teams nobody picked", () => {
     const result = plan({
-      facts: { records: [{ externalId: "99", wins: 10, ties: 0 }] },
+      facts: { records: [{ externalId: "99", wins: 10, losses: 0, ties: 0, otLosses: 0 }] },
     });
     expect(result.upserts).toEqual([]);
   });
@@ -122,7 +122,7 @@ describe("wins and ties", () => {
       rules: RULES.filter((r) => r.kind !== "per_win"),
       participants: [CHIEFS],
       existing: [],
-      facts: { records: [{ externalId: "12", wins: 1, ties: 0 }] },
+      facts: { records: [{ externalId: "12", wins: 1, losses: 0, ties: 0, otLosses: 0 }] },
     });
     expect(result).toMatchObject({ ok: false, error: { code: "missing_rule" } });
   });

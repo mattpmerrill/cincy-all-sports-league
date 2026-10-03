@@ -6,6 +6,8 @@ export type TeamRecord = {
   losses: number;
   /** NFL ties and MLS draws. Always 0 for sports without them. */
   ties: number;
+  /** NHL overtime and shootout losses (not counted in `losses`). Always 0 elsewhere. */
+  otLosses: number;
 };
 
 export type RankedAthlete = {

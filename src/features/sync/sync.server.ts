@@ -2,6 +2,7 @@ import "server-only";
 import { after } from "next/server";
 import { createMessagesRepository } from "@/data/messages.repository";
 import { createLeagueRepository } from "@/data/league.repository";
+import { createParticipantRecordsRepository } from "@/data/participant-records.repository";
 import { createParticipantResultsRepository } from "@/data/participant-results.repository";
 import { createParticipantsRepository } from "@/data/participants.repository";
 import { createPushRepository } from "@/data/push.repository";
@@ -34,6 +35,7 @@ export function getSyncService(options: { espn?: EspnClientOptions } = {}) {
     participants: createParticipantsRepository(db),
     targets: createSportTargetsRepository(db),
     results: createParticipantResultsRepository(db),
+    records: createParticipantRecordsRepository(db),
     runs: createSyncRunsRepository(db),
     snapshots: createStandingsSnapshotsRepository(db),
     league: createLeagueRepository(db),
