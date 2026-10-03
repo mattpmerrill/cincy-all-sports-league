@@ -104,6 +104,28 @@ export function weekDays(weekStart: string): string[] {
   return Array.from({ length: DAYS_PER_WEEK }, (_, i) => addDays(weekStart, i));
 }
 
+/** The first and last week starts a season covers: the Mondays on or before its first and last day. */
+export const seasonWeeks = (
+  firstDay: string,
+  lastDay: string,
+): { first: string; last: string } => ({
+  first: mondayOf(firstDay),
+  last: mondayOf(lastDay),
+});
+
+/**
+ * Pulls a week start into the weeks a season covers: no earlier than the week of its first day
+ * and no later than the week of its last. The Week page uses it so a hand-edited `?week=` cannot
+ * walk off into years with no games (and, because each week is a cache entry, cannot grow the
+ * cache without bound).
+ */
+export function clampWeekStart(weekStart: string, firstDay: string, lastDay: string): string {
+  const { first, last } = seasonWeeks(firstDay, lastDay);
+  if (weekStart < first) return first;
+  if (weekStart > last) return last;
+  return weekStart;
+}
+
 /** True when `value` is a real date that falls on a Monday: the only valid `?week=` value. */
 export const isWeekStart = (value: string): boolean =>
   isIsoDate(value) && weekdayIndex(value) === 0;

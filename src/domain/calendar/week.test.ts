@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   addDays,
+  clampWeekStart,
   easternClock,
   easternDateOf,
   easternMidnight,
@@ -141,6 +142,27 @@ describe("stepWeek and weekDays", () => {
     expect(new Set(weekDays("2027-03-08")).size).toBe(7);
     expect(addDays("2027-03-13", 1)).toBe("2027-03-14");
     expect(addDays("2027-03-14", 1)).toBe("2027-03-15");
+  });
+});
+
+describe("clampWeekStart", () => {
+  // A season from Thu Aug 27 2026 to Mon Nov 15 2027 covers the weeks of Aug 24 2026 .. Nov 15 2027.
+  const clamp = (week: string) => clampWeekStart(week, "2026-08-27", "2027-11-15");
+
+  it("leaves a week inside the season alone", () => {
+    expect(clamp("2026-10-05")).toBe("2026-10-05");
+    expect(clamp("2026-08-24")).toBe("2026-08-24");
+    expect(clamp("2027-11-15")).toBe("2027-11-15");
+  });
+
+  it("pulls an earlier week to the season's first week, which starts on the Monday before day one", () => {
+    expect(clamp("2026-08-17")).toBe("2026-08-24");
+    expect(clamp("1999-01-04")).toBe("2026-08-24");
+  });
+
+  it("pulls a later week back to the week of the season's last day", () => {
+    expect(clamp("2027-11-22")).toBe("2027-11-15");
+    expect(clamp("2099-01-05")).toBe("2027-11-15");
   });
 });
 
