@@ -4,6 +4,7 @@ import {
   Container,
   Head,
   Html,
+  Img,
   Link,
   Preview,
   Section,
@@ -26,23 +27,47 @@ export const PRODUCT_UPDATE_SUBJECT = "New in Cincy's League: the Week tab, reco
 export const PRODUCT_UPDATE_PREHEADER =
   "See every game your teams play this week, their records, and when you're facing a rival.";
 
+/** A screenshot under a feature: a phone-width one shows narrower so it does not fill the screen. */
+type Shot = { image: string; alt: string; width: number };
+export type FeatureStep = LaunchStep & { shot: Shot };
+
+/** Hosted in public/email; captured from the live site with member photos blocked. */
+export const shotUrl = (siteUrl: string, image: string) =>
+  `${siteUrl}/email/product-update-${image}.png`;
+
 /** What shipped. One source for the HTML and plain-text versions. */
-export const PRODUCT_UPDATE_FEATURES: readonly LaunchStep[] = [
+export const PRODUCT_UPDATE_FEATURES: readonly FeatureStep[] = [
   {
     title: "The Week tab",
     body: "A new tab on the bottom bar shows every game this week: your teams' and everyone else's, day by day, with scores as they come in. Tap a team at the top to see only their games, or flip to next week.",
+    shot: {
+      image: "week",
+      alt: "The Week tab, with Monday's NHL games and the team filter",
+      width: 280,
+    },
   },
   {
     title: "Team records",
     body: "Your teams and athletes now show their record, like 10-4 or 53-22-7 in hockey. Look for it under each pick on your team page and on every sport page.",
+    shot: { image: "records", alt: "The NFL page, each pick showing its 3-0 record", width: 552 },
   },
   {
     title: "Head to head",
     body: "When one of your teams plays a team another league member owns, the game gets a Showdown badge on the Week tab. Bragging rights are on the line. (Psst: it's a hint at something bigger coming soon.)",
+    shot: {
+      image: "showdown",
+      alt: "Senators at Bruins with a Showdown badge, a league team on each side",
+      width: 552,
+    },
   },
   {
     title: "A new slide-out menu",
     body: "Tap your picture in the top corner and a menu slides in from the right, with big buttons for My team, your profile, Free agents and Rules. Rules moved off the bottom bar to make room for Week.",
+    shot: {
+      image: "menu",
+      alt: "The slide-out menu open from the right, with Rules and Free agents",
+      width: 280,
+    },
   },
 ];
 
@@ -135,7 +160,10 @@ export function ProductUpdateEmail({ displayName, hasTeam, siteUrl }: ProductUpd
 
             <SectionTitle>What&apos;s new</SectionTitle>
             {PRODUCT_UPDATE_FEATURES.map((feature, i) => (
-              <Step key={feature.title} n={i + 1} step={feature} />
+              <Section key={feature.title}>
+                <Step n={i + 1} step={feature} />
+                <Screenshot siteUrl={siteUrl} shot={feature.shot} />
+              </Section>
             ))}
 
             <SectionTitle>Roll call</SectionTitle>
@@ -232,5 +260,25 @@ export function ProductUpdateEmail({ displayName, hasTeam, siteUrl }: ProductUpd
         </Container>
       </Body>
     </Html>
+  );
+}
+
+function Screenshot({ siteUrl, shot }: { siteUrl: string; shot: Shot }) {
+  return (
+    <Section style={{ padding: "12px 0 8px", textAlign: "center" }}>
+      <Img
+        src={shotUrl(siteUrl, shot.image)}
+        width={String(shot.width)}
+        alt={shot.alt}
+        style={{
+          display: "inline-block",
+          width: "100%",
+          maxWidth: `${shot.width}px`,
+          height: "auto",
+          borderRadius: "12px",
+          border: `1px solid ${palette.line}`,
+        }}
+      />
+    </Section>
   );
 }

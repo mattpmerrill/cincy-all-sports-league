@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { FREE_AGENTS_NOTES, FREE_AGENTS_STEPS } from "./free-agents-launch-email";
 import { ANDROID_STEPS, HOME_SCREEN_TIPS, IPHONE_STEPS, imageUrl } from "./home-screen-email";
+import { PRODUCT_UPDATE_FEATURES, shotUrl } from "./product-update-email";
 import { PUSH_ALERT_TYPES, PUSH_ALERTS_NOTES, PUSH_ALERTS_STEPS } from "./push-alerts-launch-email";
 import {
   renderFreeAgentsLaunchEmail,
@@ -211,6 +212,12 @@ describe("renderProductUpdateEmail", () => {
     expect(html).toContain("Papi");
     expect(text).toContain("Papi");
     expect(html).toContain(`href="${siteUrl}/week"`);
+    for (const f of PRODUCT_UPDATE_FEATURES) {
+      expect(html).toContain(shotUrl(siteUrl, f.shot.image));
+      expect(existsSync(path.join("public/email", `product-update-${f.shot.image}.png`))).toBe(
+        true,
+      );
+    }
     expect(text).toContain(`See this week: ${siteUrl}/week`);
     expect(html).not.toContain("Claim it on your profile");
   });
