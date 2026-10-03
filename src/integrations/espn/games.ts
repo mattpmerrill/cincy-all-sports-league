@@ -119,7 +119,23 @@ const inWindow = (game: ScheduledGame, window: GamesWindow): boolean => {
   return day >= window.from && day <= window.to;
 };
 
-/** Events to games inside the window, each ESPN event once (adjacent days can repeat one). */
+/** ESPN's season type for preseason (exhibition) games. */
+const PRESEASON = 1;
+
+/**
+ * True for an exhibition game. The refresh asks about a sport up to two weeks before its season
+ * starts, which is exactly when the scoreboard is full of preseason games (NBA in October, MLB
+ * spring training in March); they decide nothing and would show on the Week page, even as fake
+ * showdowns. An event without a season type is kept: only an explicit preseason is dropped.
+ */
+export const isPreseason = (event: GameEvent): boolean =>
+  (event.season?.type ?? event.seasonType?.type) === PRESEASON;
+
+/**
+ * Events to games inside the window, each ESPN event once (adjacent days can repeat one).
+ * Preseason games are left out, and are not counted as `skipped`, which is for events we could
+ * not read.
+ */
 export function gamesFromEvents(
   events: readonly GameEvent[],
   window: GamesWindow,
@@ -130,6 +146,7 @@ export function gamesFromEvents(
   for (const event of events) {
     if (seen.has(event.id)) continue;
     seen.add(event.id);
+    if (isPreseason(event)) continue;
     const game = gameFromEvent(event);
     if (!game) skipped += 1;
     else if (inWindow(game, window)) games.push(game);

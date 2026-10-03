@@ -152,6 +152,42 @@ describe("gameFromEvent (hand-built NFL day)", () => {
   });
 });
 
+describe("gamesFromEvents (preseason)", () => {
+  // ESPN's season type: 1 preseason, 2 regular season, 3 postseason. The scoreboard carries it
+  // on `season`, a team schedule on `seasonType`.
+  const asType = <T extends (typeof nflDay)[number]>(event: T, type: number, id: string): T => ({
+    ...event,
+    id,
+    season: { type },
+  });
+  const [first] = nflDay;
+  if (!first) throw new Error("fixture has no events");
+
+  it("drops a scoreboard game ESPN marks as preseason, and does not count it as skipped", () => {
+    const events = [
+      asType(first, 1, "pre-1"),
+      asType(first, 2, "reg-1"),
+      asType(first, 3, "post-1"),
+    ];
+    const { games, skipped } = gamesFromEvents(events, oct4);
+    expect(games.map((g) => g.espnEventId)).toEqual(["reg-1", "post-1"]);
+    expect(skipped).toBe(0);
+  });
+
+  it("drops a team-schedule game ESPN marks as preseason", () => {
+    const window = { from: "2026-10-01", to: "2026-10-31" };
+    const [, second, ...rest] = cfbSchedule;
+    if (!second) throw new Error("fixture too short");
+    const events = [{ ...second, seasonType: { type: 1 } }, ...rest];
+    expect(gamesFromEvents(events, window).games.map((g) => g.espnEventId)).toEqual(["910000003"]);
+  });
+
+  it("keeps an event that carries no season type at all", () => {
+    const bare = { ...first, season: undefined, seasonType: undefined };
+    expect(gamesFromEvents([bare], oct4).games).toHaveLength(1);
+  });
+});
+
 describe("gameFromEvent (hand-built college schedule)", () => {
   const window = { from: "2026-10-01", to: "2026-10-31" };
   const { games } = gamesFromEvents(cfbSchedule, window);

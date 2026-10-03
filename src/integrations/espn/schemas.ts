@@ -256,9 +256,15 @@ const gameCompetition = z.object({
   competitors: z.array(gameCompetitor),
 });
 
+// ESPN's season type: 1 preseason, 2 regular season, 3 postseason (other numbers exist, e.g. the
+// off-season). The scoreboard puts it on `season`, a team schedule on `seasonType`.
+const seasonTypeRef = z.object({ type: z.number().optional() }).optional();
+
 const gameEvent = z.object({
   id,
   date: z.string().optional(),
+  season: seasonTypeRef,
+  seasonType: seasonTypeRef,
   competitions: z.array(gameCompetition),
 });
 
