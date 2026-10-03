@@ -15,6 +15,7 @@ export type { RuleGroup, RuleGroupKind, RuleRow } from "./rules-view";
 export { isRosterLocked, seasonStatus } from "./season-status";
 export type { SeasonStatus } from "./season-status";
 export { createParticipantScorer } from "./participant-scorer";
+export { createRecordLines } from "./record-lines";
 export { BANKED_SOURCES } from "./types";
 export type {
   BankedScoreData,
@@ -23,6 +24,7 @@ export type {
   OwnerData,
   ParticipantData,
   PickData,
+  RecordData,
   ResultData,
   RuleData,
   SnapshotData,

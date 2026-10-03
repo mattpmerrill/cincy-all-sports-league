@@ -73,6 +73,7 @@ const data: LeagueData = {
     { participantId: "p1", ruleId: "win", quantity: 4, eventLabel: "" },
     { participantId: "p2", ruleId: "win", quantity: 4, eventLabel: "" },
   ],
+  records: [],
   snapshots: [],
   lastSyncAt: null,
 };

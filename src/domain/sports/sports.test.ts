@@ -22,6 +22,22 @@ describe("sport catalog", () => {
     expect(athletes.sort()).toEqual(["pga", "wta"]);
   });
 
+  it("gives athletes a ranking and teams a record style, never both", () => {
+    for (const sport of SPORT_LIST) {
+      const isAthlete = sport.participantKind === "athlete";
+      expect(sport.recordStyle === "ranking").toBe(isAthlete);
+      expect(sport.rankingLabel !== null).toBe(isAthlete);
+    }
+  });
+
+  it("gives athletes a ranking and teams a record style, never both", () => {
+    for (const sport of SPORT_LIST) {
+      const isAthlete = sport.participantKind === "athlete";
+      expect(sport.recordStyle === "ranking").toBe(isAthlete);
+      expect(sport.rankingLabel !== null).toBe(isAthlete);
+    }
+  });
+
   it("narrows unknown strings", () => {
     expect(isSportCode("nfl")).toBe(true);
     expect(isSportCode("cricket")).toBe(false);

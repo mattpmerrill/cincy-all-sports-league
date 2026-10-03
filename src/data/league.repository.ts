@@ -11,6 +11,7 @@ import type { Tables } from "./database.types";
 import { createFantasyTeamsRepository } from "./fantasy-teams.repository";
 import { toSportCode as sportCode } from "./mappers";
 import { fetchAllRows } from "./paginate";
+import { createParticipantRecordsRepository } from "./participant-records.repository";
 
 type SeasonRow = Pick<
   Tables<"seasons">,
@@ -64,6 +65,7 @@ export type LeagueRepository = ReturnType<typeof createLeagueRepository>;
 
 export function createLeagueRepository(db: DbClient) {
   const teams = createFantasyTeamsRepository(db);
+  const records = createParticipantRecordsRepository(db);
 
   async function getActiveSeason() {
     const { data, error } = await db
@@ -174,15 +176,26 @@ export function createLeagueRepository(db: DbClient) {
     async load(): Promise<LeagueData | null> {
       const season = await getActiveSeason();
       if (!season) return null;
-      const [sports, rules, leagueTeams, results, snapshots, lastSyncAt] = await Promise.all([
-        listSeasonSports(season.id),
-        listRules(season.id),
-        teams.listWithPicks(season.id),
-        listResults(season.id),
-        listRecentSnapshots(season.id),
-        getLastSyncAt(),
-      ]);
-      return { season, sports, rules, teams: leagueTeams, results, snapshots, lastSyncAt };
+      const [sports, rules, leagueTeams, results, recordRows, snapshots, lastSyncAt] =
+        await Promise.all([
+          listSeasonSports(season.id),
+          listRules(season.id),
+          teams.listWithPicks(season.id),
+          listResults(season.id),
+          records.listForSeason(season.id),
+          listRecentSnapshots(season.id),
+          getLastSyncAt(),
+        ]);
+      return {
+        season,
+        sports,
+        rules,
+        teams: leagueTeams,
+        results,
+        records: recordRows,
+        snapshots,
+        lastSyncAt,
+      };
     },
   };
 }
