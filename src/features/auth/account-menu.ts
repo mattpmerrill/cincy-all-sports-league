@@ -8,6 +8,8 @@ export type AccountMenu = {
   isAdmin: boolean;
   /** The trigger button's accessible name. */
   label: string;
+  /** The member's fantasy team this season, for the menu's "My team" row. */
+  team: { name: string; slug: string } | null;
 };
 
 /**
@@ -19,17 +21,22 @@ export const FALLBACK_ACCOUNT_MENU: AccountMenu = {
   avatarUrl: null,
   isAdmin: false,
   label: "Account menu",
+  team: null,
 };
 
 /** A profile row from the browser, checked because it crosses the network; anything bad falls back. */
-export function toAccountMenu(profile: unknown): AccountMenu {
+export function toAccountMenu(
+  profile: unknown,
+  team: { name: string; slug: string } | null = null,
+): AccountMenu {
   const parsed = accountProfileSchema.safeParse(profile);
-  if (!parsed.success) return FALLBACK_ACCOUNT_MENU;
+  if (!parsed.success) return { ...FALLBACK_ACCOUNT_MENU, team };
   const { displayName, avatarUrl, role } = parsed.data;
   return {
     displayName,
     avatarUrl,
     isAdmin: isAdminRole(role),
     label: `Account menu for ${displayName}`,
+    team,
   };
 }

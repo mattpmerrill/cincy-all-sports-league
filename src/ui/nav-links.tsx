@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  ArrowLeftRight,
-  BookOpenText,
-  CalendarDays,
-  LayoutGrid,
-  MessageSquare,
-  Trophy,
-} from "lucide-react";
+import { ArrowLeftRight, CalendarDays, LayoutGrid, MessageSquare, Trophy } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -19,7 +12,6 @@ const TABS = [
   { href: "/feed", label: "Feed", icon: MessageSquare, match: ["/feed"] },
   { href: "/trades", label: "Trades", icon: ArrowLeftRight, match: ["/trades", "/free-agents"] },
   { href: "/sports", label: "Sports", icon: LayoutGrid, match: ["/sports"] },
-  { href: "/rules", label: "Rules", icon: BookOpenText, match: ["/rules"] },
 ] as const;
 
 export type TabHref = (typeof TABS)[number]["href"];
