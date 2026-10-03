@@ -57,7 +57,8 @@ export function describeStatus(game: Game, options: DescribeOptions = {}): GameL
     case "in_progress":
       return { tone: "live", text: "Live", detail: game.statusDetail };
     case "final":
-      return { tone: "final", text: "Final", detail: finalDetail(game) };
+      // "Final/OT" says it all; "Final" followed by "Final/OT" would say it twice.
+      return { tone: "final", text: finalDetail(game) ?? "Final", detail: null };
     case "postponed":
       return { tone: "off", text: "Postponed", detail: null };
     case "canceled":

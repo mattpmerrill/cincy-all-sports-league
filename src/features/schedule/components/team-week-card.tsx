@@ -1,7 +1,6 @@
 import { Swords } from "lucide-react";
 import Link from "next/link";
 import { ParticipantImage } from "@/ui/participant-image";
-import { cn } from "cn";
 import { weekHref } from "../links";
 import type { TeamWeek } from "../schedule.service";
 import { GameStatus } from "./game-status";
@@ -57,13 +56,7 @@ export function TeamWeekCard({ week }: { week: TeamWeek }) {
                   ) : null}
                 </span>
               </div>
-              <GameStatus
-                line={game.result}
-                className={cn(
-                  "shrink-0 text-right",
-                  game.result.detail && "flex-col items-end gap-0",
-                )}
-              />
+              <GameStatus line={game.result} stacked className="shrink-0 text-right" />
             </li>
           ))}
         </ul>

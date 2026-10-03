@@ -50,7 +50,7 @@ export function GameRow({ game }: { game: GameView }) {
   return (
     <li
       className={cn(
-        "flex flex-col gap-3 rounded-2xl border bg-surface p-3 md:p-4",
+        "flex min-w-0 flex-col gap-3 rounded-2xl border bg-surface p-3 md:p-4",
         game.isShowdown ? "border-brand/60" : "border-line",
       )}
     >
@@ -58,7 +58,7 @@ export function GameRow({ game }: { game: GameView }) {
         <p className="flex min-w-0 items-center gap-1.5 text-xs font-medium text-text-muted">
           <SportIcon sport={game.sport} className="size-3.5 shrink-0" />
           <span className="shrink-0">{SPORTS[game.sport].shortLabel}</span>
-          {context ? <span className="truncate">· {context}</span> : null}
+          {context ? <span className="min-w-0 truncate">· {context}</span> : null}
         </p>
         <GameStatus line={game.line} />
       </div>

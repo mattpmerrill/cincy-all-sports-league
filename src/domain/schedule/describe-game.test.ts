@@ -116,5 +116,11 @@ describe("describeStatus (neutral)", () => {
       ),
     ).toEqual({ tone: "live", text: "Live", detail: "2nd 8:00" });
     expect(describeStatus(final(24, 17))).toMatchObject({ tone: "final", text: "Final" });
+    // ESPN's own wording replaces "Final" rather than following it.
+    expect(describeStatus(final(3, 2, { statusDetail: "Final/OT" }))).toEqual({
+      tone: "final",
+      text: "Final/OT",
+      detail: null,
+    });
   });
 });

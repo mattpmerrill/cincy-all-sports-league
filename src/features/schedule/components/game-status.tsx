@@ -12,21 +12,38 @@ const TONE: Record<GameLineTone, string> = {
   off: "text-gold",
 };
 
-/** A game's start time, live clock, result or "Postponed", in one tone-coded line. */
-export function GameStatus({ line, className }: { line: GameLine; className?: string }) {
+/**
+ * A game's start time, live clock, result or "Postponed", in one tone-coded line. `stacked` puts
+ * the extra detail ("Q3 4:12", "Final/OT") under the headline, for narrow right-hand columns.
+ */
+export function GameStatus({
+  line,
+  stacked = false,
+  className,
+}: {
+  line: GameLine;
+  stacked?: boolean;
+  className?: string;
+}) {
+  const detail = line.detail ? (
+    <span className="font-medium text-text-muted">{line.detail}</span>
+  ) : null;
   return (
     <span
       className={cn(
-        "tabular inline-flex items-center gap-1.5 text-sm font-semibold whitespace-nowrap",
+        "tabular inline-flex text-sm font-semibold whitespace-nowrap",
+        stacked ? "flex-col items-end" : "items-center gap-1.5",
         TONE[line.tone],
         className,
       )}
     >
-      {line.tone === "live" ? (
-        <span aria-hidden="true" className="size-1.5 animate-live rounded-full bg-brand" />
-      ) : null}
-      {line.text}
-      {line.detail ? <span className="font-medium text-text-muted">{line.detail}</span> : null}
+      <span className="inline-flex items-center gap-1.5">
+        {line.tone === "live" ? (
+          <span aria-hidden="true" className="size-1.5 animate-live rounded-full bg-brand" />
+        ) : null}
+        {line.text}
+      </span>
+      {detail}
     </span>
   );
 }
