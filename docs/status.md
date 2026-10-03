@@ -11,6 +11,41 @@ Firefox and desktop Safari are still unchecked. The launch was announced the sam
 post and an email to 17 members (`pnpm announce:push-alerts`; the Home Screen email template now
 says alerts are live).
 
+## On a branch: records and the Week tab (2026-10-03, not shipped)
+
+Branch `claude/team-athlete-weekly-schedule-wyann2`, built in a cloud session. Nothing here is
+live and no migration has been applied to production.
+
+- **Records:** every pick shows its participant's regular-season record (`W-L`, NFL `W-L-T` when
+  there is a tie, NHL `W-L-OTL`, MLS `W-L-D`), or an athlete's ranking ("No. 4 WTA"), on team
+  pages, sport pages and the free-agent list. Sync writes `participant_records` from the same ESPN
+  fetch as wins (no extra calls); a records failure is logged and never fails a sync. Start at
+  `domain/records`, `features/sync/record-plan.ts` and the "Records" section of
+  [architecture](architecture.md).
+- **Week tab** (`/week`, public): the games every team's picks play Monday to Sunday, Eastern time,
+  with showdowns (two league teams on opposite sides), a team filter, a "My team" shortcut and
+  per-team game counts; plus a "This week" panel on each team page. Games live in `games`,
+  refreshed by `/api/cron/games` (`range=live` at :10 and :40, `range=weeks` daily at 09:25 UTC).
+  Team sports only. See [ADR-006](decisions/ADR-006-weekly-games-feed.md) and "Games flow" in
+  [architecture](architecture.md). It is the base for weekly head-to-head matchups.
+
+What the cloud session could not run, so it must happen on Matt's machine before shipping:
+
+1. `supabase start`, then `pnpm test:db` (new `09_records` and `10_games` pgTAP files, never run).
+2. `pnpm db:types`, and expect no diff: the `participant_records`, `games` and `game_status`
+   blocks in `database.types.ts` were written by hand in the generator's format.
+3. Live ESPN check of the hand-built fixtures: `pnpm tsx src/integrations/espn/dev/smoke.ts games`
+   (scoreboard and college schedule shapes, and whether a just-after-midnight game sits on the
+   previous scoreboard day), plus the NHL standings `otLosses` stat name, which nothing has
+   confirmed yet.
+4. Look at `/week`, a team page, a sport page and a free-agent list in a browser on the local
+   stack, signed out and signed in (the "My team" shortcut was never seen).
+5. `pnpm build` and `pnpm test:e2e` (new `/week` smoke test).
+6. Ship: `supabase db push --linked --dry-run`, then without `--dry-run` (two tables, an enum and
+   two pg_cron jobs that reuse the `cron_secret` vault secret), then merge to `main`. The league
+   cache key moved to `v4`. To fill the Week page at once instead of waiting for 09:25 UTC:
+   `curl -X POST -H "Authorization: Bearer <CRON_SECRET>" "https://www.cincysports.xyz/api/cron/games?range=weeks"`.
+
 ## While it rests (from 2026-09-30)
 
 The trades, free agents, Home Screen how-to and push alerts work all shipped in the 48 hours to
@@ -285,6 +320,15 @@ none of it happens without a yes from Matt at the time. Run the commands from th
 Feature ideas that are not limits live in the
 [GitHub project](https://github.com/users/mattpmerrill/projects/2) (see [backlog.md](backlog.md)).
 
+- Records and the Week tab (on the branch above):
+  - `LeagueData.records` carries every record of the season, free agents included (about 1,450
+    small rows, roughly 150 kB as JSON), because the free-agent board scores from the same data.
+    Re-check the cached item size with the results bullet below.
+  - An athlete ranked outside every `final_rank_band` has no result, so shows no ranking line.
+  - Golf and tennis tournaments are not on the Week page (team sports only, ADR-006).
+  - A newly picked college team shows its games after the next live refresh (pro leagues store
+    every game, so a pro pick shows at once). A game ESPN deletes outright is never removed.
+  - Six nav tabs fit a 360px phone; at 320px "Standings" overflows its slot by about 1.5px.
 - Trades: offers voided because a player moved in another trade get no email. A team whose offer
   was accepted cannot be deleted on its own mid-season (by design, see ADR-003). The concurrent
   accept path is designed for (lock order, typed `busy` error) but not load tested.

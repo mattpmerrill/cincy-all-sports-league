@@ -2,6 +2,7 @@ import type { LeagueModelSource } from "@/data/league-model";
 import type { OwnerData, ParticipantData, SeasonStatus } from "@/domain/league";
 import { describePickBreakdown } from "@/domain/league";
 import type { BreakdownView, SportPickRow } from "@/domain/league";
+import type { RecordLine } from "@/domain/records";
 import { SPORTS, SPORT_CODES } from "@/domain/sports/sports";
 import type { ParticipantKind, SportCode } from "@/domain/sports/sports";
 
@@ -31,6 +32,8 @@ export type SportPickView = {
   traded: boolean;
   points: number;
   lines: BreakdownView[];
+  /** The current participant's record or ranking; null while there is nothing to show. */
+  record: RecordLine | null;
 };
 
 export type SportView = SportSummary & { picks: SportPickView[] };
@@ -94,6 +97,7 @@ export function createSportsService({ model }: { model: LeagueModelSource }) {
           traded: isTraded(row),
           points: row.credited.total,
           lines: describePickBreakdown(row),
+          record: row.record,
         })),
       };
     },

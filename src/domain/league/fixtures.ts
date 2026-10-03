@@ -5,6 +5,7 @@ import type {
   BankedSource,
   LeagueData,
   ParticipantData,
+  RecordData,
   ResultData,
   SnapshotData,
   TeamData,
@@ -49,6 +50,7 @@ type TeamSpec = {
 export function leagueData(opts: {
   teams: TeamSpec[];
   results?: ResultData[];
+  records?: RecordData[];
   snapshots?: SnapshotData[];
   startsOn?: Partial<Record<SportCode, string>>;
 }): LeagueData {
@@ -117,10 +119,20 @@ export function leagueData(opts: {
       })),
     })),
     results: opts.results ?? [],
+    records: opts.records ?? [],
     snapshots: opts.snapshots ?? [],
     lastSyncAt: null,
   };
 }
+
+/** `record("a-nfl", 10, 4)`; ties and overtime losses default to none. */
+export const record = (
+  participantId: string,
+  wins: number,
+  losses: number,
+  ties = 0,
+  otLosses = 0,
+): RecordData => ({ participantId, wins, losses, ties, otLosses });
 
 /** `wins("a-nfl", 3)` is three wins; a shared id needs the sport: `wins("shared", 5, "wnba")`. */
 export const wins = (

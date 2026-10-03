@@ -89,3 +89,12 @@ test("an unknown sport on free agents shows a not-found page", async ({ page }) 
   await page.goto("/free-agents/xyz");
   await expect(page.getByRole("heading", { name: "Sport not found" })).toBeVisible();
 });
+
+test("week page renders for a visitor and marks the Week tab current", async ({ page }) => {
+  await page.goto("/week");
+  await expect(page.getByRole("heading", { level: 1, name: "Week" })).toBeVisible();
+  // A fresh local database has no games until the games refresh runs, so this checks the frame
+  // (header, refresh note, tab), not the day list.
+  await expect(page.getByText(/Scores refresh every 30 minutes/)).toBeVisible();
+  await expect(page.locator('a[href="/week"][aria-current="page"]').first()).toBeAttached();
+});

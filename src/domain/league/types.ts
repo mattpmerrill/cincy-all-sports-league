@@ -1,4 +1,5 @@
 import type { PlayoffScoringMode, ScoreTotals, ScoringRule } from "@/domain/scoring";
+import type { ParticipantRecord } from "@/domain/records";
 import type { SportCode } from "@/domain/sports/sports";
 
 /**
@@ -13,6 +14,8 @@ export type LeagueData = {
   rules: RuleData[];
   teams: TeamData[];
   results: ResultData[];
+  /** Regular-season records, one per participant the vendor has reported on (free agents too). */
+  records: RecordData[];
   snapshots: SnapshotData[];
   /** ISO time of the last successful sync, or null when none has finished yet. */
   lastSyncAt: string | null;
@@ -83,5 +86,8 @@ export type ResultData = {
   quantity: number;
   eventLabel: string;
 };
+
+/** A display fact beside the results: never scored (ADR-001). */
+export type RecordData = ParticipantRecord & { participantId: string };
 
 export type SnapshotData = { teamId: string; date: string; rank: number; totalPoints: number };

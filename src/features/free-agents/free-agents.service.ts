@@ -18,7 +18,12 @@ import type {
   FreeAgentMove,
   MoveSideEffects,
 } from "@/domain/free-agents";
-import { buildLeagueModel, createParticipantScorer, isRosterLocked } from "@/domain/league";
+import {
+  buildLeagueModel,
+  createParticipantScorer,
+  createRecordLines,
+  isRosterLocked,
+} from "@/domain/league";
 import type {
   LeagueData,
   LeagueModel,
@@ -28,6 +33,7 @@ import type {
   StandingRow,
 } from "@/domain/league";
 import type { Actor } from "@/domain/membership/membership";
+import type { RecordLine } from "@/domain/records";
 import type { ParticipantScore } from "@/domain/scoring";
 import { SPORT_CODES, SPORTS } from "@/domain/sports/sports";
 import type { SportCode } from "@/domain/sports/sports";
@@ -98,6 +104,8 @@ export type FreeAgentRow = {
   /** The participant's own live points; none of it counts for a team that adds them. */
   points: number;
   statLine: string | null;
+  /** Record or ranking, to help a person choose; null while there is nothing to show. */
+  record: RecordLine | null;
 };
 
 /** Who is looking, and whether they may move. */
@@ -268,6 +276,7 @@ export function createFreeAgentsService(deps: FreeAgentsServiceDeps) {
       // Free agents are scored by the same scorer that scores picks, so the number on the board
       // is the number a move will use as the new baseline.
       const scoreOf = createParticipantScorer(data);
+      const recordOf = createRecordLines(data, scoreOf);
       const freeAgents = freeAgentsIn({
         pool,
         heldIds: heldParticipantIds(model, sport),
@@ -283,6 +292,7 @@ export function createFreeAgentsService(deps: FreeAgentsServiceDeps) {
             logoUrl: p.logoUrl,
             points: score.total,
             statLine: freeAgentStatLine(score),
+            record: recordOf(sport, p.id),
           };
         })
         .sort((a, b) => b.points - a.points || byName(a.name, b.name) || byName(a.id, b.id));

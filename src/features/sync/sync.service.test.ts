@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LeaguePost } from "@/domain/feed";
-import type { LeagueData } from "@/domain/league";
+import type { LeagueData, RecordData } from "@/domain/league";
 import type { PushNotifier } from "@/domain/push";
 import type { ParticipantResultRow, ResultUpsert } from "@/data/participant-results.repository";
 import type { SportTarget } from "@/data/sport-targets.repository";
@@ -122,6 +122,7 @@ const league: LeagueData = {
     },
   ],
   results: [{ participantId: "nfl-p1", ruleId: "win", quantity: 3, eventLabel: "" }],
+  records: [],
   snapshots: [],
   lastSyncAt: null,
 };
@@ -137,6 +138,10 @@ function harness(opts: {
   latest?: Map<string, SyncRunRow>;
   applyChanges?: SyncDeps["results"]["applyChanges"];
   existing?: ParticipantResultRow[];
+  /** Records already stored; the fake keeps what sync writes, so a second run sees it. */
+  storedRecords?: RecordData[];
+  /** Makes every records read or write throw, like a table that is missing or down. */
+  failRecords?: boolean;
   previousRanks?: { teamId: string; rank: number }[];
   moversAlreadyPosted?: boolean;
   leagueData?: LeagueData;
@@ -156,9 +161,16 @@ function harness(opts: {
   const applied: { upserts: readonly ResultUpsert[] }[] = [];
   const factsRequests: FactsRequest[] = [];
   const insertedRows: NewParticipant[][] = [];
+  const recordStore = new Map((opts.storedRecords ?? []).map((r) => [r.participantId, r]));
+  const recordWrites: RecordData[][] = [];
   const facts =
     opts.facts ??
-    (() => Promise.resolve(ok<SportFacts>({ records: [{ externalId: "1", wins: 3, ties: 0 }] })));
+    (() =>
+      Promise.resolve(
+        ok<SportFacts>({
+          records: [{ externalId: "1", wins: 3, losses: 0, ties: 0, otLosses: 0 }],
+        }),
+      ));
 
   const deps: SyncDeps = {
     provider: {
@@ -189,6 +201,18 @@ function harness(opts: {
           applied.push({ upserts });
           return { upserted: upserts.length, deleted: deleteIds.length };
         }),
+    },
+    records: {
+      listForParticipants: async (_season, ids) => {
+        if (opts.failRecords) throw new Error("relation participant_records does not exist");
+        return ids.flatMap((id) => recordStore.get(id) ?? []);
+      },
+      upsertMany: async (_season, rows) => {
+        if (opts.failRecords) throw new Error("relation participant_records does not exist");
+        recordWrites.push([...rows]);
+        for (const row of rows) recordStore.set(row.participantId, row);
+        return rows.length;
+      },
     },
     runs: {
       start: async (sportId) => {
@@ -232,6 +256,8 @@ function harness(opts: {
     leaguePosts,
     factsRequests,
     insertedRows,
+    recordStore,
+    recordWrites,
   };
 }
 
@@ -241,7 +267,9 @@ describe("syncLeague", () => {
     const report = await h.service.syncLeague({ now: NOW });
 
     expect(report).toMatchObject({ correlationId: "corr-1", changed: true, snapshot: "written" });
-    expect(report.sports).toEqual([{ sport: "nfl", status: "succeeded", upserted: 1, deleted: 0 }]);
+    expect(report.sports).toEqual([
+      { sport: "nfl", status: "succeeded", upserted: 1, deleted: 0, recordsWritten: 1 },
+    ]);
     expect(h.runs.finished[0]).toMatchObject({
       status: "succeeded",
       summary: { upserted: 1, correlationId: "corr-1", unmatchedExternalIds: [] },
@@ -264,6 +292,8 @@ describe("syncLeague", () => {
     const h = harness({
       targets: [target("nfl")],
       applyChanges: async () => ({ upserted: 0, deleted: 0 }),
+      // The record is already stored too, so the run has nothing at all to write.
+      storedRecords: [{ participantId: "nfl-p1", wins: 3, losses: 0, ties: 0, otLosses: 0 }],
     });
     const report = await h.service.syncLeague({ now: NOW });
     expect(report).toMatchObject({ changed: false, snapshot: "not_needed" });
@@ -277,7 +307,11 @@ describe("syncLeague", () => {
       facts: (sport) =>
         sport === "nba"
           ? Promise.resolve(err("espn_timeout", "ESPN request failed (espn_timeout)"))
-          : Promise.resolve(ok<SportFacts>({ records: [{ externalId: "1", wins: 2, ties: 0 }] })),
+          : Promise.resolve(
+              ok<SportFacts>({
+                records: [{ externalId: "1", wins: 2, losses: 0, ties: 0, otLosses: 0 }],
+              }),
+            ),
     });
     const report = await h.service.syncLeague({ now: NOW });
 
@@ -600,7 +634,13 @@ const freeAgents = (count: number) => Array.from({ length: count }, (_, i) => fr
 const recordsFor = (request: FactsRequest) =>
   Promise.resolve(
     ok<SportFacts>({
-      records: request.externalIds.map((externalId) => ({ externalId, wins: 2, ties: 0 })),
+      records: request.externalIds.map((externalId) => ({
+        externalId,
+        wins: 2,
+        losses: 0,
+        ties: 0,
+        otLosses: 0,
+      })),
     }),
   );
 
@@ -656,8 +696,8 @@ describe("free agents in the regular run", () => {
         Promise.resolve(
           ok<SportFacts>({
             records: [
-              { externalId: "1", wins: 3, ties: 0 },
-              { externalId: "99", wins: 5, ties: 0 },
+              { externalId: "1", wins: 3, losses: 0, ties: 0, otLosses: 0 },
+              { externalId: "99", wins: 5, losses: 0, ties: 0, otLosses: 0 },
             ],
           }),
         ),
@@ -667,6 +707,144 @@ describe("free agents in the regular run", () => {
     expect(report.changed).toBe(true);
     expect(h.leaguePosts.filter((p) => p.payload.type === "score_update")).toEqual([]);
     expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("participant records", () => {
+  const nhlFacts = (request: FactsRequest) =>
+    Promise.resolve(
+      ok<SportFacts>({
+        records: request.externalIds.map((externalId, i) => ({
+          externalId,
+          wins: 10 + i,
+          losses: 4,
+          ties: 0,
+          otLosses: 2,
+        })),
+      }),
+    );
+
+  it("writes a record for every scored participant, free agents included, from the one fetch", async () => {
+    const h = harness({
+      targets: [
+        target("nhl", {
+          freeAgents: [{ id: "nhl-fa", name: "Free", shortName: "F", externalId: "99" }],
+        }),
+      ],
+      facts: (_sport, request) => nhlFacts(request),
+    });
+    await h.service.syncLeague({ now: NOW });
+
+    expect(h.factsRequests).toHaveLength(1);
+    expect(h.recordWrites).toEqual([
+      [
+        { participantId: "nhl-p1", wins: 10, losses: 4, ties: 0, otLosses: 2 },
+        { participantId: "nhl-fa", wins: 11, losses: 4, ties: 0, otLosses: 2 },
+      ],
+    ]);
+    expect(h.runs.finished[0]).toMatchObject({ summary: { recordsWritten: 2 } });
+  });
+
+  it("is idempotent: a second identical run writes no records and drops no cache", async () => {
+    const h = harness({
+      targets: [target("nhl")],
+      facts: (_sport, request) => nhlFacts(request),
+      // Results are already current, so only records could have changed.
+      applyChanges: async () => ({ upserted: 0, deleted: 0 }),
+    });
+    await h.service.syncLeague({ now: NOW });
+    expect(h.recordWrites).toHaveLength(1);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+
+    const second = await h.service.syncLeague({ now: NOW });
+    expect(h.recordWrites).toHaveLength(1);
+    expect(second.sports[0]?.recordsWritten).toBe(0);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes the cached page when only a record changed (a loss moves no score)", async () => {
+    const h = harness({
+      targets: [target("nhl")],
+      facts: (_sport, request) => nhlFacts(request),
+      applyChanges: async () => ({ upserted: 0, deleted: 0 }),
+      storedRecords: [{ participantId: "nhl-p1", wins: 10, losses: 3, ties: 0, otLosses: 2 }],
+    });
+    const report = await h.service.syncLeague({ now: NOW });
+
+    // Nothing scored, so no standings snapshot or feed post; the new record still has to show.
+    expect(report).toMatchObject({ changed: false, snapshot: "not_needed" });
+    expect(h.snapshotWrites).toEqual([]);
+    expect(h.leaguePosts).toEqual([]);
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("never lets a records failure fail the scoring sync", async () => {
+    const withRecords = harness({ targets: [target("nfl")] });
+    await withRecords.service.syncLeague({ now: NOW });
+
+    const h = harness({ targets: [target("nfl")], failRecords: true });
+    const report = await h.service.syncLeague({ now: NOW });
+
+    expect(report.sports).toEqual([
+      { sport: "nfl", status: "succeeded", upserted: 1, deleted: 0, recordsWritten: 0 },
+    ]);
+    expect(report).toMatchObject({ changed: true, snapshot: "written" });
+    // Scoring is exactly what it is when records work.
+    expect(h.applied).toEqual(withRecords.applied);
+    expect(h.runs.finished[0]).toMatchObject({
+      status: "succeeded",
+      summary: { upserted: 1, recordsFailed: true },
+    });
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("writes records for college free agents through the daily pool job and the pre-move refresh", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(3) })],
+      facts: (_sport, request) => recordsFor(request),
+    });
+    const report = await h.service.refreshFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report.facts).toMatchObject({ status: "succeeded", upserted: 3, recordsWritten: 3 });
+    expect(h.recordStore.get("fa1")).toEqual({
+      participantId: "fa1",
+      wins: 2,
+      losses: 0,
+      ties: 0,
+      otLosses: 0,
+    });
+
+    await h.service.refreshParticipants({ sport: "ncaab", participantIds: ["fa0"], now: NOW });
+    // Already stored and unchanged: the refresh reads, finds nothing new, writes nothing more.
+    expect(h.recordWrites).toHaveLength(1);
+  });
+
+  it("drops the cache for a free-agent run whose only change is a record", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(2) })],
+      facts: (_sport, request) => recordsFor(request),
+      applyChanges: async () => ({ upserted: 0, deleted: 0 }),
+    });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report).toMatchObject({ changed: true, facts: { upserted: 0, recordsWritten: 2 } });
+    expect(h.invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a free-agent chunk's results when its records cannot be written", async () => {
+    const h = harness({
+      targets: [target("ncaab", { freeAgents: freeAgents(70) })],
+      facts: (_sport, request) => recordsFor(request),
+      failRecords: true,
+    });
+    const report = await h.service.syncFreeAgents({ now: NOW, sport: "ncaab" });
+
+    expect(report.facts).toMatchObject({
+      status: "succeeded",
+      upserted: 70,
+      failedChunks: 0,
+      recordsWritten: 0,
+    });
   });
 });
 

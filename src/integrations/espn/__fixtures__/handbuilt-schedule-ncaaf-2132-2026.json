@@ -1,0 +1,145 @@
+{
+  "_comment": "HAND-BUILT from ESPN's known team-schedule shape, not recorded from the live API (ESPN was unreachable when this was written). Replace with a recorded response once dev/smoke.ts can run: pnpm tsx src/integrations/espn/dev/smoke.ts games",
+  "events": [
+    {
+      "id": "910000001",
+      "date": "2026-09-19T16:00Z",
+      "seasonType": { "type": 2, "name": "Regular Season" },
+      "competitions": [
+        {
+          "id": "910000001",
+          "date": "2026-09-19T16:00Z",
+          "neutralSite": false,
+          "timeValid": true,
+          "notes": [],
+          "status": {
+            "type": {
+              "name": "STATUS_FINAL",
+              "state": "post",
+              "completed": true,
+              "shortDetail": "Final"
+            }
+          },
+          "competitors": [
+            {
+              "homeAway": "home",
+              "winner": true,
+              "score": { "value": 38.0, "displayValue": "38" },
+              "team": {
+                "id": "2132",
+                "location": "Cincinnati",
+                "name": "Bearcats",
+                "displayName": "Cincinnati Bearcats",
+                "abbreviation": "CIN"
+              }
+            },
+            {
+              "homeAway": "away",
+              "winner": false,
+              "score": { "value": 14.0, "displayValue": "14" },
+              "team": {
+                "id": "2306",
+                "location": "Kansas State",
+                "name": "Wildcats",
+                "displayName": "Kansas State Wildcats",
+                "abbreviation": "KSU"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "910000002",
+      "date": "2026-10-10T04:00Z",
+      "seasonType": { "type": 2, "name": "Regular Season" },
+      "competitions": [
+        {
+          "id": "910000002",
+          "date": "2026-10-10T04:00Z",
+          "neutralSite": false,
+          "timeValid": false,
+          "notes": [],
+          "status": {
+            "type": {
+              "name": "STATUS_SCHEDULED",
+              "state": "pre",
+              "completed": false,
+              "shortDetail": "10/10 - TBD"
+            }
+          },
+          "competitors": [
+            {
+              "homeAway": "home",
+              "winner": false,
+              "team": {
+                "id": "2116",
+                "location": "UCF",
+                "name": "Knights",
+                "displayName": "UCF Knights",
+                "abbreviation": "UCF"
+              }
+            },
+            {
+              "homeAway": "away",
+              "winner": false,
+              "team": {
+                "id": "2132",
+                "location": "Cincinnati",
+                "name": "Bearcats",
+                "displayName": "Cincinnati Bearcats",
+                "abbreviation": "CIN"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "910000003",
+      "date": "2026-10-17T23:30Z",
+      "seasonType": { "type": 2, "name": "Regular Season" },
+      "competitions": [
+        {
+          "id": "910000003",
+          "date": "2026-10-17T23:30Z",
+          "neutralSite": true,
+          "timeValid": true,
+          "notes": [{ "type": "event", "headline": "Neutral Site Classic" }],
+          "status": {
+            "type": {
+              "name": "STATUS_SCHEDULED",
+              "state": "pre",
+              "completed": false,
+              "shortDetail": "10/17 - 7:30 PM EDT"
+            }
+          },
+          "competitors": [
+            {
+              "homeAway": "home",
+              "winner": false,
+              "team": {
+                "id": "2132",
+                "location": "Cincinnati",
+                "name": "Bearcats",
+                "displayName": "Cincinnati Bearcats",
+                "abbreviation": "CIN"
+              }
+            },
+            {
+              "homeAway": "away",
+              "winner": false,
+              "team": {
+                "id": "251",
+                "location": "Texas",
+                "name": "Longhorns",
+                "displayName": "Texas Longhorns",
+                "abbreviation": "TEX"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

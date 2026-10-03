@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createLeagueModelSource } from "@/data/league-model";
-import { leagueData, wins } from "@/domain/league/fixtures";
+import { leagueData, record, wins } from "@/domain/league/fixtures";
 import { createFantasyTeamsService } from "./fantasy-teams.service";
 
 const service = () =>
@@ -10,6 +10,7 @@ const service = () =>
         leagueData({
           teams: [{ id: "a" }, { id: "b" }],
           results: [wins("a-nfl", 3), wins("a-ncaaf", 4), wins("b-nfl", 1)],
+          records: [record("a-nfl", 10, 4, 1), record("a-nhl", 30, 20, 0, 5)],
           startsOn: { nba: "2026-10-20" },
         }),
       now: () => new Date("2026-09-28T16:00:00Z"),
@@ -34,6 +35,14 @@ describe("getTeamDetail", () => {
     expect(nba?.lines).toEqual([]);
     expect(team?.rankLabel).toBe("1");
     expect(team?.teamCount).toBe(2);
+  });
+
+  it("carries each pick's record in the sport's style, and null where there is none", async () => {
+    const team = await service().getTeamDetail("a");
+    const text = (sport: string) => team?.picks.find((p) => p.sport === sport)?.record?.text;
+    expect(text("nfl")).toBe("10-4-1");
+    expect(text("nhl")).toBe("30-20-5");
+    expect(team?.picks.find((p) => p.sport === "mlb")?.record).toBeNull();
   });
 
   it("marks a pick movable until its season is over", async () => {

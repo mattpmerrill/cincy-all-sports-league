@@ -217,3 +217,61 @@ export const golfScoreboardSchema = z.object({
     }),
   ),
 });
+
+// ---- Games (scoreboard and team schedule share one event shape) -----------------------------
+
+const gameStatusType = z.object({
+  // STATUS_SCHEDULED, STATUS_IN_PROGRESS, STATUS_FINAL, STATUS_POSTPONED, STATUS_CANCELED, ...
+  name: z.string().optional(),
+  // "pre", "in" or "post".
+  state: z.string().optional(),
+  completed: z.boolean().optional(),
+  // "Q3 4:12", "Final/OT", "Postponed"; before the game it is a date string we do not use.
+  shortDetail: z.string().optional(),
+});
+
+const gameCompetitor = z.object({
+  homeAway: z.string().optional(),
+  // Present on a finished game; ESPN sends `false` for both sides before the game.
+  winner: z.boolean().optional(),
+  score: score.optional(),
+  team: z.object({
+    id,
+    displayName: z.string().optional(),
+    shortDisplayName: z.string().optional(),
+    abbreviation: z.string().optional(),
+    name: z.string().optional(),
+    location: z.string().optional(),
+  }),
+});
+
+const gameCompetition = z.object({
+  // Like the event's, e.g. "2026-10-04T17:00Z" (no seconds).
+  date: z.string().optional(),
+  neutralSite: z.boolean().optional(),
+  // False when ESPN has the day but not the kickoff yet.
+  timeValid: z.boolean().optional(),
+  notes: z.array(z.object({ headline: z.string().optional() })).optional(),
+  status: z.object({ type: gameStatusType }),
+  competitors: z.array(gameCompetitor),
+});
+
+// ESPN's season type: 1 preseason, 2 regular season, 3 postseason (other numbers exist, e.g. the
+// off-season). The scoreboard puts it on `season`, a team schedule on `seasonType`.
+const seasonTypeRef = z.object({ type: z.number().optional() }).optional();
+
+const gameEvent = z.object({
+  id,
+  date: z.string().optional(),
+  season: seasonTypeRef,
+  seasonType: seasonTypeRef,
+  competitions: z.array(gameCompetition),
+});
+
+export type GameEvent = z.output<typeof gameEvent>;
+
+/** `/scoreboard?dates=YYYYMMDD` for a pro league: that day's events across the league. */
+export const gamesScoreboardSchema = z.object({ events: z.array(gameEvent) });
+
+/** `/teams/{id}/schedule`: one team's whole season, including its postseason. */
+export const gamesTeamScheduleSchema = z.object({ events: z.array(gameEvent) });

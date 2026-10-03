@@ -2,6 +2,7 @@ import { formatPoints } from "@/domain/league";
 import type { MoveSideEffects } from "@/domain/free-agents";
 import type { ParticipantKind, SportCode } from "@/domain/sports/sports";
 import { ParticipantImage } from "@/ui/participant-image";
+import { RecordText } from "@/ui/record-line";
 import type { FreeAgentRow, MyPickView } from "../free-agents.service";
 import { MoveDialog, type MoveAction } from "./move-dialog";
 
@@ -29,7 +30,11 @@ export function FreeAgentListItem({
       <ParticipantImage name={row.name} src={row.logoUrl} kind={kind} size="sm" />
       <div className="flex min-w-0 flex-1 flex-col">
         <span className="min-w-0 text-sm leading-tight font-semibold break-words">{row.name}</span>
-        <span className="text-xs text-text-muted">{row.statLine ?? "No results yet"}</span>
+        {/* The record already carries the wins the stat line would repeat, and an athlete's
+            ranking replaces its "Rank n". Without one, fall back to what has been scored. */}
+        <span className="text-xs text-text-muted">
+          {row.record ? <RecordText record={row.record} /> : (row.statLine ?? "No results yet")}
+        </span>
       </div>
       <span className="tabular shrink-0 text-right">
         <span className="font-display text-xl leading-none font-bold">

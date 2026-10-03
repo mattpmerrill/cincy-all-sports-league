@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { TeamRef } from "@/data/fantasy-teams.repository";
 import type { FreeAgentError } from "@/domain/free-agents";
 import type { LeagueData, ParticipantData } from "@/domain/league";
-import { leagueData, wins } from "@/domain/league/fixtures";
+import { leagueData, record, wins } from "@/domain/league/fixtures";
 import type { Actor } from "@/domain/membership/membership";
 import type { SportCode } from "@/domain/sports/sports";
 import { AN_HOUR_AGO, IN_AN_HOUR, item, listing, offer, teamRef } from "@/domain/trades/fixtures";
@@ -373,6 +373,8 @@ describe("getSportBoard", () => {
           wins("fa-cubs", 3, "mlb"),
           wins("fa-zebras", 5, "mlb"),
         ],
+        // Free agents carry records too: the league data holds every participant's.
+        records: [record("fa-zebras", 5, 2)],
       }),
       ...world,
     }).service.getSportBoard(viewer, "mlb");
@@ -387,6 +389,7 @@ describe("getSportBoard", () => {
         logoUrl: null,
         points: 10,
         statLine: "5 wins",
+        record: { kind: "record", text: "5-2", label: "Regular-season record" },
       },
       {
         id: "fa-bears",
@@ -395,6 +398,7 @@ describe("getSportBoard", () => {
         logoUrl: null,
         points: 6,
         statLine: "3 wins",
+        record: null,
       },
       {
         id: "fa-cubs",
@@ -403,6 +407,7 @@ describe("getSportBoard", () => {
         logoUrl: null,
         points: 6,
         statLine: "3 wins",
+        record: null,
       },
       {
         id: "fa-aardvarks",
@@ -411,6 +416,7 @@ describe("getSportBoard", () => {
         logoUrl: null,
         points: 0,
         statLine: null,
+        record: null,
       },
     ]);
   });

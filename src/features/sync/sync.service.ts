@@ -1,5 +1,6 @@
 import type { LeagueData } from "@/domain/league";
 import type { SportCode } from "@/domain/sports/sports";
+import type { ParticipantRecordsRepository } from "@/data/participant-records.repository";
 import type { ParticipantResultRow, ResultUpsert } from "@/data/participant-results.repository";
 import type { SportTarget, TargetParticipant } from "@/data/sport-targets.repository";
 import type { SnapshotWrite } from "@/data/standings-snapshots.repository";
@@ -17,7 +18,8 @@ import {
 } from "@/domain/feed";
 import { scorePushAlerts, type PushNotifier } from "@/domain/push";
 import { planSportSync, type SyncPlan } from "./plan";
-import type { ProviderError, ResultsProvider } from "./results-provider";
+import { planRecordWrites } from "./record-plan";
+import type { ProviderError, RecordFact, ResultsProvider } from "./results-provider";
 import { refreshRoster, type RosterDeps } from "./roster";
 import { computeScoreChanges, planChanges, type ParticipantChange } from "./score-changes";
 import { computeSnapshotRows } from "./snapshot";
@@ -40,6 +42,11 @@ export type SyncDeps = {
       deleteIds: readonly string[],
     ): Promise<{ upserted: number; deleted: number }>;
   };
+  /**
+   * Regular-season records, written from the same fetch as the results. Display facts only: a
+   * failure here never fails a sync (see `applyRecords`).
+   */
+  records: Pick<ParticipantRecordsRepository, "listForParticipants" | "upsertMany">;
   runs: {
     start(sportId: string, now: Date): Promise<string>;
     finish(id: string, status: "succeeded" | "failed", summary: Json, now: Date): Promise<void>;
@@ -75,6 +82,8 @@ export type SportOutcome = {
   status: "succeeded" | "failed" | "skipped";
   upserted: number;
   deleted: number;
+  /** Records created or changed; they do not count as `upserted` because they never score. */
+  recordsWritten: number;
   /** Stable machine code when failed or skipped. */
   code?: string;
 };
@@ -93,6 +102,7 @@ export type FreeAgentFactsOutcome = {
   status: "succeeded" | "failed" | "skipped";
   upserted: number;
   deleted: number;
+  recordsWritten: number;
   chunks: number;
   failedChunks: number;
   /** Stable machine code when failed or skipped. */
@@ -124,12 +134,16 @@ const STALE_RUN_MS = 5 * 60_000;
 
 export type SyncService = ReturnType<typeof createSyncService>;
 
+/** What happened to the records half of a facts run. `failed` is logged, never propagated. */
+type RecordsApplied = { written: number; unchanged: number; failed: boolean };
+
 type FactsRun =
   | {
       ok: true;
       existing: ParticipantResultRow[];
       plan: SyncPlan;
       applied: { upserted: number; deleted: number };
+      records: RecordsApplied;
     }
   | { ok: false; stage: "provider" | "plan"; error: AppError };
 
@@ -149,6 +163,7 @@ export function createSyncService(deps: SyncDeps) {
   async function applyFacts(
     target: SportTarget,
     participants: readonly TargetParticipant[],
+    log: Logger,
   ): Promise<FactsRun> {
     const facts = await deps.provider.fetchFacts({
       sport: target.sport,
@@ -174,7 +189,40 @@ export function createSyncService(deps: SyncDeps) {
       plan.value.upserts,
       plan.value.deleteIds,
     );
-    return { ok: true, existing, plan: plan.value, applied };
+    // After scoring is safely written, so nothing about records can delay or undo it.
+    const records = await applyRecords(target, participants, facts.value.records, log);
+    return { ok: true, existing, plan: plan.value, applied, records };
+  }
+
+  /**
+   * Writes the regular-season records that came with the same fetch, for held participants and
+   * free agents alike (every caller of `applyFacts` passes whoever it fetched for).
+   *
+   * Records are display-only and sit in their own table, so a failure here (a vendor oddity, the
+   * table not migrated yet) is logged and swallowed: failing the sync would mark the run failed,
+   * withhold the standings snapshot and score alerts, and leave results stale, all to protect a
+   * label. Same stance as league posts and snapshots, which are also non-critical writes. The next
+   * run retries, because only changed rows are skipped.
+   */
+  async function applyRecords(
+    target: SportTarget,
+    participants: readonly TargetParticipant[],
+    facts: RecordFact[] | undefined,
+    log: Logger,
+  ): Promise<RecordsApplied> {
+    if (!facts) return { written: 0, unchanged: 0, failed: false };
+    try {
+      const existing = await deps.records.listForParticipants(
+        target.seasonId,
+        participants.map((p) => p.id),
+      );
+      const plan = planRecordWrites({ participants, existing, facts });
+      if (plan.writes.length > 0) await deps.records.upsertMany(target.seasonId, plan.writes);
+      return { written: plan.writes.length, unchanged: plan.unchanged, failed: false };
+    } catch (error) {
+      log.error("records write failed", { sport: target.sport, error });
+      return { written: 0, unchanged: 0, failed: true };
+    }
   }
 
   async function syncSport(
@@ -195,7 +243,13 @@ export function createSyncService(deps: SyncDeps) {
       const alreadyNoted =
         latest?.status === "skipped" && easternDate(new Date(latest.startedAt)) === today;
       if (!alreadyNoted) await deps.runs.recordSkipped(target.sportId, { reason: outside }, now);
-      return outcome({ status: "skipped", upserted: 0, deleted: 0, code: outside });
+      return outcome({
+        status: "skipped",
+        upserted: 0,
+        deleted: 0,
+        recordsWritten: 0,
+        code: outside,
+      });
     }
 
     const startedAt = Date.now();
@@ -221,7 +275,7 @@ export function createSyncService(deps: SyncDeps) {
       const scored = deps.provider.fetchesPerParticipant(sport)
         ? target.participants
         : [...target.participants, ...target.freeAgents];
-      const run = await applyFacts(target, scored);
+      const run = await applyFacts(target, scored, log);
       if (!run.ok) {
         const { code, message } = run.error;
         if (run.stage === "provider") log.warn("provider failed", { sport, code });
@@ -229,7 +283,7 @@ export function createSyncService(deps: SyncDeps) {
         return await finish(
           "failed",
           { error: { code, message } },
-          { upserted: 0, deleted: 0, code },
+          { upserted: 0, deleted: 0, recordsWritten: 0, code },
         );
       }
 
@@ -238,7 +292,10 @@ export function createSyncService(deps: SyncDeps) {
         changeSink.push(...planChanges(sport, existing, plan.upserts, plan.deleteIds));
       }
       log.info("sport synced", { sport, ...applied, unchanged: plan.unchanged });
-      return await finish("succeeded", summaryOf(plan, applied), applied);
+      return await finish("succeeded", summaryOf(plan, applied, run.records), {
+        ...applied,
+        recordsWritten: run.records.written,
+      });
     } catch (error) {
       // Details go to the log; sync_runs is publicly readable, so it gets a fixed message.
       log.error("sport sync crashed", { sport, error });
@@ -250,8 +307,16 @@ export function createSyncService(deps: SyncDeps) {
             message: "Unexpected error. The server log has the details under this correlation id.",
           },
         },
-        { upserted: 0, deleted: 0, code: "unexpected" },
-      ).catch(() => outcome({ status: "failed", upserted: 0, deleted: 0, code: "unexpected" }));
+        { upserted: 0, deleted: 0, recordsWritten: 0, code: "unexpected" },
+      ).catch(() =>
+        outcome({
+          status: "failed",
+          upserted: 0,
+          deleted: 0,
+          recordsWritten: 0,
+          code: "unexpected",
+        }),
+      );
     }
   }
 
@@ -354,6 +419,7 @@ export function createSyncService(deps: SyncDeps) {
     status,
     upserted: 0,
     deleted: 0,
+    recordsWritten: 0,
     chunks: 0,
     failedChunks: 0,
     ...over,
@@ -391,6 +457,7 @@ export function createSyncService(deps: SyncDeps) {
 
     let upserted = 0;
     let deleted = 0;
+    let recordsWritten = 0;
     let unchanged = 0;
     let failedChunks = 0;
     let lastError: AppError | null = null;
@@ -398,7 +465,7 @@ export function createSyncService(deps: SyncDeps) {
       // One bad chunk (a flaky ESPN call, a scoring rule missing) costs 60 teams a day of
       // freshness, not the whole sport. Details go to the log, never to the public run row.
       try {
-        const run = await applyFacts(target, chunk);
+        const run = await applyFacts(target, chunk, log);
         if (!run.ok) {
           failedChunks += 1;
           lastError = run.error;
@@ -407,6 +474,7 @@ export function createSyncService(deps: SyncDeps) {
         }
         upserted += run.applied.upserted;
         deleted += run.applied.deleted;
+        recordsWritten += run.records.written;
         unchanged += run.plan.unchanged;
       } catch (error) {
         failedChunks += 1;
@@ -426,6 +494,7 @@ export function createSyncService(deps: SyncDeps) {
         failedChunks,
         upserted,
         deleted,
+        recordsWritten,
         unchanged,
         ...(lastError && status === "failed"
           ? { error: { code: lastError.code, message: lastError.message } }
@@ -441,10 +510,12 @@ export function createSyncService(deps: SyncDeps) {
       failedChunks,
       upserted,
       deleted,
+      recordsWritten,
     });
     return factsOutcome(status, {
       upserted,
       deleted,
+      recordsWritten,
       chunks: chunks.length,
       failedChunks,
       ...(status === "failed" && lastError ? { code: lastError.code } : {}),
@@ -517,6 +588,10 @@ export function createSyncService(deps: SyncDeps) {
           if (items && items.length > 0) notifyScores(correlationId, data, items, log);
         }
         deps.invalidate();
+      } else if (outcomes.some((o) => o.recordsWritten > 0)) {
+        // A loss or an overtime loss changes a record but no score, so nothing above ran; the
+        // cached model still has to drop for the new record to show.
+        deps.invalidate();
       }
       log.info("sync finished", { changed, snapshot, sports: outcomes.length });
       return { correlationId, date: today, sports: outcomes, changed, snapshot };
@@ -533,7 +608,7 @@ export function createSyncService(deps: SyncDeps) {
       if (!target) return notInSeason(correlationId, sport);
 
       const outcome = await runFreeAgentFacts(target, now, correlationId, log);
-      const changed = outcome.upserted + outcome.deleted > 0;
+      const changed = outcome.upserted + outcome.deleted + outcome.recordsWritten > 0;
       if (changed) deps.invalidate();
       return { correlationId, sport, facts: outcome, changed };
     },
@@ -570,7 +645,10 @@ export function createSyncService(deps: SyncDeps) {
       const current = inserted > 0 ? ((await targetFor(sport)) ?? target) : target;
 
       const outcome = await runFreeAgentFacts(current, now, correlationId, log);
-      const changed = inserted > 0 || rosterCrashed || outcome.upserted + outcome.deleted > 0;
+      const changed =
+        inserted > 0 ||
+        rosterCrashed ||
+        outcome.upserted + outcome.deleted + outcome.recordsWritten > 0;
       if (changed) deps.invalidate();
       return { correlationId, sport, roster, facts: outcome, changed };
     },
@@ -597,7 +675,7 @@ export function createSyncService(deps: SyncDeps) {
       );
       if (participants.length === 0) return ok(null);
 
-      const run = await applyFacts(target, participants);
+      const run = await applyFacts(target, participants, deps.logger.child({ sport }));
       return run.ok ? ok(null) : { ok: false, error: run.error };
     },
   };
@@ -610,10 +688,18 @@ export type RefreshParticipantsOptions = {
   now: Date;
 };
 
-function summaryOf(plan: SyncPlan, applied: { upserted: number; deleted: number }) {
+function summaryOf(
+  plan: SyncPlan,
+  applied: { upserted: number; deleted: number },
+  records: RecordsApplied,
+) {
   return {
     upserted: applied.upserted,
     deleted: applied.deleted,
+    recordsWritten: records.written,
+    // Surfaced in the public run row on purpose: a stuck records feed should be visible to the
+    // admin without reading logs. The fixed key carries no detail.
+    ...(records.failed ? { recordsFailed: true } : {}),
     unchanged: plan.unchanged,
     unmatchedExternalIds: plan.unmatchedExternalIds,
     missingExternalIds: plan.missingExternalIdCount,

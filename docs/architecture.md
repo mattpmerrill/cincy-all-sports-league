@@ -67,10 +67,36 @@ pg_cron (every 30 min) -> POST /api/cron/sync (bearer CRON_SECRET, constant-time
        ResultsProvider.fetchFacts ... records | stages (+bye implication) | majors | ranks
        planSportSync (pure) ......... facts + existing rows -> upserts / deletes, locks respected
        applyChanges ................. idempotent upsert on (season, participant, rule, event)
+       applyRecords ................. same fetch: participant_records, only rows that changed;
+                                      a failure is logged and never fails the run
      if anything changed:
        standings_snapshots upsert for today (scoreParticipant -> scoreFantasyTeam -> rankStandings)
        revalidateLeague() ......... drops the cached public read model
 ```
+
+### Records
+
+A pick also shows its participant's regular-season record ("10-4", NHL "30-20-5", MLS "12-8-6",
+NFL "10-6-1" only when there is a tie). Records are display facts, not scoring facts, so they live
+in their own table, `participant_records` (one row per season and participant: wins, losses, ties,
+OT losses). Wins keep scoring through `participant_results`, and nothing in `domain/scoring` reads a
+record ([ADR-001](decisions/ADR-001-scoring-in-domain-db-stores-facts.md) is unchanged).
+
+- **Write.** The ESPN standings call (pro) or team schedule (college) that already feeds wins also
+  carries losses, ties and NHL OT losses. `applyFacts` writes them right after the results, through
+  `data/participant-records.repository.ts`, from the same fetch (no extra ESPN calls). Only rows that
+  changed are written, so a quiet run touches nothing. Free agents ride the same path, in the 30-minute
+  run for league-wide feeds and in the daily pool job for college. A records failure is logged and
+  swallowed: it must not fail scoring, withhold the snapshot or delay score alerts. Because a loss
+  changes a record but no score, a run whose only change is a record still drops the cached model.
+- **Read.** `LeagueData.records` carries every record of the season. `buildLeagueModel` attaches a
+  `RecordLine` to each `ScoredPick` and `SportPickRow`; the free-agent board attaches one per row. The
+  format per sport is `recordStyle` in `domain/sports/sports.ts`, applied by `domain/records`.
+  Before a sport's first game there is no row (or an all-zero one), and nothing is shown.
+- **Athletes** (WTA, PGA) have no record. Their line ("No. 4 WTA", "No. 12 FedExCup") is read from the
+  `final_rank_band` result they already have, whose quantity is the actual rank.
+- **Access.** Public read like `participant_results`; only `service_role` writes (no admin edit path,
+  since a record is ESPN's number).
 
 Free agents ride along: where ESPN's feed is league-wide (pro sports, WTA, PGA) the same fetch
 already covers the whole pool, so the 30-minute run scores free agents with no extra ESPN calls.
@@ -135,6 +161,38 @@ A pg_cron job calls `/api/cron/free-agents?sport=<code>` once per sport at 09:15
 or deletes a participant and a re-run inserts nothing) and then, for college sports, scoring of
 the free agents in chunks. Pro sports, WTA and PGA free agents are scored in the regular
 30-minute sync. Anyone no team holds is a free agent, derived per request (`domain/free-agents`).
+
+## Games flow
+
+The Week page and the team page's "This week" panel read stored games. The games are facts with no
+owner; which fantasy teams care about a game is worked out when the page renders. See
+[ADR-006](decisions/ADR-006-weekly-games-feed.md).
+
+```
+pg_cron (:10 and :40 every hour)  -> POST /api/cron/games?range=live   (yesterday + today)
+pg_cron (09:25 UTC daily)         -> POST /api/cron/games?range=weeks  (this week + next)
+  bearer CRON_SECRET, constant-time check, range parsed with Zod
+  -> refreshGames({ now, range })
+     in-season team sports only (season window touches the days), 3 sports at a time, failures isolated:
+       pro sports ........ ESPN scoreboard, one call per Eastern day (includes the postseason)
+       college sports .... ESPN team schedule, one call per HELD team (whole season in one response)
+       fetchScheduledGames  validates with Zod, maps ESPN status to GameStatus, ScheduledGame facts
+       upsertGames ........ participant ids mapped per sport, only new or changed rows written
+                            (idempotent on sport + ESPN event id)
+     if anything changed: revalidateGames() drops the cached games
+
+page -> getWeek / getTeamWeek (feature service)
+     -> cached league (current picks, season dates) + cached games for the week [from, to)
+     -> domain buildWeekSlate: games by Eastern day, the fantasy teams holding each side,
+        showdowns, per-team counts
+     -> describeStatus / describeGame: "1:00 PM", "17–14", "W 27–24"
+```
+
+The league week (Monday to Sunday, Eastern) belongs to `domain/calendar/week.ts`; a game is on the
+Eastern day it starts, so a 10:30 pm tip-off stays on its own day across both clock changes. The
+page reads two caches, `league` and `games`, so a pick change shows after the league cache turns
+over and a new score after the next refresh. `?week=` outside the season is pulled back into it,
+which also bounds the cache keys.
 
 ## Push flow
 

@@ -73,6 +73,7 @@ const data: LeagueData = {
     banked: [],
   })),
   results: [],
+  records: [],
   snapshots: [],
   lastSyncAt: null,
 };

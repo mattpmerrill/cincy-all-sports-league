@@ -33,8 +33,8 @@ const REGULAR_SEASON = 2;
  * Regular-season record per team.
  *
  * Pro leagues: one standings call, which already excludes the postseason and carries ties
- * (NFL) and draws (MLS, exposed as `ties`). NHL overtime losses are not counted as losses;
- * only wins matter for scoring.
+ * (NFL) and draws (MLS, exposed as `ties`). NHL overtime losses are kept apart from `losses`
+ * (`otLosses`, ESPN's own split) so the NHL record can read W-L-OTL; scoring only uses wins.
  *
  * College: a team schedule per requested id, counted game by game. See {@link recordFromSchedule}.
  */
@@ -81,6 +81,7 @@ export function recordsFromStandings(root: StandingsNode): TeamRecord[] {
         wins: stat("wins"),
         losses: stat("losses"),
         ties: stat("ties"),
+        otLosses: stat("otLosses"),
       });
     }
     node.children?.forEach(walk);
@@ -128,7 +129,8 @@ type Schedule = ReturnType<typeof teamScheduleSchema.parse>;
  * Only completed games count: postponed and future games have `completed: false`.
  */
 export function recordFromSchedule(schedule: Schedule, espnTeamId: string): TeamRecord {
-  const record: TeamRecord = { espnTeamId, wins: 0, losses: 0, ties: 0 };
+  // A schedule has no overtime-loss concept (college has none), so `otLosses` stays 0.
+  const record: TeamRecord = { espnTeamId, wins: 0, losses: 0, ties: 0, otLosses: 0 };
   for (const event of schedule.events) {
     if (event.seasonType.type !== REGULAR_SEASON) continue;
     for (const competition of event.competitions) {

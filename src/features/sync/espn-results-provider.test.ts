@@ -19,7 +19,7 @@ describe("createEspnResultsProvider", () => {
 
   it("counts a bye as reaching the earlier rounds (NFL #1 seed that skipped Wild Card)", async () => {
     adapter.fetchTeamRecords.mockResolvedValue(
-      ok([{ espnTeamId: "12", wins: 14, losses: 3, ties: 0 }]),
+      ok([{ espnTeamId: "12", wins: 14, losses: 3, ties: 1, otLosses: 2 }]),
     );
     adapter.fetchPostseasonStages.mockResolvedValue(
       ok([
@@ -40,7 +40,9 @@ describe("createEspnResultsProvider", () => {
       "divisional",
       "conference_championship",
     ]);
-    expect(result.value.records).toEqual([{ externalId: "12", wins: 14, ties: 0 }]);
+    expect(result.value.records).toEqual([
+      { externalId: "12", wins: 14, losses: 3, ties: 1, otLosses: 2 },
+    ]);
     expect(adapter.fetchTeamRecords).toHaveBeenCalledWith(
       "nfl",
       2026,

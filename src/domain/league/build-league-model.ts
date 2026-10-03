@@ -1,3 +1,4 @@
+import type { RecordLine } from "@/domain/records";
 import type { ParticipantScore, ScoreTotals } from "@/domain/scoring";
 import { rankMovement, rankStandings, scoreFantasyTeam } from "@/domain/standings";
 import type { RankMovement, RankedTeam, TeamScore } from "@/domain/standings";
@@ -6,6 +7,7 @@ import type { SportCode } from "@/domain/sports/sports";
 import { creditPick } from "./credit-pick";
 import type { PickAdjustment } from "./credit-pick";
 import { createParticipantScorer } from "./participant-scorer";
+import { createRecordLines } from "./record-lines";
 import { seasonStatus } from "./season-status";
 import type { SeasonStatus } from "./season-status";
 import type {
@@ -24,6 +26,8 @@ export type ScoredPick = {
   /** What the team is credited for this pick; team totals and rankings use this, never `score`. */
   credited: ScoreTotals;
   adjustment: PickAdjustment;
+  /** Record or ranking to show beside the participant; null while there is nothing to show. */
+  record: RecordLine | null;
 };
 
 export type SportInfo = SportSeasonData & { status: SeasonStatus };
@@ -46,6 +50,7 @@ export type SportPickRow = {
   /** What the team is credited for; the rows are ranked by `credited.total`. */
   credited: ScoreTotals;
   adjustment: PickAdjustment;
+  record: RecordLine | null;
 };
 
 export type LeagueModel = {
@@ -105,6 +110,7 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
   ) as Record<SportCode, SportInfo>;
 
   const scorePick = createParticipantScorer(data);
+  const recordOf = createRecordLines(data, scorePick);
 
   const teams = data.teams.map((team) => {
     const picks: ScoredPick[] = team.picks.map((p) => {
@@ -114,6 +120,7 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
         participant: p.participant,
         score,
         ...creditPick(team, p, score),
+        record: recordOf(p.sport, p.participant.id),
       };
     });
     return {
@@ -148,6 +155,7 @@ export function buildLeagueModel(data: LeagueData, today: string): LeagueModel {
             score: p.score,
             credited: p.credited,
             adjustment: p.adjustment,
+            record: p.record,
           })),
       );
       return [code, rankPicks(rows)];

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildLeagueModel, previousRanks } from "./build-league-model";
-import { leagueData, wins } from "./fixtures";
+import { leagueData, record, wins } from "./fixtures";
 
 const TODAY = "2026-09-28";
 
@@ -339,6 +339,83 @@ describe("credited scoring across trades (ADR-003)", () => {
     // Live: shared 8, c-wnba 2. a: 6 + (2 - 2); b: 8 (drafted); c: 2 + (8 - 6).
     expect(wnba).toEqual({ a: 6, b: 8, c: 4 });
     expect(model.sportPicks.wnba.map((r) => r.teamName)).toEqual(["b", "a", "c"]);
+  });
+});
+
+describe("records on picks", () => {
+  const rankBand = {
+    sport: "wta" as const,
+    code: "rank-1-10",
+    sortOrder: 0,
+    rule: {
+      kind: "final_rank_band" as const,
+      id: "wta-top-10",
+      label: "Top 10 finish",
+      points: 10,
+      rankFrom: 1,
+      rankTo: 10,
+      isChampionship: false,
+    },
+  };
+
+  it("puts each team pick's record in the sport's own style, on the pick and the sport row", () => {
+    const model = buildLeagueModel(
+      leagueData({
+        teams: [{ id: "a" }, { id: "b" }],
+        records: [
+          record("a-nfl", 10, 6),
+          record("b-nfl", 4, 12, 1),
+          record("a-nhl", 30, 20, 0, 5),
+          record("a-mls", 12, 8, 6),
+        ],
+      }),
+      TODAY,
+    );
+    const pickText = (teamId: string, sport: string) =>
+      model.standings.find((t) => t.teamId === teamId)?.picks.find((p) => p.sport === sport)?.record
+        ?.text;
+    expect(pickText("a", "nfl")).toBe("10-6");
+    expect(pickText("b", "nfl")).toBe("4-12-1");
+    expect(pickText("a", "nhl")).toBe("30-20-5");
+    expect(pickText("a", "mls")).toBe("12-8-6");
+    expect(model.sportPicks.nfl.map((r) => [r.teamName, r.record?.text])).toEqual([
+      ["a", "10-6"],
+      ["b", "4-12-1"],
+    ]);
+  });
+
+  it("shows nothing for a pick with no record row, or an all-zero one", () => {
+    const model = buildLeagueModel(
+      leagueData({ teams: [{ id: "a" }], records: [record("a-nfl", 0, 0)] }),
+      TODAY,
+    );
+    const picks = model.standings[0]?.picks ?? [];
+    expect(picks.every((p) => p.record === null)).toBe(true);
+    expect(model.sportPicks.mlb[0]?.record).toBeNull();
+  });
+
+  it("derives an athlete's ranking from the stored rank-band result", () => {
+    const data = leagueData({
+      teams: [{ id: "a" }, { id: "b" }],
+      results: [
+        { participantId: "a-wta", ruleId: "wta-top-10", quantity: 4, eventLabel: "" },
+        // A different team's athlete, unranked: no rank-band result, so no line.
+      ],
+    });
+    data.rules.push(rankBand);
+    const model = buildLeagueModel(data, TODAY);
+    expect(model.sportPicks.wta.map((r) => [r.teamName, r.record?.text ?? null])).toEqual([
+      ["a", "No. 4 WTA"],
+      ["b", null],
+    ]);
+  });
+
+  it("does not let a team record attach to an athlete pick", () => {
+    const model = buildLeagueModel(
+      leagueData({ teams: [{ id: "a" }], records: [record("a-pga", 3, 1)] }),
+      TODAY,
+    );
+    expect(model.sportPicks.pga[0]?.record).toBeNull();
   });
 });
 

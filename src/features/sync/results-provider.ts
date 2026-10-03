@@ -5,7 +5,15 @@ import type { SportCode } from "@/domain/sports/sports";
  * What sync needs from a data vendor, in league vocabulary. Nothing here names ESPN: `externalId`
  * is whatever id the vendor uses, and it is stored in `participants.espn_id`.
  */
-export type RecordFact = { externalId: string; wins: number; ties: number };
+export type RecordFact = {
+  externalId: string;
+  wins: number;
+  losses: number;
+  /** NFL ties and MLS draws. */
+  ties: number;
+  /** NHL overtime and shootout losses. */
+  otLosses: number;
+};
 /** `stage` equals a playoff_milestone `scoring_rules.code` for the sport. */
 export type StageFact = { externalId: string; stage: string };
 /** `finish` equals a major_finish rule code, or is "earlier" / "missed_cut" (no points). */

@@ -19,6 +19,9 @@ export const espnUrls = {
     `${SITE}/${path(s)}/teams/${encodeURIComponent(teamId)}/schedule?season=${season}`,
   /** `query` is ESPN's own filter string, e.g. `dates=202604` (a month) or `dates=20260420` (a day). */
   scoreboard: (s: Sport, query: string) => `${SITE}/${path(s)}/scoreboard?${query}&limit=1000`,
+  /** One day's games: an ISO date (`2026-10-04`) becomes ESPN's `dates=20261004`. */
+  scoreboardDay: (s: Sport, isoDate: string) =>
+    `${SITE}/${path(s)}/scoreboard?dates=${isoDate.replaceAll("-", "")}&limit=1000`,
   wtaRankings: (s: Sport) => `${SITE}/${path(s)}/rankings`,
   /** Overall (id 0) FedExCup table for the season. */
   fedexCupStandings: (s: Sport, season: number) =>
