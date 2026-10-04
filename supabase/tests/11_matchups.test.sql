@@ -3,7 +3,7 @@
 -- and the two rollover jobs. Fixtures are self-contained.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(67);
+select plan(99);
 
 -- The seed may already have an active season; only one can be active at a time.
 update public.seasons set is_active = false;
@@ -32,7 +32,6 @@ grant execute on function pg_temp.set_caller(uuid, text) to public;
 -- ===== shape =====
 select has_table('public', 'matchups', 'the matchups table exists');
 select ok((select relrowsecurity from pg_class where oid = 'public.matchups'::regclass), 'RLS is on for matchups');
-select has_index('public', 'matchups', 'matchups_season_week_idx', 'the season-in-week-order read is indexed');
 select has_index('public', 'matchups', 'matchups_home_team_idx', 'home team lookups are indexed');
 select has_index('public', 'matchups', 'matchups_away_team_idx', 'away team lookups are indexed');
 select has_function('public', 'roll_matchup_week', array['uuid', 'date', 'jsonb', 'jsonb'], 'the rollover function exists');
@@ -41,9 +40,10 @@ select has_function('public', 'roll_matchup_week', array['uuid', 'date', 'jsonb'
 insert into public.matchups (id, season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points)
 values ('60000000-0000-0000-0000-000000000001', '10000000-0000-0000-0000-000000000001', '2029-12-31',
         '50000000-0000-0000-0000-000000000001', '50000000-0000-0000-0000-000000000002', 12.5, 10.25);
-select is(
-  (select home_end_points::text || away_end_points::text || finalized_at::text from public.matchups where id = '60000000-0000-0000-0000-000000000001'),
-  null, 'a new matchup is open: no end points, not finalized');
+select ok(
+  (select home_end_points is null and away_end_points is null and finalized_at is null
+   from public.matchups where id = '60000000-0000-0000-0000-000000000001'),
+  'a new matchup is open: no end points, not finalized');
 select is(
   (select home_start_points::text || '/' || away_start_points::text from public.matchups where id = '60000000-0000-0000-0000-000000000001'),
   '12.5000/10.2500', 'start points keep four decimals');
@@ -88,6 +88,22 @@ select throws_ok(
   $$insert into public.matchups (season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points)
     values ('10000000-0000-0000-0000-000000000001', '2030-01-07', '50000000-0000-0000-0000-000000000003', '50000000-0000-0000-0000-000000000005', 0, 0)$$,
   '23503', null, 'a matchup cannot pair a team of another season');
+select throws_ok(
+  $$insert into public.matchups (season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points)
+    values ('10000000-0000-0000-0000-000000000001', '2030-01-07', '50000000-0000-0000-0000-000000000003', '50000000-0000-0000-0000-000000000004', 'NaN', 0)$$,
+  '23514', null, 'a NaN home start is rejected');
+select throws_ok(
+  $$insert into public.matchups (season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points)
+    values ('10000000-0000-0000-0000-000000000001', '2030-01-07', '50000000-0000-0000-0000-000000000003', '50000000-0000-0000-0000-000000000004', 0, 'NaN')$$,
+  '23514', null, 'a NaN away start is rejected');
+select throws_ok(
+  $$insert into public.matchups (season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points, home_end_points, away_end_points, finalized_at)
+    values ('10000000-0000-0000-0000-000000000001', '2030-01-07', '50000000-0000-0000-0000-000000000003', '50000000-0000-0000-0000-000000000004', 0, 0, 'NaN', 1, now())$$,
+  '23514', null, 'a NaN home end is rejected');
+select throws_ok(
+  $$insert into public.matchups (season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points, home_end_points, away_end_points, finalized_at)
+    values ('10000000-0000-0000-0000-000000000001', '2030-01-07', '50000000-0000-0000-0000-000000000003', '50000000-0000-0000-0000-000000000004', 0, 0, 1, 'NaN', now())$$,
+  '23514', null, 'a NaN away end is rejected');
 
 -- ===== foreign-key behaviour =====
 insert into public.matchups (season_id, week_start, home_team_id, away_team_id, home_start_points, away_start_points)
@@ -236,7 +252,7 @@ select throws_ok(
       {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1},
       {"team_id": "50000000-0000-0000-0000-000000000002", "points": null}]',
     '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
-  'P0001', 'missing_final', 'an open row whose team has no usable final is rejected');
+  'P0001', 'invalid_finals', 'a final whose points are null is rejected');
 select throws_ok(
   $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21',
     '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1},
@@ -252,9 +268,6 @@ select throws_ok(
   $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000009', '2030-01-21', '[]',
     '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
   'P0001', 'season_not_found', 'an unknown season is rejected');
-select throws_ok(
-  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[]', '[]')$$,
-  'P0001', 'no_pairings', 'an empty pairing list is rejected');
 select throws_ok(
   $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[]',
     '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1}]')$$,
@@ -272,6 +285,63 @@ select throws_ok(
       {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]',
     '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000005", "home_start_points": 1, "away_start_points": 1}]')$$,
   '23503', null, 'a pairing with a team of another season is rejected, and the finalizing rolls back with it');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', null)$$,
+  'P0001', 'invalid_pairings', 'null pairings are rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '{"a": 1}')$$,
+  'P0001', 'invalid_pairings', 'pairings that are not an array are rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[1]')$$,
+  'P0001', 'invalid_pairings', 'a pairing that is not an object is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": "5", "away_start_points": 1}]')$$,
+  'P0001', 'invalid_pairings', 'a start point given as a string is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": "NaN", "away_start_points": 1}]')$$,
+  'P0001', 'invalid_pairings', 'the string NaN as a start point is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": null}]')$$,
+  'P0001', 'invalid_pairings', 'a null start point is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 100000}]')$$,
+  'P0001', 'invalid_pairings', 'a start point too large for the column is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "not-a-uuid", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_pairings', 'a malformed team id in a pairing is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": 5, "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_pairings', 'a team id that is not a string is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000002", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000003", "points": 1}, {"team_id": "50000000-0000-0000-0000-000000000004", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000001", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'duplicate_team', 'a team paired with itself is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', null, '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'a null finals value is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '{"a": 1}', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'finals that are not an array are rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[1]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'a final that is not an object is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": null, "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'a final with a null team id is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'a final with no team id is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "not-a-uuid", "points": 1}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'a malformed team id in a final is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": "NaN"}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'the string NaN as final points is rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": "7"}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'final points given as a string are rejected');
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": -100000}]', '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'invalid_finals', 'final points too large for the column are rejected');
 select is(
   (select count(*)::int from public.matchups where week_start = '2030-01-14' and finalized_at is null)
   || '/' || (select count(*)::int from public.matchups where week_start = '2030-01-21'),
@@ -286,18 +356,61 @@ select is(
       {"team_id": "50000000-0000-0000-0000-000000000002", "points": 30},
       {"team_id": "50000000-0000-0000-0000-000000000003", "points": 30},
       {"team_id": "50000000-0000-0000-0000-000000000004", "points": 30}]',
-    '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 30, "away_start_points": 30},
+    '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 30.12345, "away_start_points": 30},
       {"home_team_id": "50000000-0000-0000-0000-000000000003", "away_team_id": "50000000-0000-0000-0000-000000000004", "home_start_points": 30, "away_start_points": 30}]') ->> 'finalized',
   '2', 'a skipped Monday''s open rows are closed by the next rollover');
 select is(
   (select home_end_points::text from public.matchups where week_start = '2030-01-07' and home_team_id = '50000000-0000-0000-0000-000000000001'),
   '14.2500', 'and a week that was already final keeps its result');
+select is(
+  (select home_start_points::text from public.matchups where week_start = '2030-01-28' and home_team_id = '50000000-0000-0000-0000-000000000001'),
+  '30.1235', 'a fifth decimal is rounded half away from zero by the column (30.12345 becomes 30.1235)');
+
+-- Out of order: a week earlier than one the season already has is rejected, and nothing is written.
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-21', '[]',
+    '[{"home_team_id": "50000000-0000-0000-0000-000000000001", "away_team_id": "50000000-0000-0000-0000-000000000002", "home_start_points": 1, "away_start_points": 1}]')$$,
+  'P0001', 'week_out_of_order', 'a week before the season''s latest week is rejected');
+select is((select count(*)::int from public.matchups where week_start = '2030-01-21'), 0, 'and no row was created for it');
+select is(
+  public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-01-28', '[]', '[]') ->> 'rolled',
+  'false', 'a repeat for the existing latest week is still a no-op, not out of order');
+
+-- Close only: an empty pairing list ends the season's last week and opens nothing.
+select throws_ok(
+  $$select public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-02-04',
+    '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 40},
+      {"team_id": "50000000-0000-0000-0000-000000000002", "points": 40},
+      {"team_id": "50000000-0000-0000-0000-000000000003", "points": 40}]', '[]')$$,
+  'P0001', 'missing_final', 'a close-only call still needs a final for every open row');
+select is(
+  public.roll_matchup_week(
+    '10000000-0000-0000-0000-000000000001', '2030-02-04',
+    '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 40.00005},
+      {"team_id": "50000000-0000-0000-0000-000000000002", "points": 41},
+      {"team_id": "50000000-0000-0000-0000-000000000003", "points": 42},
+      {"team_id": "50000000-0000-0000-0000-000000000004", "points": 43}]', '[]'),
+  '{"rolled": true, "finalized": 2, "created": 0}'::jsonb,
+  'close-only finalizes the open rows and creates none');
+select is((select count(*)::int from public.matchups where week_start = '2030-02-04'), 0, 'and no row exists for the closing week');
+select is(
+  (select home_end_points::text || '/' || away_end_points::text from public.matchups where week_start = '2030-01-28' and home_team_id = '50000000-0000-0000-0000-000000000001'),
+  '40.0001/41.0000', 'the closed rows carry the given totals (a fifth decimal in an end point rounds the same way)');
+select is((select count(*)::int from public.matchups where finalized_at is null), 0, 'nothing is left open');
+select is(
+  public.roll_matchup_week('10000000-0000-0000-0000-000000000001', '2030-02-04',
+    '[{"team_id": "50000000-0000-0000-0000-000000000001", "points": 99}]', '[]'),
+  '{"rolled": false, "finalized": 0, "created": 0}'::jsonb,
+  'repeating a close-only call changes nothing and reports rolled false');
+select is(
+  (select home_end_points::text from public.matchups where week_start = '2030-01-28' and home_team_id = '50000000-0000-0000-0000-000000000001'),
+  '40.0001', 'and leaves the result alone');
 reset role;
 
 -- ===== rollover jobs =====
 select is((select count(*)::int from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est')), 2, 'both matchups rollover jobs are scheduled');
-select is((select schedule from cron.job where jobname = 'cincy-matchups-edt'), '0 11 * * *', 'the EDT job runs daily at 11:00 UTC');
-select is((select schedule from cron.job where jobname = 'cincy-matchups-est'), '0 12 * * *', 'the EST job runs daily at 12:00 UTC');
+select is((select schedule from cron.job where jobname = 'cincy-matchups-edt'), '45 10 * * *', 'the EDT job runs daily at 10:45 UTC (6:45 am Eastern)');
+select is((select schedule from cron.job where jobname = 'cincy-matchups-est'), '45 11 * * *', 'the EST job runs daily at 11:45 UTC (6:45 am Eastern)');
 select ok(
   (select bool_and(command like '%https://www.cincysports.xyz/api/cron/matchups%' and command like '%cron_secret%')
    from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est')),

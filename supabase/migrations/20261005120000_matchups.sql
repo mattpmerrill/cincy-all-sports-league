@@ -34,6 +34,13 @@ create table public.matchups (
   created_at timestamptz not null default now(),
 
   constraint matchups_distinct_teams check (home_team_id <> away_team_id),
+  -- numeric stores NaN, and NaN would silently poison every comparison (it sorts above all
+  -- numbers and equals itself). The function only accepts JSON numbers, so this guards direct
+  -- writes. A null end point passes, as it should while the week is open.
+  constraint matchups_home_start_not_nan check (home_start_points <> 'NaN'),
+  constraint matchups_away_start_not_nan check (away_start_points <> 'NaN'),
+  constraint matchups_home_end_not_nan check (home_end_points <> 'NaN'),
+  constraint matchups_away_end_not_nan check (away_end_points <> 'NaN'),
   constraint matchups_result_all_or_nothing check (
     (home_end_points is null) = (away_end_points is null)
     and (home_end_points is null) = (finalized_at is null)
@@ -48,9 +55,9 @@ create table public.matchups (
   unique (season_id, week_start, away_team_id)
 );
 
--- The matchups views read a whole season in week order. The unique indexes above lead with the
--- same columns but exist to enforce pairing, not to serve reads.
-create index matchups_season_week_idx on public.matchups (season_id, week_start desc);
+-- Reading a whole season in week order needs no index of its own: the unique constraints above
+-- lead with (season_id, week_start), and the planner uses them.
+
 -- The team page reads one team's matchups, and the cascade from fantasy_teams looks rows up by
 -- team.
 create index matchups_home_team_idx on public.matchups (home_team_id);
