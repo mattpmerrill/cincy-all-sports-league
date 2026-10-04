@@ -343,6 +343,63 @@ export type Database = {
           },
         ]
       }
+      matchups: {
+        Row: {
+          away_end_points: number | null
+          away_start_points: number
+          away_team_id: string
+          created_at: string
+          finalized_at: string | null
+          home_end_points: number | null
+          home_start_points: number
+          home_team_id: string
+          id: string
+          season_id: string
+          week_start: string
+        }
+        Insert: {
+          away_end_points?: number | null
+          away_start_points: number
+          away_team_id: string
+          created_at?: string
+          finalized_at?: string | null
+          home_end_points?: number | null
+          home_start_points: number
+          home_team_id: string
+          id?: string
+          season_id: string
+          week_start: string
+        }
+        Update: {
+          away_end_points?: number | null
+          away_start_points?: number
+          away_team_id?: string
+          created_at?: string
+          finalized_at?: string | null
+          home_end_points?: number | null
+          home_start_points?: number
+          home_team_id?: string
+          id?: string
+          season_id?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matchups_away_team_id_season_id_fkey"
+            columns: ["away_team_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id", "season_id"]
+          },
+          {
+            foreignKeyName: "matchups_home_team_id_season_id_fkey"
+            columns: ["home_team_id", "season_id"]
+            isOneToOne: false
+            referencedRelation: "fantasy_teams"
+            referencedColumns: ["id", "season_id"]
+          },
+        ]
+      }
       message_reactions: {
         Row: {
           created_at: string
@@ -1335,6 +1392,15 @@ export type Database = {
       reject_trade_offer: {
         Args: { p_actor: string; p_offer_id: string }
         Returns: undefined
+      }
+      roll_matchup_week: {
+        Args: {
+          p_finals: Json
+          p_pairings: Json
+          p_season_id: string
+          p_week_start: string
+        }
+        Returns: Json
       }
       trade_actor_team: {
         Args: { p_actor: string }
