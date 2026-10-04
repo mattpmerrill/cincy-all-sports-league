@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { leagueData, wins } from "@/domain/league/fixtures";
 import type { DigestMember, DigestSend } from "@/data/digest.repository";
+import type { Matchup } from "@/domain/matchups";
+import { matchup } from "@/domain/matchups/fixtures";
 import type { EmailError, OutgoingEmail } from "@/integrations/resend";
 import { createLogger, type Logger } from "@/lib/logger";
 import { err, ok, type Result } from "@/lib/result";
@@ -21,6 +23,13 @@ const data = leagueData({
   results: [wins("a-nfl", 3), wins("b-nfl", 1)],
 });
 
+// Last week Ann's team (a) beat Bo's (b) 8 to 3 and they meet again this week. Monday Sep 28 is the
+// digest's week, so Sep 21 is "last week".
+const defaultMatchups = (): Matchup[] => [
+  matchup("2026-09-21", "a", "b", { start: [0, 0], end: [8, 3] }),
+  matchup("2026-09-28", "a", "b", { start: [8, 3] }),
+];
+
 const member = (userId: string, name: string, optedIn = true): DigestMember => ({
   userId,
   email: `${name.toLowerCase()}@example.com`,
@@ -39,6 +48,8 @@ function setup(
     send?: (email: OutgoingEmail) => Result<{ id: string }, EmailError>;
     signToken?: ((userId: string) => string) | null;
     snapshotRows?: { teamId: string; rank: number; totalPoints: number }[];
+    matchups?: Matchup[];
+    listSeason?: () => Promise<Matchup[]>;
   } = {},
 ) {
   const sent: OutgoingEmail[] = [];
@@ -56,8 +67,10 @@ function setup(
       { teamId: "a", rank: 2, totalPoints: 0 },
     ],
   }));
+  const listSeason = vi.fn(opts.listSeason ?? (async () => opts.matchups ?? defaultMatchups()));
   const service = createDigestService({
     league: { load },
+    matchups: { listSeason },
     snapshots: { latestOnOrBefore },
     digests: {
       listConfirmedMembers: async () =>
@@ -74,7 +87,7 @@ function setup(
       },
     },
     renderEmail: async (props) => ({
-      html: `<p>${props.displayName}|${props.digest.recipient?.teamName ?? "no team"}</p>`,
+      html: `<p>${props.displayName}|${props.digest.recipient?.teamName ?? "no team"}|${props.digest.matchups?.lastWeek?.mine?.text ?? "no matchups"}</p>`,
       text: "text",
     }),
     signToken: opts.signToken === undefined ? (id) => `tok-${id}` : opts.signToken,
@@ -91,6 +104,7 @@ function setup(
     lines,
     load,
     latestOnOrBefore,
+    listSeason,
     restore: () => logSpy.mockRestore(),
   };
 }
@@ -150,7 +164,7 @@ describe("sendWeeklyDigest sending", () => {
 
     expect(t.sent.map((e) => e.to).sort()).toEqual(["ann@example.com", "bo@example.com"]);
     const ann = t.sent.find((e) => e.to === "ann@example.com");
-    expect(ann?.html).toContain("Ann|a");
+    expect(ann?.html).toContain("Ann|a|");
     expect(ann?.subject).toBe("Week of Sep 28: a climbs to 1");
     expect(ann?.headers).toEqual({
       "List-Unsubscribe": `<https://www.cincysports.xyz/unsubscribe?t=tok-${USER_A}>`,
@@ -174,7 +188,7 @@ describe("sendWeeklyDigest sending", () => {
     const t = setup({ members: [member(USER_C, "Cy")] });
     await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
     t.restore();
-    expect(t.sent[0]?.html).toContain("Cy|no team");
+    expect(t.sent[0]?.html).toContain("Cy|no team|no matchups");
   });
 
   it("records 'sent' with the count once", async () => {
@@ -224,6 +238,53 @@ describe("sendWeeklyDigest sending", () => {
     expect(output).toContain("a***@example.com");
     expect(output).not.toContain("ann@example.com");
     expect(output).not.toContain("<p>");
+  });
+});
+
+describe("sendWeeklyDigest matchups section", () => {
+  it("hands each recipient a section phrased from their own side", async () => {
+    const t = setup();
+    await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(t.sent.find((e) => e.to === "ann@example.com")?.html).toContain("You beat b 8 to 3");
+    expect(t.sent.find((e) => e.to === "bo@example.com")?.html).toContain("You lost to a 8 to 3");
+  });
+
+  it("reads the season's matchups once for the whole run, not once per recipient", async () => {
+    const t = setup();
+    await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(t.sent).toHaveLength(2);
+    expect(t.listSeason).toHaveBeenCalledTimes(1);
+    expect(t.listSeason).toHaveBeenCalledWith("s1");
+  });
+
+  it("does not read matchups when the run is skipped", async () => {
+    const t = setup({ existing: { weekStart: "2026-09-28", status: "sent", recipientCount: 2 } });
+    await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(t.listSeason).not.toHaveBeenCalled();
+  });
+
+  it("still sends every digest, without the section, when matchups cannot be read", async () => {
+    const t = setup({
+      listSeason: async () => {
+        throw new Error("matchups table down");
+      },
+    });
+    const result = await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(result).toMatchObject({ ok: true, value: { outcome: "sent", sent: 2, failed: 0 } });
+    expect(t.sent.every((e) => e.html.includes("no matchups"))).toBe(true);
+    const failure = t.lines.find((l) => l.includes("digest matchups read failed"));
+    expect(failure).toContain("corr-1");
+  });
+
+  it("sends without a section when the season has no matchups yet", async () => {
+    const t = setup({ matchups: [] });
+    await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(t.sent.every((e) => e.html.includes("no matchups"))).toBe(true);
   });
 });
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { createDigestRepository } from "@/data/digest.repository";
 import { createLeagueRepository } from "@/data/league.repository";
+import { createMatchupsRepository } from "@/data/matchups.repository";
 import { createStandingsSnapshotsRepository } from "@/data/standings-snapshots.repository";
 import { createEmailSender } from "@/integrations/resend";
 import { publicEnv } from "@/lib/env";
@@ -23,6 +24,7 @@ export function getDigestService() {
     league: createLeagueRepository(db),
     snapshots: createStandingsSnapshotsRepository(db),
     digests: createDigestRepository(db),
+    matchups: createMatchupsRepository(db),
     sender: createEmailSender({
       apiKey: env.RESEND_API_KEY,
       from: env.DIGEST_FROM,

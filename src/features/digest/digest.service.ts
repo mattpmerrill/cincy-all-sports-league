@@ -1,7 +1,9 @@
 import { buildWeeklyDigest, digestHeadline, subtractDays, weekWindow } from "@/domain/digest";
 import { buildLeagueModel, formatMonthDay } from "@/domain/league";
 import type { LeagueData } from "@/domain/league";
+import type { Matchup } from "@/domain/matchups";
 import type { DigestRepository } from "@/data/digest.repository";
+import type { MatchupsRepository } from "@/data/matchups.repository";
 import type { StandingsSnapshotsRepository } from "@/data/standings-snapshots.repository";
 import type { EmailSender } from "@/integrations/resend";
 import type { Logger } from "@/lib/logger";
@@ -34,6 +36,8 @@ export type DigestServiceDeps = {
   league: { load: () => Promise<LeagueData | null> };
   snapshots: Pick<StandingsSnapshotsRepository, "latestOnOrBefore">;
   digests: Pick<DigestRepository, "listConfirmedMembers" | "getSend" | "recordSend">;
+  /** Public-read table, so any client works; the digest passes the one it already reads with. */
+  matchups: Pick<MatchupsRepository, "listSeason">;
   sender: EmailSender;
   renderEmail: (props: DigestEmailProps) => Promise<{ html: string; text: string }>;
   /** Null when DIGEST_SIGNING_SECRET is unset: without it no unsubscribe link can be made. */
@@ -108,6 +112,16 @@ export function createDigestService(deps: DigestServiceDeps) {
       }
       if (recipients.length === 0) return skipped("no_recipients");
 
+      // Read once for the whole run. The section is a bonus: a failed read must never cost the
+      // league its Monday email, so it is logged and the digest goes out without the section.
+      let seasonMatchups: Matchup[] | null = null;
+      try {
+        seasonMatchups = await deps.matchups.listSeason(data.season.id);
+      } catch (error) {
+        log.error("digest matchups read failed", { error });
+      }
+      const matchups = seasonMatchups ? { matchups: seasonMatchups, weekStart } : null;
+
       const currentTeams = model.standings.map((row) => ({
         ...row,
         ownerName: row.owner?.displayName ?? null,
@@ -143,6 +157,7 @@ export function createDigestService(deps: DigestServiceDeps) {
                 current: currentTeams,
                 weekAgo: weekAgo?.rows ?? null,
                 recipientTeamId,
+                matchups,
               }),
               siteUrl,
               unsubscribeUrl,
