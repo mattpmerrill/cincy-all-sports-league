@@ -53,6 +53,14 @@ the digest can already include the new week. Each job is an hour off for half th
 route decides: `rolloverWindow` does nothing before Monday 06:30 Eastern, and every later day of
 the week counts as due so a missed Monday is caught up. The jobs fire daily for that reason.
 
+A third job, `cincy-matchups-retry` (`15 12 * * *` UTC), exists for standard time. In daylight time
+two firings are due before the 12:00 UTC digest (10:45 and 11:45 UTC), so one failed pg_net call
+still leaves a second. From November to March only one is (11:45 UTC, since 10:45 UTC is 5:45 am and
+not yet due), and a single failure would cost that Monday's digest section. 12:15 UTC is 7:15 am
+EST, a retry before the 8:00 am digest. In daylight time it is 8:15 am, after the digest, and an
+idempotent repeat. 12:15 keeps clear of the `:00` and `:30` score syncs and sits five minutes after
+the games refresh at `:10`.
+
 **Alternatives for where the weeks come from.**
 
 - _Compute from `standings_snapshots`._ A snapshot is one row per team per date, written by a sync
@@ -118,8 +126,12 @@ point in the week, never part-way through one. Once any matchup exists, a later 
 catch-up run opens a week whose label is the calendar week but whose start totals were frozen on the
 catch-up day, so the prior week absorbs the extra days of scoring. Between Monday 00:00 and the
 rollover, and after a missed Monday, `displayWeek` keeps last week's matchups on screen, labelled
-as still counting, instead of showing "nothing this week". Consequence for shipping: deploy before
-a Monday 6:45 am Eastern, or week one starts the following Monday.
+as still counting, instead of showing "nothing this week". Consequence for shipping: the migration
+and the deploy must both be live before the last firing on the Monday you want week one to open.
+That is the 12:15 UTC retry: 8:15 am Eastern in daylight time (until 2026-11-01) and 7:15 am
+Eastern in standard time (2026-11-02 to 2027-03-08). Aim for before 6:45 am, because the
+daylight-time retry lands after the 8:00 am digest, which would then go out without the section. A
+merge after the last firing means week one opens the following Monday.
 
 **Season end.** The Monday after the season's last week is close-only, and so is any later week, so
 a run of failed jobs still closes the last week. The service skips the call when nothing is open
@@ -135,8 +147,22 @@ rollover. The 500-character message body cannot hold ten results and ten pairing
 names, so the body is a one-line summary that lists as many as fit and says how many were left out,
 and the full lists live in a `matchups_week` payload (validated like the other League payloads),
 which the feed card renders. The payload carries the new week's Monday and the results of the week
-before it. The post and the digest both word a result through `gainTexts`, the one place that
-decides how many decimals show a close finish.
+before it. The post and the digest both word a result and a pairing through `resultSentence`
+and `pairingSentence` in `domain/matchups` (which use `gainTexts` to decide how many decimals show
+a close finish), so the neutral wording has one owner.
+
+**The digest section.** The Monday digest reads the season's matchups once per run
+(`domain/digest/build-matchups-section.ts`). Its results are those of the latest earlier week that
+is final and was finalized on or after this Monday (Eastern date), headed "Last week's matchups"
+when that is the previous Monday's week and "Latest matchup results" otherwise, so a fully missed
+week still shows and a stale week (the Monday after a season ends) does not. The pairings are this
+week's live matchups. The section is capped so the recipient's own result and pairing and their
+record do not sit under twenty lines on a phone: up to 3 other results and 3 other pairings with a
+team, 4 and 4 without one, and a "See all {n} matchups" link when anything was cut. When the
+rollover has not run by digest time (an earlier week is still live and this week has no rows), the
+section says the matchups are still being settled and prints no scores. A failed matchups read
+never costs the email: the digest goes out without the section, and `DigestReport.matchupsSection`
+reports `included`, `none` or `read_failed`, so the cron response shows a failed read.
 
 **Reading and caching.** The pages read two caches. The matchups cache (`matchups` tag, one-hour
 expiry as a safety net) holds the season's rows, about ten a week. Live scores come from the league
@@ -169,14 +195,11 @@ ignored like the other filters.
 ## Known limits
 
 - The record shown on a past week's view is season-to-date, not "as of" that week.
-- The digest's "last week" is exactly the previous Monday's week, and only if it is final. If the
-  Monday rollover has not run by 8:00 am, that week is still live and is left out, so the section
-  can be empty.
 - The feed card says "Last week's results" because the payload carries only the new week's date.
 - An odd number of teams gives one team a bye, and there is no bye history.
-- The daily non-Monday firings do a full league load and an idempotent rpc (about 20 ms locally) to
+- The daily non-Monday firings (three a day) do a full league load and an idempotent rpc (about 20 ms locally) to
   find out nothing is due. That is accepted for the catch-up guarantee.
 - A lost feed post cannot be recovered (see above).
-- Not verified: a real-device, keyboard or screen-reader pass; the two-team games filter beyond unit
-  tests (the local database has no games); a forced matchups read failure in a browser; and the real
-  pg_cron jobs firing against the app.
+- Not verified: real phones; real mail clients (Gmail, Outlook, Apple Mail); keyboard and
+  screen-reader passes; the two-team games filter in a browser (the local database has no games); a
+  forced matchups read failure in a browser; and the real pg_cron jobs firing against the app.

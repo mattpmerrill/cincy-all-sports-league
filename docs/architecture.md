@@ -202,7 +202,7 @@ standings, and dependency-cruiser fails the build if `domain/scoring` or `domain
 `domain/matchups`. See [ADR-007](decisions/ADR-007-weekly-matchups.md).
 
 ```
-pg_cron 10:45 and 11:45 UTC daily (6:45 am Eastern in EDT and EST) -> POST /api/cron/matchups
+pg_cron 10:45, 11:45 and 12:15 UTC daily (6:45 am Eastern in EDT and EST, then a retry) -> POST /api/cron/matchups
   bearer CRON_SECRET, constant-time check; the route takes the clock itself, never a parameter
   -> rollWeek({ now })
      rolloverWindow ........ before Monday 06:30 Eastern: not_due; any later day counts as due
@@ -224,12 +224,14 @@ pg_cron 10:45 and 11:45 UTC daily (6:45 am Eastern in EDT and EST) -> POST /api/
 
 The week closes at the rollover, not at Sunday midnight, because scores arrive by the 30-minute sync
 and a Sunday-night game can finish after midnight. `:45` sits between the `:00` and `:30` score
-syncs and before the 8:00 am digest. Each of the two jobs is an hour off for half the year, so the
-route's own 06:30 Eastern guard and the week check decide, and the rest of the daily firings are
-idempotent no-ops. A Monday the job missed is caught up on a later day; the week then carries the
-calendar week's label but its start totals are from the catch-up day. The first week only opens on a
-Monday. After the season's last week the run is close-only, so the active season must be flipped
-after that run.
+syncs and before the 8:00 am digest. The first two jobs are each an hour off for half the year, so
+the route's own 06:30 Eastern guard and the week check decide, and the rest of the daily firings
+are idempotent no-ops. The third job (12:15 UTC, 7:15 am EST) exists because in standard time only
+one firing is due before the 8:00 am digest, so a single failed call would cost that Monday's
+digest section; in daylight time it lands at 8:15 am and is a repeat. A Monday the job missed is
+caught up on a later day; the week then carries the calendar week's label but its start totals are
+from the catch-up day. The first week only opens on a Monday. After the season's last week the run
+is close-only, so the active season must be flipped after that run.
 
 `roll_matchup_week` is the single writer (`service_role` only, `security definer`, typed error
 tokens). The table is public read with no write path for anyone else. The Monday feed post is lost
@@ -249,8 +251,12 @@ Results are derived, never stored, so a scoring correction moves a live week at 
 change a final one. Live scores come from the league cache, so a sync never has to drop the
 matchups cache. The Week page, the Standings page's `?view=matchups`, the record on season rows and
 the team page's matchups section all share this read side. The Monday digest reads the season's
-matchups once per run, through `domain/digest`'s `buildMatchupsSection`, and goes out without the
-section if that read fails.
+matchups once per run, through `domain/digest`'s `buildMatchupsSection`: the results of the latest
+earlier week finalized on or after that Monday, this week's pairings, capped lists with a "See all
+{n} matchups" link, and a "still being settled" note instead of scores if the rollover has not run.
+The result and pairing sentences come from `domain/matchups` (`resultSentence`, `pairingSentence`),
+shared with the feed post. The email goes out without the section if the read fails, and the digest
+report says which of `included`, `none` or `read_failed` happened.
 
 ## Push flow
 

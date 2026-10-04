@@ -13,8 +13,8 @@ branches, worktrees or open pull requests.
 ## On a branch: weekly matchups (2026-10-04, not shipped)
 
 Branch `feat/matchups`, built on this machine. No migration has been applied to production, the
-branch is not merged or pushed, and its two pg_cron jobs (`cincy-matchups-edt` and
-`cincy-matchups-est`) do not exist in production yet.
+branch is not merged or pushed, and its three pg_cron jobs (`cincy-matchups-edt`,
+`cincy-matchups-est` and `cincy-matchups-retry`) do not exist in production yet.
 
 - **What it is.** Every Monday each fantasy team gets one opponent, chosen by standings neighbors
   (no repeat inside 3 weeks when it can be avoided). Whoever gains more points over the week wins;
@@ -31,42 +31,52 @@ branch is not merged or pushed, and its two pg_cron jobs (`cincy-matchups-edt` a
   pg_cron jobs). The digest section is `domain/digest/build-matchups-section.ts`.
 - **Deferred by decision.** Push alerts for lead changes and wins, a "Rivalry" tag, and lead-change
   feed posts.
-- **Verified (local stack and unit level).** `supabase/tests/11_matchups.test.sql` (99 assertions:
-  constraints, public read, deny tests for every client write and for a client calling the
-  function, every `roll_matchup_week` path and error token, the cascade and both cron jobs);
-  Vitest (132 files and 1554 tests passing when this section was written); two e2e smoke tests (the
-  Week matchups region and the Standings switch, written to pass on an empty database, so they
-  prove the pages render and not that matchups display); and Opus reviewer runs during the build.
-  The pairing search is covered by a 30-week, 20-team simulation (zero rematches).
+- **Verified.**
+  - pgTAP on a freshly reset local stack: `supabase/tests/11_matchups.test.sql` (100 assertions:
+    constraints, public read, deny tests for every client write and for a client calling the
+    function, every `roll_matchup_week` path and error token, the cascade and all three cron jobs)
+    passes, and so does the whole suite (11 files, 728 tests; `pnpm test:db`, run 2026-10-04).
+  - Vitest: 133 files and 1581 tests passing (`pnpm check`, run 2026-10-04). The pairing search is
+    covered by a 30-week, 20-team simulation (zero rematches).
+  - Two e2e smoke tests (the Week matchups region and the Standings switch) ran during the build.
+    They are written to pass on an empty database, so they prove the pages render and not that
+    matchups display. They were not re-run for this update, so no count is given.
+  - The UI was looked at in a real browser on the local stack, by the builder and independently by
+    the reviewer (Playwright at 320, 390 and 1280 px, signed in and signed out, with seeded weeks).
+  - The digest was rendered locally to HTML and text with a stub sender, and the screenshots were
+    looked at in Chromium.
+  - Opus reviewer runs during the build.
 - **Not verified.**
   - The real pg_cron jobs have not fired against the app, and nothing has run against production
     data.
-  - No real-device, keyboard or screen-reader pass.
-  - The two-team games filter (`?team=a&vs=b`) is covered by unit tests only: the local database
-    has no games.
-  - A forced matchups read failure was not induced in a browser. The "section left out" behavior
-    is covered by unit tests.
-  - The Monday digest section and the feed card are covered by unit tests; neither has been seen in
-    a real inbox or on the production feed.
+  - Real phones, and real mail clients (Gmail, Outlook, Apple Mail) for the digest section.
+  - Keyboard and screen-reader passes.
+  - The two-team games filter (`?team=a&vs=b`) in a browser: it is covered by unit tests only,
+    because the local database has no games.
+  - A forced matchups read failure in a browser. The "section left out" behavior is covered by
+    unit tests.
 
 ### Ship checklist for weekly matchups (needs Matt's explicit go-ahead)
 
 Every step touches production (the database, the live site or its schedule), so each needs a yes
-from Matt at the time. Run the commands from the repo root. Timing matters: the rollover for a week
-runs at 6:45 am Eastern on its Monday, so do steps 1 to 3 before the Monday you want week one to
-start. The first rollover after that opens week one. The next Monday is 2026-10-05. If the deploy
-lands after that Monday's 6:45 am Eastern, week one waits until the following Monday, because the
-first week never opens part-way through a week. (Until the clocks change on 2026-11-01, the second
-daily job fires at 7:45 am Eastern, which also counts on a Monday, so there is one more hour of
-grace. Do not plan around it.)
+from Matt at the time. Run the commands from the repo root. Timing matters: week one opens on the first firing of the rollover that is due on a Monday, and the
+first week never opens part-way through a week. The migration (which creates the jobs) and the
+deploy must both be live before the last firing on the Monday you want it to open, or week one waits
+until the following Monday. The Monday firings are 10:45, 11:45 and 12:15 UTC, and the route counts
+a firing as due from 06:30 Eastern. So the last firing that can open week one is 12:15 UTC, which
+is **8:15 am Eastern while daylight time lasts (through Monday 2026-10-26; the clocks change on
+2026-11-01) and 7:15 am Eastern in standard time (Mondays 2026-11-02 to 2027-03-08)**. Aim for
+before 6:45 am Eastern anyway: the daylight-time 12:15 firing lands after the 8:00 am digest, so the
+digest would go out without the section that day, and a deploy still building at the deadline has
+no margin. The next Monday is 2026-10-05.
 
 1. Migrations before code. `supabase db push --linked --dry-run` must list exactly
    `20261005120000`, `20261005120100`, `20261005120200` and `20261005120300`. Then
-   `supabase db push --linked`. The two jobs reuse the `cron_secret` vault secret the other jobs
+   `supabase db push --linked`. The three jobs reuse the `cron_secret` vault secret the other jobs
    already use.
 2. Read-only check that the jobs exist:
-   `select jobname, schedule from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est');`
-   returns two rows, `45 10 * * *` and `45 11 * * *`.
+   `select jobname, schedule from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est', 'cincy-matchups-retry');`
+   returns three rows: `45 10 * * *`, `45 11 * * *` and `15 12 * * *`.
 3. Merge `feat/matchups` into `main` (it auto-deploys). `LeagueData` did not change, so there is no
    league cache key bump; the new matchups cache has its own key (`v1`). Until the first rollover,
    the Week tab and the Standings switch show "Matchups start Monday".
@@ -79,8 +89,8 @@ grace. Do not plan around it.)
 5. Season end, when it comes: the Monday after the season's last week closes the last matchups
    (close-only). Flip the active season to the next one only after that run, or the old season's
    last week stays open.
-6. Rollback: matchups are additive. To stop the rollover, unschedule the two jobs
-   (`select cron.unschedule('cincy-matchups-edt'), cron.unschedule('cincy-matchups-est');`); the
+6. Rollback: matchups are additive. To stop the rollover, unschedule the three jobs
+   (`select cron.unschedule('cincy-matchups-edt'), cron.unschedule('cincy-matchups-est'), cron.unschedule('cincy-matchups-retry');`); the
    pages keep showing what exists. The migrations can stay.
 
 ## Shipped 2026-10-03 and 2026-10-04
@@ -134,8 +144,10 @@ and push alerts work.
   `cincy-free-agent-refresh` daily at 09:15 UTC, `cincy-games-weeks` daily at 09:25 UTC,
   `cincy-push-sends-cleanup` daily at 09:40 UTC, and the weekly digest at 8am Eastern on Mondays
   (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC). On the branch only, not
-  in production yet: `cincy-matchups-edt` (10:45 UTC) and `cincy-matchups-est` (11:45 UTC), which
-  together fire at 6:45 am Eastern daily to roll the weekly matchups.
+  in production yet: `cincy-matchups-edt` (10:45 UTC), `cincy-matchups-est` (11:45 UTC) and
+  `cincy-matchups-retry` (12:15 UTC), which together fire daily to roll the weekly matchups. The
+  first two are 6:45 am Eastern in daylight and standard time respectively, and the retry is 7:15
+  am EST (8:15 am EDT) so a failed standard-time call still gets a second chance before the digest.
 
 Read-only health checks (Supabase SQL editor or the MCP `execute_sql`):
 
@@ -413,8 +425,10 @@ Feature ideas that are not limits live in the
 - Weekly matchups (on a branch, not shipped; full reasoning in
   [ADR-007](decisions/ADR-007-weekly-matchups.md)):
   - The record shown on a past week's view is season-to-date, not "as of" that week.
-  - The digest's "last week" is exactly the previous Monday's week, and only when it is final. If
-    the rollover has not run by 8:00 am, the section can be empty.
+  - The digest section's lists are capped (3 other results and 3 other pairings with a team, 4 and
+    4 without), with a "See all {n} matchups" link. If the rollover has not run by digest time, the
+    section says the matchups are still being settled and shows no scores. The digest report's
+    `matchupsSection` is `included`, `none` or `read_failed`.
   - The feed card says "Last week's results" because the payload carries only the new week's date.
   - An odd number of teams gives one team a bye, and there is no bye history.
   - The daily non-Monday firings do a full league load and an idempotent database call (about
