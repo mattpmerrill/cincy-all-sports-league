@@ -23,6 +23,7 @@ export function LeaderboardRow({
   isMine,
   index,
   claimHref,
+  matchupRecord = null,
 }: {
   row: Row;
   maxSportPoints: number;
@@ -31,6 +32,8 @@ export function LeaderboardRow({
   index: number;
   /** Where to claim this team, or null when the viewer can't (it's owned, or they have one). */
   claimHref: string | null;
+  /** The team's weekly matchup record ("3-1-0"); null before a first week has finished. */
+  matchupRecord?: string | null;
 }) {
   return (
     <li className="animate-rise" style={{ animationDelay: `${Math.min(index, 12) * 40}ms` }}>
@@ -63,16 +66,28 @@ export function LeaderboardRow({
               </span>
             ) : null}
           </div>
-          {row.owner ? (
-            <span className="truncate text-xs text-text-muted">{row.owner.displayName}</span>
-          ) : claimHref ? (
-            // Sits above the stretched link so it gets its own tap, 24px tall for WCAG 2.2 AA.
-            <Link
-              href={claimHref}
-              className="relative z-10 inline-flex min-h-6 items-center gap-1 self-start rounded-full border border-brand/50 bg-brand/10 px-2 text-xs font-semibold text-brand-bright outline-none hover:bg-brand/20 focus-visible:ring-3 focus-visible:ring-ring/60"
-            >
-              Unclaimed · Claim it<span className="sr-only">: {row.name}</span>
-            </Link>
+          {row.owner || claimHref || matchupRecord ? (
+            <div className="flex flex-wrap items-center gap-x-2">
+              {row.owner ? (
+                <span className="max-w-full truncate text-xs text-text-muted">
+                  {row.owner.displayName}
+                </span>
+              ) : claimHref ? (
+                // Sits above the stretched link so it gets its own tap, 24px tall for WCAG 2.2 AA.
+                <Link
+                  href={claimHref}
+                  className="relative z-10 inline-flex min-h-6 items-center gap-1 self-start rounded-full border border-brand/50 bg-brand/10 px-2 text-xs font-semibold text-brand-bright outline-none hover:bg-brand/20 focus-visible:ring-3 focus-visible:ring-ring/60"
+                >
+                  Unclaimed · Claim it<span className="sr-only">: {row.name}</span>
+                </Link>
+              ) : null}
+              {matchupRecord ? (
+                <span className="tabular text-xs whitespace-nowrap text-text-muted">
+                  Matchups <span className="sr-only">record </span>
+                  {matchupRecord}
+                </span>
+              ) : null}
+            </div>
           ) : null}
           <SportContributionBars sportPoints={row.sportPoints} max={maxSportPoints} />
         </div>
