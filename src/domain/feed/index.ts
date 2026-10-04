@@ -1,8 +1,14 @@
 export { MESSAGE_MAX_LENGTH, messageBodySchema } from "./body";
-export { buildMoversPost, buildScoreUpdatePost, groupScoreUpdateItems } from "./league-posts";
+export {
+  buildMatchupsWeekPost,
+  buildMoversPost,
+  buildScoreUpdatePost,
+  groupScoreUpdateItems,
+} from "./league-posts";
 export type {
   CurrentRankedTeam,
   LeaguePost,
+  MatchupsWeekInput,
   RankedTeamRef,
   ScoreUpdateGroup,
 } from "./league-posts";
@@ -17,13 +23,17 @@ export {
 export { REACTIONS, REACTION_NAMES, isReactionName, summarizeReactions } from "./reactions";
 export type { ReactionName, ReactionRow, ReactionSummary } from "./reactions";
 export { assembleThreads } from "./thread";
-export { MESSAGE_KINDS, OFFER_KINDS } from "./types";
+export { MATCHUPS_WEEK_OUTCOMES, MESSAGE_KINDS, OFFER_KINDS } from "./types";
 export type {
   FreeAgentMovePayload,
   FreeAgentMovePayloadDraft,
   LeaguePayload,
   Message,
   MessageAuthor,
+  MatchupsWeekOutcome,
+  MatchupsWeekPairing,
+  MatchupsWeekPayload,
+  MatchupsWeekResult,
   MessageKind,
   MoverItem,
   MoversPayload,

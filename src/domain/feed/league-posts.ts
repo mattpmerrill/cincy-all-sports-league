@@ -3,6 +3,8 @@ import { rankMovement } from "@/domain/standings";
 import { MESSAGE_MAX_LENGTH } from "./body";
 import type {
   LeaguePayload,
+  MatchupsWeekPayload,
+  MatchupsWeekResult,
   MoverItem,
   MoversPayload,
   ScoreUpdateItem,
@@ -20,12 +22,16 @@ const BODY_BUDGET = MESSAGE_MAX_LENGTH - 24;
 const signed = (n: number) => `${n > 0 ? "+" : "-"}${formatPoints(Math.abs(n))}`;
 
 /** Adds pieces to a comma list until the budget runs out, then says how many were left out. */
-function joinWithinBudget(prefix: string, pieces: readonly string[]): string {
+function joinWithinBudget(
+  prefix: string,
+  pieces: readonly string[],
+  budget: number = BODY_BUDGET,
+): string {
   let text = prefix;
   let used = 0;
   for (const piece of pieces) {
     const next = `${used === 0 ? "" : ", "}${piece}`;
-    if (text.length + next.length > BODY_BUDGET && used > 0) break;
+    if (text.length + next.length > budget && used > 0) break;
     text += next;
     used += 1;
   }
@@ -138,4 +144,76 @@ export function groupScoreUpdateItems(items: readonly ScoreUpdateItem[]): ScoreU
     groups.set(key, group);
   }
   return [...groups.values()];
+}
+
+export type MatchupsWeekInput = Omit<MatchupsWeekPayload, "type">;
+
+const resultPiece = (r: MatchupsWeekResult): string => {
+  if (r.outcome === "tie")
+    return `${r.home.name} and ${r.away.name} tied at ${formatPoints(r.homeGain)}`;
+  const [winner, loser, winnerGain, loserGain] =
+    r.outcome === "home"
+      ? [r.home, r.away, r.homeGain, r.awayGain]
+      : [r.away, r.home, r.awayGain, r.homeGain];
+  return `${winner.name} beat ${loser.name} ${formatPoints(winnerGain)} to ${formatPoints(loserGain)}`;
+};
+
+/**
+ * Splits a character budget between two parts that each want their full length: both fit when they
+ * can, otherwise the shorter one keeps all of its text and the longer one gets the rest, and two
+ * long ones share equally. Neither part ever starves the other.
+ */
+function splitBudget(total: number, first: number, second: number): [number, number] {
+  if (first + second <= total) return [total, total];
+  const half = Math.floor(total / 2);
+  if (first <= half) return [first, total - first];
+  if (second <= half) return [total - second, second];
+  return [half, half];
+}
+
+/**
+ * The Monday rollover post, e.g. "Last week: Sher Bear beat Papie 12.4 to 8, Coop Doggies and Dirk
+ * tied at 0. This week: Sher Bear vs Coop Doggies, Papie vs Dirk." Results keep the order given, as
+ * do pairings. Null when there is nothing to say, so a quiet no-op rollover stays silent.
+ */
+export function buildMatchupsWeekPost(
+  input: MatchupsWeekInput,
+): LeaguePost<MatchupsWeekPayload> | null {
+  const results = input.results.slice(0, MAX_PAYLOAD_ITEMS);
+  const pairings = input.pairings.slice(0, MAX_PAYLOAD_ITEMS);
+  if (results.length === 0 && pairings.length === 0) return null;
+
+  const resultPieces = results.map(resultPiece);
+  const pairingPieces = pairings.map((p) => `${p.home.name} vs ${p.away.name}`);
+  const RESULTS_PREFIX = "Last week: ";
+  const PAIRINGS_PREFIX = "This week: ";
+
+  // Two sentences share one message, so each gets a slice of the budget. The reserve for the
+  // "and N more" tails already sits in BODY_BUDGET; the three characters here are the two full
+  // stops and the space between the parts.
+  const parts: string[] = [];
+  const shared = BODY_BUDGET - 3;
+  if (resultPieces.length > 0 && pairingPieces.length > 0) {
+    const fullLength = (prefix: string, pieces: string[]) => (prefix + pieces.join(", ")).length;
+    const [resultsBudget, pairingsBudget] = splitBudget(
+      shared,
+      fullLength(RESULTS_PREFIX, resultPieces),
+      fullLength(PAIRINGS_PREFIX, pairingPieces),
+    );
+    parts.push(
+      joinWithinBudget(RESULTS_PREFIX, resultPieces, resultsBudget),
+      joinWithinBudget(PAIRINGS_PREFIX, pairingPieces, pairingsBudget),
+    );
+  } else if (resultPieces.length > 0) {
+    parts.push(joinWithinBudget(RESULTS_PREFIX, resultPieces, shared));
+  } else {
+    parts.push(joinWithinBudget(PAIRINGS_PREFIX, pairingPieces, shared));
+  }
+
+  const body = `${parts.map((p) => `${p}.`).join(" ")}`;
+  return {
+    // Team names are free text, so even with the tail reserve a body of absurd names is cut to fit.
+    body: body.length > MESSAGE_MAX_LENGTH ? `${body.slice(0, MESSAGE_MAX_LENGTH - 1)}…` : body,
+    payload: { type: "matchups_week", weekStart: input.weekStart, results, pairings },
+  };
 }

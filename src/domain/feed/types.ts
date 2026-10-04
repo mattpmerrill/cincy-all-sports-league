@@ -86,11 +86,38 @@ export type FreeAgentMovePayload = {
 };
 export type FreeAgentMovePayloadDraft = Omit<FreeAgentMovePayload, "moveId">;
 
+/** Who won a finished matchup, from the home side's point of view. */
+export const MATCHUPS_WEEK_OUTCOMES = ["home", "away", "tie"] as const;
+export type MatchupsWeekOutcome = (typeof MATCHUPS_WEEK_OUTCOMES)[number];
+
+export type MatchupsWeekResult = {
+  home: TradeTeamLink;
+  away: TradeTeamLink;
+  /** Points each team gained over the week: its season total at the close minus at the open. */
+  homeGain: number;
+  awayGain: number;
+  outcome: MatchupsWeekOutcome;
+};
+
+export type MatchupsWeekPairing = { home: TradeTeamLink; away: TradeTeamLink };
+
+/**
+ * The Monday rollover post: last week's final results and the new week's pairings. `weekStart` is
+ * the Monday of the new week; the results are for the week before it. Either list may be empty
+ * (no results in the first week, no pairings in the closing week of a season).
+ */
+export type MatchupsWeekPayload = {
+  type: "matchups_week";
+  weekStart: string;
+  results: MatchupsWeekResult[];
+  pairings: MatchupsWeekPairing[];
+};
+
 export type ScoreUpdatePayload = { type: "score_update"; items: ScoreUpdateItem[] };
 export type MoversPayload = { type: "movers"; date: string | null; items: MoverItem[] };
 
 export type LeaguePayload =
-  ScoreUpdatePayload | MoversPayload | TradePayload | FreeAgentMovePayload;
+  ScoreUpdatePayload | MoversPayload | TradePayload | FreeAgentMovePayload | MatchupsWeekPayload;
 
 export type Message = {
   id: string;
