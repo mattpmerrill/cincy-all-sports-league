@@ -11,18 +11,29 @@ import {
 
 type Row = Record<string, unknown>;
 
+type Recorded = { orders: [string, unknown][]; ranges: [number, number][] };
+
 /**
- * A thenable query builder over in-memory tables: applies the equality and date filters the
- * repository uses, so the week window can be exercised without a database. Ordering and paging are
- * query-builder details with nothing to assert here.
+ * A thenable query builder over in-memory tables: applies the equality and date filters and the
+ * page window the repository uses, and records the ordering columns and ranges it was given, so a
+ * missing `order` (paging then loses rows) or a missing `range` (a silent 1000-row cap) shows up.
  */
 function fakeDb(tables: Record<string, Row[]>) {
+  const recorded: Recorded = { orders: [], ranges: [] };
   const from = (table: string) => {
     const filters: ((row: Row) => boolean)[] = [];
+    let window: [number, number] | null = null;
     const query = {
       select: () => query,
-      order: () => query,
-      range: () => query,
+      order: (column: string, options: unknown) => {
+        recorded.orders.push([column, options]);
+        return query;
+      },
+      range: (first: number, last: number) => {
+        recorded.ranges.push([first, last]);
+        window = [first, last];
+        return query;
+      },
       eq: (column: string, value: unknown) => {
         filters.push((row) => row[column] === value);
         return query;
@@ -35,15 +46,14 @@ function fakeDb(tables: Record<string, Row[]>) {
         filters.push((row) => String(row[column]) < value);
         return query;
       },
-      then: (resolve: (result: { data: Row[]; error: null }) => unknown) =>
-        resolve({
-          data: (tables[table] ?? []).filter((row) => filters.every((f) => f(row))),
-          error: null,
-        }),
+      then: (resolve: (result: { data: Row[]; error: null }) => unknown) => {
+        const rows = (tables[table] ?? []).filter((r) => filters.every((f) => f(r)));
+        resolve({ data: window ? rows.slice(window[0], window[1] + 1) : rows, error: null });
+      },
     };
     return query;
   };
-  return { from } as unknown as DbClient;
+  return { db: { from } as unknown as DbClient, recorded };
 }
 
 const row = (overrides: Partial<MatchupRow> = {}): MatchupRow => ({
@@ -94,7 +104,7 @@ describe("toMatchup", () => {
 
 describe("listSeason", () => {
   it("returns only the season's matchups as domain values", async () => {
-    const db = fakeDb({
+    const { db } = fakeDb({
       matchups: [
         row({ id: "m1" }),
         row({ id: "m2", season_id: "season-2" }),
@@ -107,8 +117,31 @@ describe("listSeason", () => {
   });
 });
 
+describe("listSeason paging and order", () => {
+  it("orders by week then id (a total order, which paging needs) and asks for the first page", async () => {
+    const { db, recorded } = fakeDb({ matchups: [row()] });
+    await createMatchupsRepository(db).listSeason("season-1");
+    expect(recorded.orders).toEqual([
+      ["week_start", { ascending: true }],
+      ["id", { ascending: true }],
+    ]);
+    expect(recorded.ranges).toEqual([[0, 999]]);
+  });
+
+  it("walks to a second page instead of stopping at the 1000-row cap", async () => {
+    const many = Array.from({ length: 1001 }, (_, i) => row({ id: `m${i}` }));
+    const { db, recorded } = fakeDb({ matchups: many });
+    const matchups = await createMatchupsRepository(db).listSeason("season-1");
+    expect(matchups).toHaveLength(1001);
+    expect(recorded.ranges).toEqual([
+      [0, 999],
+      [1000, 1999],
+    ]);
+  });
+});
+
 describe("listRecentPairs", () => {
-  const db = fakeDb({
+  const { db } = fakeDb({
     matchups: [
       row({ id: "m1", week_start: "2026-09-14", home_team_id: "a", away_team_id: "b" }),
       row({ id: "m2", week_start: "2026-09-21", home_team_id: "c", away_team_id: "d" }),
@@ -131,6 +164,13 @@ describe("listRecentPairs", () => {
   it("does not reach past the window or into another season", async () => {
     const pairs = await createMatchupsRepository(db).listRecentPairs("season-1", "2026-10-05", 1);
     expect(pairs).toEqual([["e", "f"]]);
+  });
+
+  it("orders by week then id and pages like the season read", async () => {
+    const { db: recording, recorded } = fakeDb({ matchups: [row()] });
+    await createMatchupsRepository(recording).listRecentPairs("season-1", "2026-10-05", 3);
+    expect(recorded.orders.map(([column]) => column)).toEqual(["week_start", "id"]);
+    expect(recorded.ranges).toEqual([[0, 999]]);
   });
 
   it("is empty before any matchups exist", async () => {

@@ -94,6 +94,21 @@ describe("buildMatchupStandings, streaks", () => {
     ).toEqual({ result: "tie", length: 2, label: "T2" });
   });
 
+  it("reads a streak across a week the team did not play (a bye or a gap)", () => {
+    // W, no matchup in week 2, W: the missing week neither breaks nor extends the run.
+    expect(one([final(W1, "a", "b", 5, 1), final(W3, "a", "b", 5, 1)])).toMatchObject({
+      result: "win",
+      length: 2,
+      label: "W2",
+    });
+  });
+
+  it("is broken by a tie in the middle: W, T, W reads W1", () => {
+    expect(
+      one([final(W1, "a", "b", 5, 1), final(W2, "a", "b", 2, 2), final(W3, "a", "b", 5, 1)]),
+    ).toMatchObject({ result: "win", length: 1, label: "W1" });
+  });
+
   it("does not depend on the order the matchups arrive in", () => {
     const week = [final(W3, "a", "b", 1, 5), final(W1, "a", "b", 5, 1), final(W2, "a", "b", 5, 1)];
     expect(one(week)?.label).toBe("L1");
