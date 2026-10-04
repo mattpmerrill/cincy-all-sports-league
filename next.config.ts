@@ -2,7 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // ESPN hosts every team logo and athlete headshot we show.
+    // ESPN already hosts every team logo and athlete headshot. Serve those files
+    // directly. Resizing them here counts against the Hobby team's image
+    // transformations, which is shared by every project on the account.
+    unoptimized: true,
     remotePatterns: [{ protocol: "https", hostname: "a.espncdn.com", pathname: "/i/**" }],
   },
   async headers() {
