@@ -125,7 +125,7 @@ export type MatchupStandingsRowView = TeamLink & {
   isTied: boolean;
   seasonRank: number;
   seasonRankLabel: string;
-  /** Always present here: the table is only meant to be shown once `hasFinishedWeek`. */
+  /** Always present here: the table is only meant to be shown in state `table`, once a week has finished. */
   record: MatchupRecord;
   /** Total weekly points gained across finished matchups. */
   pointsGained: number;

@@ -11,8 +11,9 @@
 -- for the last week of a season, which has no next week to open. p_pairings must still be an
 -- array: null or anything else is invalid_pairings.
 --
--- Idempotent and safe against overlapping calls. The cron fires twice a day for DST and daily to
--- catch up a missed Monday, so overlap and repeats are normal. The function takes a row lock on
+-- Idempotent and safe against overlapping calls. The cron fires on three daily schedules (two for
+-- daylight saving, one retry) and a later day catches up a missed Monday, so overlap and repeats
+-- are normal. The function takes a row lock on
 -- the season (FOR NO KEY UPDATE, like the move functions lock participants: it serializes two
 -- rollovers but does not block the foreign-key checks other writers take on the season). The
 -- second caller waits, then sees the first one's committed rows for the week and changes nothing.

@@ -47,17 +47,14 @@ export type RolloverDeps = {
  * - `nothing_open`: a week after the season's last, and no matchup is still open to close.
  * - `already_rolled`: the database already had this week (an earlier run did the work).
  */
-export const ROLLOVER_SKIP_REASONS = [
-  "not_due",
-  "no_season",
-  "outside_season",
-  "waiting_for_monday",
-  "nothing_open",
-  "already_rolled",
-] as const;
-export type RolloverSkipReason = (typeof ROLLOVER_SKIP_REASONS)[number];
+export type RolloverSkipReason =
+  | "not_due"
+  | "no_season"
+  | "outside_season"
+  | "waiting_for_monday"
+  | "nothing_open"
+  | "already_rolled";
 
-/** `written` and `none` are both fine: `none` means there was nothing to say. */
 /**
  * A typed failure from the database function plus the run's correlation id, so the caller can
  * quote it and find the log line. Same `code` and `message` as `AppError`.
@@ -70,6 +67,7 @@ const EXPECTED_REFUSALS: readonly MatchupError["code"][] = [
   "season_not_found",
 ];
 
+/** `written` and `none` are both fine: `none` means there was nothing to say. */
 export type RolloverPostStatus = "written" | "none" | "failed";
 
 export type RolloverReport =
