@@ -11,8 +11,8 @@ import type { MatchupsSectionTeam } from "./build-matchups-section";
 const THIS_WEEK = "2026-10-12";
 const LAST_WEEK = "2026-10-05";
 const WEEK_BEFORE = "2026-09-28";
-/** The rollover closes a week at 07:00 EDT on the Monday that opens the next one. */
-const CLOSED_THIS_MONDAY = "2026-10-12T11:00:00.000Z";
+/** The rollover closes a week at 06:45 EDT on the Monday that opens the next one. */
+const CLOSED_THIS_MONDAY = "2026-10-12T10:45:00.000Z";
 
 // Season order: Sher Bear, Papie, Coop, Dirk. Home is the better-ranked side by convention.
 const teams: MatchupsSectionTeam[] = [
@@ -178,8 +178,8 @@ describe("buildMatchupsSection wording", () => {
     const section = ready(
       build(
         [
-          closed(WEEK_BEFORE, "sher", "coop", [0, 0], [3, 1], "2026-10-05T11:00:00.000Z"),
-          closed(WEEK_BEFORE, "papie", "dirk", [0, 0], [1, 1], "2026-10-05T11:00:00.000Z"),
+          closed(WEEK_BEFORE, "sher", "coop", [0, 0], [3, 1], "2026-10-05T10:45:00.000Z"),
+          closed(WEEK_BEFORE, "papie", "dirk", [0, 0], [1, 1], "2026-10-05T10:45:00.000Z"),
           ...lastWeekFinal(),
           ...thisWeekLive(),
         ],
@@ -227,7 +227,7 @@ describe("buildMatchupsSection which weeks it shows", () => {
   it("gives an older week closed before this Monday no results", () => {
     // The Monday after a season ends: the last week closed a week ago and nothing is new.
     const stale = [
-      closed(WEEK_BEFORE, "sher", "papie", [0, 0], [5, 2], "2026-10-05T11:00:00.000Z"),
+      closed(WEEK_BEFORE, "sher", "papie", [0, 0], [5, 2], "2026-10-05T10:45:00.000Z"),
     ];
     expect(build(stale, "sher")).toBeNull();
   });

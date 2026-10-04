@@ -11,8 +11,8 @@
 create table public.matchups (
   id uuid primary key default gen_random_uuid(),
   season_id uuid not null,
-  -- The Monday the week opens. The week closes at the next rollover (Monday 7:00 am Eastern, not
-  -- midnight Sunday, so a late Sunday game still lands in the week it was played in).
+  -- The Monday the week opens. The week closes at the next rollover (Monday 6:45 am Eastern, due from
+  -- 06:30, not midnight Sunday, so a late Sunday game still lands in the week it was played in).
   week_start date not null check (extract(isodow from week_start) = 1),
 
   -- "Home" and "away" carry no meaning beyond a stable display order: home is the better-ranked

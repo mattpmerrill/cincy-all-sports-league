@@ -1,9 +1,9 @@
 -- Matchups: schema constraints, public read, no client writes (allow AND deny), the service_role-
 -- only roll_matchup_week function (create, idempotency, finalizing, every error token), cascade,
--- and the two rollover jobs. Fixtures are self-contained.
+-- and the three rollover jobs. Fixtures are self-contained.
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(99);
+select plan(100);
 
 -- The seed may already have an active season; only one can be active at a time.
 update public.seasons set is_active = false;
@@ -408,13 +408,14 @@ select is(
 reset role;
 
 -- ===== rollover jobs =====
-select is((select count(*)::int from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est')), 2, 'both matchups rollover jobs are scheduled');
+select is((select count(*)::int from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est', 'cincy-matchups-retry')), 3, 'all three matchups rollover jobs are scheduled');
 select is((select schedule from cron.job where jobname = 'cincy-matchups-edt'), '45 10 * * *', 'the EDT job runs daily at 10:45 UTC (6:45 am Eastern)');
 select is((select schedule from cron.job where jobname = 'cincy-matchups-est'), '45 11 * * *', 'the EST job runs daily at 11:45 UTC (6:45 am Eastern)');
+select is((select schedule from cron.job where jobname = 'cincy-matchups-retry'), '15 12 * * *', 'the retry job runs daily at 12:15 UTC (7:15 am EST, 8:15 am EDT)');
 select ok(
   (select bool_and(command like '%https://www.cincysports.xyz/api/cron/matchups%' and command like '%cron_secret%')
-   from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est')),
-  'both jobs call the matchups route with the vault bearer');
+   from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est', 'cincy-matchups-retry')),
+  'all three jobs call the matchups route with the vault bearer');
 
 select * from finish();
 rollback;

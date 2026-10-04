@@ -4,8 +4,9 @@ import { easternClock, mondayOf, seasonWeeks } from "@/domain/calendar/week";
  * Monday 06:30 Eastern. The weekend's games are final and the 30-minute sync has had its last
  * Sunday-night run, and it is early enough that the rollover lands before the 8 am digest. The
  * pg_cron jobs fire at 06:45 Eastern in daylight and standard time, so the on-time firing clears
- * this cutoff by 15 minutes. The other daily firing of each pair lands an hour away (05:45 or
- * 07:45) and is either too early or a harmless repeat.
+ * this cutoff by 15 minutes. The other firing of that pair lands an hour away (05:45 or 07:45)
+ * and is either too early or a harmless repeat. A third job, `cincy-matchups-retry` at 12:15 UTC,
+ * is 08:15 EDT or 07:15 EST: always due, and a retry before the 8 am digest in standard time.
  */
 export const ROLLOVER_HOUR_ET = 6;
 export const ROLLOVER_MINUTE_ET = 30;

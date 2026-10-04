@@ -27,11 +27,11 @@ const data = leagueData({
 // Last week Ann's team (a) beat Bo's (b) 8 to 3 and they meet again this week. Monday Sep 28 is the
 // digest's week, so Sep 21 is "last week".
 const defaultMatchups = (): Matchup[] => [
-  // The rollover closed it at 07:00 EDT on the Monday of the digest.
+  // The rollover closed it at 06:45 EDT on the Monday of the digest.
   matchup("2026-09-21", "a", "b", {
     start: [0, 0],
     end: [8, 3],
-    finalizedAt: "2026-09-28T11:00:00.000Z",
+    finalizedAt: "2026-09-28T10:45:00.000Z",
   }),
   matchup("2026-09-28", "a", "b", { start: [8, 3] }),
 ];

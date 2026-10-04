@@ -173,9 +173,10 @@ export function createMatchupsRolloverService(deps: RolloverDeps) {
   return {
     /**
      * The Monday rollover: close last week's matchups at the current season totals and open this
-     * week's pairings, in one database transaction. Called by a daily cron (twice, to cover both
-     * halves of the daylight-saving year), so repeats are the normal case and every one after the
-     * first is a no-op. Safe to run late: a Monday the job missed is caught up the next day.
+     * week's pairings, in one database transaction. Called by a daily cron (three jobs: two to
+     * cover both halves of the daylight-saving year, and a retry), so repeats are the normal case
+     * and every one after the first is a no-op. Safe to run late: a Monday the job missed is caught up
+     * the next day.
      *
      * Catch-up: a run on a later day than Monday (the Monday run was missed) opens a week whose
      * label is the calendar week but whose start totals were frozen on the catch-up day, so the
@@ -251,8 +252,8 @@ export function createMatchupsRolloverService(deps: RolloverDeps) {
       }
 
       // Whether or not this run rolled the week. The cached list also expires on its own after an
-      // hour and the next firing is at least an hour away, so this is a cheap belt-and-braces drop
-      // (it also covers a run that crashed between the commit and its own invalidation).
+      // hour, so this is a cheap belt-and-braces drop (it also covers a run that crashed between
+      // the commit and its own invalidation).
       deps.revalidate();
 
       if (!rolled.value.rolled) return skipped("already_rolled");

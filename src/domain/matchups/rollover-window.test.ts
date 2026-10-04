@@ -33,6 +33,13 @@ describe("rolloverWindow", () => {
         due: true,
       });
     });
+
+    it("is due for the 12:15 UTC retry job (08:15 Eastern), a harmless repeat after a roll", () => {
+      expect(rolloverWindow(new Date("2026-09-28T12:15:00Z"))).toEqual({
+        weekStart: "2026-09-28",
+        due: true,
+      });
+    });
   });
 
   describe("after the November fall-back (EST, UTC-5)", () => {
@@ -43,6 +50,13 @@ describe("rolloverWindow", () => {
         due: false,
       });
       expect(rolloverWindow(new Date("2026-11-02T11:45:00Z"))).toEqual({
+        weekStart: "2026-11-02",
+        due: true,
+      });
+    });
+
+    it("is due for the 12:15 UTC retry job (07:15 Eastern), still before the 08:00 digest", () => {
+      expect(rolloverWindow(new Date("2026-11-02T12:15:00Z"))).toEqual({
         weekStart: "2026-11-02",
         due: true,
       });
