@@ -62,13 +62,21 @@ function setup(options: Setup = {}) {
     posts.push(post);
   });
   const revalidate = vi.fn();
+  const invalidateLeague = vi.fn();
   const error = vi.fn();
+  const warn = vi.fn();
   const deps: RolloverDeps = {
     league: { loadFresh },
     matchups: { listSeason, listRecentPairs, rollWeek },
     posts: { write },
     revalidate,
-    logger: { ...silent, error, child: () => ({ ...silent, error }) },
+    invalidateLeague,
+    logger: {
+      ...silent,
+      warn,
+      error,
+      child: () => ({ ...silent, warn, error }),
+    },
     newCorrelationId: () => "corr-1",
   };
   return {
@@ -80,7 +88,9 @@ function setup(options: Setup = {}) {
     write,
     posts,
     revalidate,
+    invalidateLeague,
     error,
+    warn,
   };
 }
 
@@ -262,14 +272,18 @@ describe("rollWeek: a repeat", () => {
     });
     expect(s.rollWeek).toHaveBeenCalledOnce();
     expect(s.write).not.toHaveBeenCalled();
-    // A crash after an earlier commit must not leave pages stale until the hourly expiry.
+    // A cheap belt-and-braces drop: it also covers a run that died between its commit and its own
+    // invalidation. The league cache is not touched: repeats fire daily and must not churn it.
     expect(s.revalidate).toHaveBeenCalledOnce();
+    expect(s.invalidateLeague).not.toHaveBeenCalled();
   });
 
-  it("drops the cache when it rolled too", async () => {
+  it("drops the matchups cache and the league cache when it rolled", async () => {
     const s = setup();
     await report(s, MONDAY);
     expect(s.revalidate).toHaveBeenCalledOnce();
+    // Pages must not compute live gains from totals older than the ones just frozen as starts.
+    expect(s.invalidateLeague).toHaveBeenCalledOnce();
   });
 });
 
@@ -330,16 +344,37 @@ describe("rollWeek: the feed post", () => {
 });
 
 describe("rollWeek: failures", () => {
-  it("returns the database function's typed error as a value, with no post and no cache drop", async () => {
+  it("returns the database function's typed error as a value, with the correlation id, no post and no cache drop", async () => {
     const error: MatchupError = {
       code: "week_out_of_order",
       message: "A later week already has matchups, so an earlier one cannot be added.",
     };
     const s = setup({ rolled: err(error.code, error.message) });
     const result = await s.service.rollWeek({ now: MONDAY });
-    expect(result).toEqual({ ok: false, error });
+    expect(result).toEqual({ ok: false, error: { ...error, correlationId: "corr-1" } });
     expect(s.write).not.toHaveBeenCalled();
     expect(s.revalidate).not.toHaveBeenCalled();
+    expect(s.invalidateLeague).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["week_out_of_order", "warn"],
+    ["season_not_found", "warn"],
+    ["missing_final", "error"],
+    ["invalid_finals", "error"],
+    ["invalid_pairings", "error"],
+    ["duplicate_team", "error"],
+    ["invalid_week_start", "error"],
+  ] as const)("logs %s at %s level", async (code, level) => {
+    const s = setup({ rolled: err(code, code) });
+    await s.service.rollWeek({ now: MONDAY });
+    const loud = level === "error" ? s.error : s.warn;
+    const quiet = level === "error" ? s.warn : s.error;
+    expect(loud).toHaveBeenCalledWith(
+      "matchups rollover refused",
+      expect.objectContaining({ code }),
+    );
+    expect(quiet).not.toHaveBeenCalled();
   });
 
   it("lets an unexpected failure throw for the route to log", async () => {

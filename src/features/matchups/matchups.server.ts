@@ -4,6 +4,7 @@ import { loadCachedLeagueData } from "@/data/league.cached";
 import { loadCachedMatchups } from "@/data/matchups.cached";
 import { createMatchupsRepository } from "@/data/matchups.repository";
 import { createMessagesRepository } from "@/data/messages.repository";
+import { revalidateLeague } from "@/lib/league-cache";
 import { revalidateMatchups } from "@/lib/matchups-cache";
 import { logger, newCorrelationId } from "@/lib/logger";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
@@ -28,6 +29,7 @@ export function getMatchupsRolloverService() {
     matchups: createMatchupsRepository(db),
     posts: { write: (seasonId, post) => messages.insertLeague(seasonId, post.body, post.payload) },
     revalidate: revalidateMatchups,
+    invalidateLeague: revalidateLeague,
     logger: logger.child({ scope: "matchups" }),
     newCorrelationId,
   });

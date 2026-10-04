@@ -27,6 +27,12 @@ export type RolloverDeps = {
   posts: { write(seasonId: string, post: LeaguePost): Promise<void> };
   /** Drops the cached matchups (`revalidateMatchups`). Injected so tests need no Next. */
   revalidate: () => void;
+  /**
+   * Drops the cached league (`revalidateLeague`). Called only on a run that actually rolled, never
+   * on the daily repeats, so pages cannot show live gains computed from totals older than the ones
+   * just frozen as the new week's starts.
+   */
+  invalidateLeague: () => void;
   logger: Logger;
   newCorrelationId: () => string;
 };
@@ -52,6 +58,18 @@ export const ROLLOVER_SKIP_REASONS = [
 export type RolloverSkipReason = (typeof ROLLOVER_SKIP_REASONS)[number];
 
 /** `written` and `none` are both fine: `none` means there was nothing to say. */
+/**
+ * A typed failure from the database function plus the run's correlation id, so the caller can
+ * quote it and find the log line. Same `code` and `message` as `AppError`.
+ */
+export type RolloverError = MatchupError & { correlationId: string };
+
+/** Failures that only mean the request raced or the season moved; the next run can succeed. */
+const EXPECTED_REFUSALS: readonly MatchupError["code"][] = [
+  "week_out_of_order",
+  "season_not_found",
+];
+
 export type RolloverPostStatus = "written" | "none" | "failed";
 
 export type RolloverReport =
@@ -126,9 +144,13 @@ export function createMatchupsRolloverService(deps: RolloverDeps) {
   }
 
   /**
-   * The Monday post is a courtesy, written only on the run whose rpc actually rolled the week, so
-   * it is as idempotent as the rollover. A failure is logged and never fails or undoes the
-   * rollover (same stance as the sync's posts).
+   * The Monday post is a courtesy, written only on the run whose rpc actually rolled the week, and
+   * only after the rpc has committed. That ordering is what guarantees the post is never
+   * duplicated: a repeat sees `rolled: false` and writes nothing. The price is accepted: if the
+   * process dies after the commit and before this write, that week's post is lost for good,
+   * because no later run will see `rolled: true` for the week. There is deliberately no "post if
+   * missing" recovery. A failed write is logged and never fails or undoes the rollover (same
+   * stance as the sync's posts).
    */
   async function postWeek(
     seasonId: string,
@@ -155,19 +177,23 @@ export function createMatchupsRolloverService(deps: RolloverDeps) {
      * halves of the daylight-saving year), so repeats are the normal case and every one after the
      * first is a no-op. Safe to run late: a Monday the job missed is caught up the next day.
      *
+     * Catch-up: a run on a later day than Monday (the Monday run was missed) opens a week whose
+     * label is the calendar week but whose start totals were frozen on the catch-up day, so the
+     * prior week absorbs the extra days of scoring.
+     *
      * The totals are read once, from fresh data, and used for both the closing totals of the old
      * week and the starting totals of the new one, so no point is lost or counted twice.
      *
      * Expected failures from the database function come back as a typed error. Anything
      * unexpected (database down, a reply that does not match) throws for the route to log.
      */
-    async rollWeek(input: { now: Date }): Promise<Result<RolloverReport, MatchupError>> {
+    async rollWeek(input: { now: Date }): Promise<Result<RolloverReport, RolloverError>> {
       const correlationId = deps.newCorrelationId();
       const log = deps.logger.child({ correlationId });
       const { now } = input;
       const window = rolloverWindow(now);
       const { weekStart } = window;
-      const skipped = (reason: RolloverSkipReason): Result<RolloverReport, MatchupError> => {
+      const skipped = (reason: RolloverSkipReason): Result<RolloverReport, RolloverError> => {
         log.info("matchups rollover skipped", { reason, weekStart });
         return { ok: true, value: { status: "skipped", reason, correlationId, weekStart } };
       };
@@ -217,15 +243,21 @@ export function createMatchupsRolloverService(deps: RolloverDeps) {
         })),
       });
       if (!rolled.ok) {
-        log.warn("matchups rollover refused", { code: rolled.error.code, weekStart });
-        return rolled;
+        // The other codes mean this app built a bad call, and the same call is built again every
+        // day. pg_net ignores the HTTP status, so this log line is the only alarm.
+        const level = EXPECTED_REFUSALS.includes(rolled.error.code) ? "warn" : "error";
+        log[level]("matchups rollover refused", { code: rolled.error.code, weekStart });
+        return { ok: false, error: { ...rolled.error, correlationId } };
       }
 
-      // Rolled or not. An earlier run may have committed and then died before it dropped the
-      // cache; this run is the one that repairs the stale pages.
+      // Whether or not this run rolled the week. The cached list also expires on its own after an
+      // hour and the next firing is at least an hour away, so this is a cheap belt-and-braces drop
+      // (it also covers a run that crashed between the commit and its own invalidation).
       deps.revalidate();
 
       if (!rolled.value.rolled) return skipped("already_rolled");
+      // Only on the run that rolled: the daily repeats must not churn the league cache.
+      deps.invalidateLeague();
 
       const { finalized, created } = rolled.value;
       if (pairing.bye) log.info("matchups bye this week", { teamId: pairing.bye });

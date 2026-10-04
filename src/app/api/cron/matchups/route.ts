@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { MatchupErrorCode } from "@/domain/matchups";
 import { serverEnv } from "@/lib/env.server";
 import { logger, newCorrelationId } from "@/lib/logger";
 import { isAuthorizedCronRequest } from "@/lib/cron-auth";
@@ -8,7 +9,7 @@ import { getMatchupsRolloverService } from "@/features/matchups/matchups.server"
 export const maxDuration = 60;
 
 /** Only two failures are about the request's state; the rest mean this app built a bad call. */
-const ERROR_STATUS: Partial<Record<string, number>> = {
+const ERROR_STATUS: Partial<Record<MatchupErrorCode, number>> = {
   week_out_of_order: 409,
   season_not_found: 404,
 };
@@ -24,9 +25,9 @@ async function run(request: Request): Promise<Response> {
     // The clock is not a parameter on purpose: nobody who can call this route may pick the week.
     const result = await getMatchupsRolloverService().rollWeek({ now: new Date() });
     if (!result.ok) {
-      const { code, message } = result.error;
+      const { code, message, correlationId } = result.error;
       return NextResponse.json(
-        { ok: false, error: code, message },
+        { ok: false, error: code, message, correlationId },
         { status: ERROR_STATUS[code] ?? 500 },
       );
     }
