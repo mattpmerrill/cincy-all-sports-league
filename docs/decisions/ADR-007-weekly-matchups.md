@@ -1,6 +1,6 @@
 # ADR-007: Weekly matchups are bragging rights, frozen at a Monday rollover and written by one SQL function
 
-Status: accepted (built on `feat/matchups`, not yet shipped)
+Status: accepted (shipped 2026-10-04)
 
 ## Context
 
