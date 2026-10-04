@@ -38,6 +38,14 @@ export type MatchupStandingRow = {
 export const formatMatchupRecord = (wins: number, losses: number, ties: number): string =>
   `${wins}-${losses}-${ties}`;
 
+const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+/** "2 wins, 1 loss, 1 tie": the compact record in words, for places a "2-1-1" would need a legend. */
+export const formatMatchupRecordWords = (wins: number, losses: number, ties: number): string =>
+  [count(wins, "win", "wins"), count(losses, "loss", "losses"), count(ties, "tie", "ties")].join(
+    ", ",
+  );
+
 const RESULT_LETTER: Record<MatchupResult, string> = { win: "W", loss: "L", tie: "T" };
 
 const NO_TOTALS: ReadonlyMap<string, number> = new Map();

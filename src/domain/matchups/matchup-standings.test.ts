@@ -3,6 +3,7 @@ import { matchup } from "./fixtures";
 import {
   buildMatchupStandings,
   formatMatchupRecord,
+  formatMatchupRecordWords,
   type MatchupStandingTeam,
 } from "./matchup-standings";
 
@@ -214,6 +215,14 @@ describe("buildMatchupStandings, current opponent", () => {
       const rows = buildMatchupStandings(teams, matchups, options);
       expect(rows.every((r) => r.currentOpponentId === null)).toBe(true);
     }
+  });
+});
+
+describe("formatMatchupRecordWords", () => {
+  it("pluralises each count on its own, and zero reads plural", () => {
+    expect(formatMatchupRecordWords(2, 1, 1)).toBe("2 wins, 1 loss, 1 tie");
+    expect(formatMatchupRecordWords(1, 2, 0)).toBe("1 win, 2 losses, 0 ties");
+    expect(formatMatchupRecordWords(0, 0, 3)).toBe("0 wins, 0 losses, 3 ties");
   });
 });
 

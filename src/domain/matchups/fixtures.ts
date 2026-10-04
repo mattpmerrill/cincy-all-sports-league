@@ -10,7 +10,12 @@ export function matchup(
   weekStart: string,
   homeTeamId: string,
   awayTeamId: string,
-  options: { start?: [number, number]; end?: [number, number] | null } = {},
+  options: {
+    start?: [number, number];
+    end?: [number, number] | null;
+    /** ISO instant the week closed; defaults to the matchup's own Monday, which tests rarely care about. */
+    finalizedAt?: string;
+  } = {},
 ): Matchup {
   const [homeStart, awayStart] = options.start ?? [0, 0];
   const end = options.end ?? null;
@@ -20,6 +25,6 @@ export function matchup(
     weekStart,
     home: { teamId: homeTeamId, startPoints: homeStart, endPoints: end ? end[0] : null },
     away: { teamId: awayTeamId, startPoints: awayStart, endPoints: end ? end[1] : null },
-    finalizedAt: end ? `${weekStart}T11:00:00.000Z` : null,
+    finalizedAt: end ? (options.finalizedAt ?? `${weekStart}T11:00:00.000Z`) : null,
   };
 }

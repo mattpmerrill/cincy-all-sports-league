@@ -1,5 +1,5 @@
 import { formatPoints } from "@/domain/league/format";
-import { gainTexts } from "@/domain/matchups";
+import { pairingSentence, resultSentence } from "@/domain/matchups";
 import { rankMovement } from "@/domain/standings";
 import { MESSAGE_MAX_LENGTH } from "./body";
 import type {
@@ -149,17 +149,14 @@ export function groupScoreUpdateItems(items: readonly ScoreUpdateItem[]): ScoreU
 
 export type MatchupsWeekInput = Omit<MatchupsWeekPayload, "type">;
 
-const resultPiece = (r: MatchupsWeekResult): string => {
-  if (r.outcome === "tie") {
-    return `${r.home.name} and ${r.away.name} tied at ${formatPoints(r.homeGain)}`;
-  }
-  const [winner, loser, winnerGain, loserGain] =
-    r.outcome === "home"
-      ? [r.home, r.away, r.homeGain, r.awayGain]
-      : [r.away, r.home, r.awayGain, r.homeGain];
-  const [winnerText, loserText] = gainTexts(winnerGain, loserGain);
-  return `${winner.name} beat ${loser.name} ${winnerText} to ${loserText}`;
-};
+const resultPiece = (r: MatchupsWeekResult): string =>
+  resultSentence({
+    home: r.home.name,
+    away: r.away.name,
+    homeGain: r.homeGain,
+    awayGain: r.awayGain,
+    leader: r.outcome === "tie" ? "tied" : r.outcome,
+  });
 
 /** Cuts to `max` UTF-16 units (the unit the message limit counts) without splitting a surrogate pair. */
 function cutAtCodePoints(text: string, max: number): string {
@@ -197,7 +194,7 @@ export function buildMatchupsWeekPost(
   if (results.length === 0 && pairings.length === 0) return null;
 
   const resultPieces = results.map(resultPiece);
-  const pairingPieces = pairings.map((p) => `${p.home.name} vs ${p.away.name}`);
+  const pairingPieces = pairings.map((p) => pairingSentence(p.home.name, p.away.name));
   const RESULTS_PREFIX = "Last week: ";
   const PAIRINGS_PREFIX = "This week: ";
 

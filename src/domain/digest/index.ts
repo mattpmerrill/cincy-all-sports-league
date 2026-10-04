@@ -1,4 +1,9 @@
-export { buildMatchupsSection } from "./build-matchups-section";
+export {
+  OTHER_MATCHUPS_WITHOUT_TEAM,
+  OTHER_MATCHUPS_WITH_TEAM,
+  SETTLING_MESSAGE,
+  buildMatchupsSection,
+} from "./build-matchups-section";
 export type {
   DigestMatchupBlock,
   DigestMatchupLine,

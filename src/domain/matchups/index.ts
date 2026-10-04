@@ -1,7 +1,13 @@
 export { gainTexts } from "./gain-texts";
 export { displayWeek } from "./display-week";
 export type { DisplayWeek } from "./display-week";
-export { buildMatchupStandings, formatMatchupRecord } from "./matchup-standings";
+export { pairingSentence, resultSentence } from "./matchup-sentences";
+export type { ResultSentenceInput } from "./matchup-sentences";
+export {
+  buildMatchupStandings,
+  formatMatchupRecord,
+  formatMatchupRecordWords,
+} from "./matchup-standings";
 export type { MatchupStandingRow, MatchupStandingTeam, Streak } from "./matchup-standings";
 export { REMATCH_WEEKS, pairByStandings } from "./pair-by-standings";
 export type { Pairing, PairingResult, RecentPair } from "./pair-by-standings";
