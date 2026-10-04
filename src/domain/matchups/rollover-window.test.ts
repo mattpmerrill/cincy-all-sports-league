@@ -107,13 +107,14 @@ describe("isSeasonWeek and rolloverAction", () => {
     expect(rolloverAction("2027-06-28", season)).toBe("pair");
   });
 
-  it("closes only on the Monday after the last week", () => {
+  it("closes only on the Monday after the last week, and on any later week so a missed close is caught up", () => {
     expect(rolloverAction("2027-07-05", season)).toBe("close_only");
+    expect(rolloverAction("2027-07-12", season)).toBe("close_only");
+    expect(rolloverAction("2028-01-03", season)).toBe("close_only");
   });
 
-  it("skips before the season and after the closing Monday", () => {
+  it("skips before the season", () => {
     expect(rolloverAction("2026-08-24", season)).toBe("skip");
-    expect(rolloverAction("2027-07-12", season)).toBe("skip");
   });
 
   it("works when the last day is itself a Monday", () => {
