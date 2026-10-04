@@ -39,6 +39,13 @@ export type TeamLink = { teamId: string; slug: string; name: string };
 
 export type MatchupRecord = { wins: number; losses: number; ties: number; label: string };
 
+/** How a team stands in a live matchup: it can only be called with both gains known. */
+export type TeamMatchupLead = "ahead" | "behind" | "tied";
+
+/** A matchup from one team's point of view: its result once final, its lead while live. */
+export type MatchupOutcome =
+  { state: "final"; result: MatchupResult } | { state: "live"; lead: TeamMatchupLead | null };
+
 /** One team's side of a matchup as the Week page draws it. */
 export type MatchupSideView = TeamLink & {
   ownerName: string | null;
@@ -54,6 +61,8 @@ export type MatchupSideView = TeamLink & {
   gain: number | null;
   /** Null while the matchup is live. */
   result: MatchupResult | null;
+  /** How the team stands while the matchup is live; null once final or when a gain is unknown. */
+  lead: TeamMatchupLead | null;
   /** True when the signed-in viewer owns this team. */
   isMine: boolean;
 };
@@ -68,6 +77,8 @@ export type MatchupView = {
   leader: MatchupLeader | null;
   /** True when the viewer owns either team. Such a matchup comes first. */
   isMine: boolean;
+  /** How the viewer's own team is doing ("Winning", "Final: won"); null unless `isMine`. */
+  viewerOutcome: MatchupOutcome | null;
 };
 
 /**
@@ -129,9 +140,6 @@ export type MatchupStandings = {
   rows: MatchupStandingsRowView[];
 };
 
-/** How the team stands in a live matchup: it can only be called with both gains known. */
-export type TeamMatchupLead = "ahead" | "behind" | "tied";
-
 export type TeamMatchupEntry = {
   id: string;
   weekStart: string;
@@ -141,8 +149,7 @@ export type TeamMatchupEntry = {
   /** The team's gain and its opponent's, for the week. Null when a live total is unknown. */
   gain: number | null;
   opponentGain: number | null;
-  status:
-    { state: "final"; result: MatchupResult } | { state: "live"; lead: TeamMatchupLead | null };
+  status: MatchupOutcome;
 };
 
 export type TeamMatchups = TeamLink & {
@@ -246,7 +253,7 @@ export function createMatchupsService(deps: MatchupsDeps) {
   function sideView(
     loaded: Loaded,
     team: StandingRow,
-    score: { gain: number | null; result: MatchupResult | null },
+    score: { gain: number | null; result: MatchupResult | null; lead: TeamMatchupLead | null },
     viewerTeam: string | null,
   ): MatchupSideView {
     return {
@@ -257,14 +264,27 @@ export function createMatchupsService(deps: MatchupsDeps) {
       record: recordFor(loaded, team.teamId),
       gain: score.gain,
       result: score.result,
+      lead: score.lead,
       isMine: team.teamId === viewerTeam,
     };
   }
 
-  const scoreOf = (scored: ScoredMatchup, key: MatchupSideKey) => ({
-    gain: scored[key].gain,
-    result: scored.state === "final" ? scored[key].result : null,
-  });
+  /** The matchup as `side` sees it: its result when final, its lead while live. */
+  const outcomeOf = (scored: ScoredMatchup, side: MatchupSideKey): MatchupOutcome => {
+    if (scored.state === "final") return { state: "final", result: scored[side].result };
+    if (scored.leader === null) return { state: "live", lead: null };
+    if (scored.leader === "tied") return { state: "live", lead: "tied" };
+    return { state: "live", lead: scored.leader === side ? "ahead" : "behind" };
+  };
+
+  const scoreOf = (scored: ScoredMatchup, key: MatchupSideKey) => {
+    const outcome = outcomeOf(scored, key);
+    return {
+      gain: scored[key].gain,
+      result: outcome.state === "final" ? outcome.result : null,
+      lead: outcome.state === "live" ? outcome.lead : null,
+    };
+  };
 
   return {
     /**
@@ -299,6 +319,9 @@ export function createMatchupsService(deps: MatchupsDeps) {
           // A team the cached league no longer lists (deleted since): nothing honest to show.
           if (!home || !away) return [];
           const scored = scoreMatchup(m, loaded.totals);
+          const mine = viewerTeam
+            ? MATCHUP_SIDES.find((k) => m[k].teamId === viewerTeam)
+            : undefined;
           return [
             {
               id: m.id,
@@ -307,7 +330,8 @@ export function createMatchupsService(deps: MatchupsDeps) {
               home: sideView(loaded, home, scoreOf(scored, "home"), viewerTeam),
               away: sideView(loaded, away, scoreOf(scored, "away"), viewerTeam),
               leader: scored.leader,
-              isMine: home.teamId === viewerTeam || away.teamId === viewerTeam,
+              isMine: mine !== undefined,
+              viewerOutcome: mine ? outcomeOf(scored, mine) : null,
             },
           ];
         });
@@ -407,11 +431,6 @@ export function createMatchupsService(deps: MatchupsDeps) {
           const scored = scoreMatchup(m, loaded.totals);
           const mine = scoreOf(scored, side);
           const theirs = scoreOf(scored, other);
-          const lead = (): TeamMatchupLead | null => {
-            if (scored.leader === null) return null;
-            if (scored.leader === "tied") return "tied";
-            return scored.leader === side ? "ahead" : "behind";
-          };
           return [
             {
               id: m.id,
@@ -421,10 +440,7 @@ export function createMatchupsService(deps: MatchupsDeps) {
               opponent: { ...teamLink(opponent), ownerName: opponent.owner?.displayName ?? null },
               gain: mine.gain,
               opponentGain: theirs.gain,
-              status:
-                scored.state === "final"
-                  ? { state: "final", result: scored[side].result }
-                  : { state: "live", lead: lead() },
+              status: outcomeOf(scored, side),
             },
           ];
         })

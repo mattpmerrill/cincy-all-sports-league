@@ -139,6 +139,35 @@ describe("getWeek: the team filter", () => {
     expect(page?.gameCount).toBe(2);
   });
 
+  it("adds a second team's games, a shared game once", async () => {
+    const page = await setup([soloA, showdown]).service.getWeek({ teamSlug: "b", vsSlug: "a" });
+    expect(page?.selectedTeam).toEqual({ slug: "b", name: "b" });
+    expect(page?.selectedOpponent).toEqual({ slug: "a", name: "a" });
+    expect(page?.days.flatMap((d) => d.games.map((g) => g.id))).toEqual([soloA.id, showdown.id]);
+    expect(page?.gameCount).toBe(2);
+    expect(page?.showdownCount).toBe(1);
+  });
+
+  it("ignores a second team it does not know, one without a first, and a repeat of the first", async () => {
+    const { service } = setup([soloA, showdown]);
+    const unknown = await service.getWeek({ teamSlug: "b", vsSlug: "ghost" });
+    expect(unknown?.selectedOpponent).toBeNull();
+    expect(unknown?.gameCount).toBe(1);
+    const alone = await service.getWeek({ vsSlug: "a" });
+    expect(alone?.selectedOpponent).toBeNull();
+    expect(alone?.gameCount).toBe(2);
+    const same = await service.getWeek({ teamSlug: "b", vsSlug: "b" });
+    expect(same?.selectedOpponent).toBeNull();
+    const badFirst = await service.getWeek({ teamSlug: "ghost", vsSlug: "a" });
+    expect(badFirst?.selectedTeam).toBeNull();
+    expect(badFirst?.selectedOpponent).toBeNull();
+  });
+
+  it("reports an idle pair when neither team plays", async () => {
+    const page = await setup([soloA]).service.getWeek({ teamSlug: "b", vsSlug: "c" });
+    expect(page?.empty).toBe("team_idle");
+  });
+
   it("offers every team by name for the select", async () => {
     const page = await setup([]).service.getWeek({});
     expect(page?.teamOptions.map((t) => t.slug)).toEqual(["a", "b", "c"]);

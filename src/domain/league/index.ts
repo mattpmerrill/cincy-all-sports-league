@@ -31,4 +31,4 @@ export type {
   SportSeasonData,
   TeamData,
 } from "./types";
-export { formatMonthDay, formatPoints } from "./format";
+export { formatGain, formatMonthDay, formatPoints } from "./format";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildWeekSlate, filterSlateToTeam, teamGames, teamSide } from "./build-week-slate";
+import { buildWeekSlate, filterSlateToTeams, teamGames, teamSide } from "./build-week-slate";
 import { game, side, team } from "./fixtures";
 
 const WEEK = "2026-10-05"; // Mon Oct 5 - Sun Oct 11
@@ -293,11 +293,22 @@ describe("per-team views", () => {
   });
 
   it("narrows the days to one team but keeps every team in the strip", () => {
-    const filtered = filterSlateToTeam(slate, "b");
+    const filtered = filterSlateToTeams(slate, ["b"]);
     expect(filtered.gameCount).toBe(1);
     expect(filtered.showdownCount).toBe(1);
     expect(filtered.teams).toEqual(slate.teams);
     expect(filtered.days).toHaveLength(7);
+  });
+
+  it("shows the games either of two teams has a stake in, a shared game once", () => {
+    const filtered = filterSlateToTeams(slate, ["a", "b"]);
+    expect(filtered.days.flatMap((d) => d.games.map((g) => g.id))).toEqual([nhl.id, nfl.id]);
+    expect(filtered.showdownCount).toBe(1);
+    expect(filterSlateToTeams(slate, ["b", "nobody"]).gameCount).toBe(1);
+  });
+
+  it("shows nothing for no team at all", () => {
+    expect(filterSlateToTeams(slate, []).gameCount).toBe(0);
   });
 
   it("returns an empty list for a team with no games", () => {

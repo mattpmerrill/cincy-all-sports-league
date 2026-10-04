@@ -73,6 +73,16 @@ describe("getWeekMatchups", () => {
     });
   });
 
+  it("gives each side its lead while live and its result once final, never both", async () => {
+    const live1 = (await setup(live).service.getWeekMatchups({}))?.matchups[0];
+    expect([live1?.home.lead, live1?.away.lead]).toEqual(["ahead", "behind"]);
+    expect([live1?.home.result, live1?.away.result]).toEqual([null, null]);
+    const closed = [matchup("2026-09-28", "a", "b", { start: [0, 0], end: [2, 5] })];
+    const done = (await setup(closed).service.getWeekMatchups({ weekStart: "2026-09-28" }))
+      ?.matchups[0];
+    expect([done?.home.lead, done?.away.lead]).toEqual([null, null]);
+  });
+
   it("puts the viewer's matchup first, and flags their side", async () => {
     const week = await setup(live).service.getWeekMatchups({ viewerId: "u3" });
     expect(week?.matchups.map((m) => [m.home.slug, m.isMine])).toEqual([
@@ -81,6 +91,26 @@ describe("getWeekMatchups", () => {
     ]);
     expect(week?.matchups[0]?.home.isMine).toBe(true);
     expect(week?.matchups[0]?.away.isMine).toBe(false);
+  });
+
+  it("tells the viewer how their own team is doing, and nobody else", async () => {
+    // c (viewer) is level with d at 0 vs -1, so ahead; a is the home side of the other matchup.
+    const week = await setup(live).service.getWeekMatchups({ viewerId: "u3" });
+    expect(week?.matchups[0]?.viewerOutcome).toEqual({ state: "live", lead: "ahead" });
+    expect(week?.matchups[1]?.viewerOutcome).toBeNull();
+    const away = await setup(live).service.getWeekMatchups({ viewerId: "u2" });
+    expect(away?.matchups[0]?.viewerOutcome).toEqual({ state: "live", lead: "behind" });
+    const none = await setup(live).service.getWeekMatchups({});
+    expect(none?.matchups.every((m) => m.viewerOutcome === null)).toBe(true);
+  });
+
+  it("gives a finished matchup's result from the viewer's side", async () => {
+    const closed = [matchup("2026-09-28", "a", "b", { start: [0, 0], end: [2, 5] })];
+    const week = await setup(closed).service.getWeekMatchups({
+      weekStart: "2026-09-28",
+      viewerId: "u1",
+    });
+    expect(week?.matchups[0]?.viewerOutcome).toEqual({ state: "final", result: "loss" });
   });
 
   it("orders everyone equally by season rank when signed out or the viewer has no team", async () => {

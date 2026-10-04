@@ -14,7 +14,7 @@ import {
   buildWeekSlate,
   describeGame,
   describeStatus,
-  filterSlateToTeam,
+  filterSlateToTeams,
   opposite,
   teamGames,
   teamSide,
@@ -78,6 +78,11 @@ export type WeekPage = {
   teams: TeamGameCount[];
   teamOptions: TeamOption[];
   selectedTeam: TeamOption | null;
+  /**
+   * The second team of a matchup filter, or null. Only set next to `selectedTeam`: the games list
+   * then covers either team, and the page heading names both.
+   */
+  selectedOpponent: TeamOption | null;
   /** The signed-in viewer's own team, for the "My team" shortcut. */
   myTeam: TeamOption | null;
   empty: WeekEmpty | null;
@@ -142,11 +147,14 @@ export function createScheduleService(deps: ScheduleDeps) {
     /**
      * The Week page: a week's games for the picks in play. An unusable `weekStart` (outside the
      * season) is pulled to the nearest week the season covers; an unknown `teamSlug` shows all
-     * teams. Null before a season exists.
+     * teams, and an unknown `vsSlug` (or one without a team) is ignored. Null before a season
+     * exists.
      */
     async getWeek(input: {
       weekStart?: string;
       teamSlug?: string;
+      /** A second team to show next to `teamSlug`, for a matchup's two sides. */
+      vsSlug?: string;
       /** The signed-in user, for the "My team" shortcut. */
       viewerId?: string | null;
     }): Promise<WeekPage | null> {
@@ -159,11 +167,18 @@ export function createScheduleService(deps: ScheduleDeps) {
         .sort((a, b) => a.name.localeCompare(b.name));
       const selected = league.teams.find((t) => t.slug === input.teamSlug) ?? null;
       const selectedTeam = selected ? { slug: selected.slug, name: selected.name } : null;
+      const opponent =
+        selected && input.vsSlug !== selected.slug
+          ? (league.teams.find((t) => t.slug === input.vsSlug) ?? null)
+          : null;
+      const selectedOpponent = opponent ? { slug: opponent.slug, name: opponent.name } : null;
       const mine = input.viewerId
         ? league.teams.find((t) => t.owner?.id === input.viewerId)
         : undefined;
 
-      const shown = selected ? filterSlateToTeam(slate, selected.id) : slate;
+      const shown = selected
+        ? filterSlateToTeams(slate, opponent ? [selected.id, opponent.id] : [selected.id])
+        : slate;
       const days = shown.days.map((day): DayView => ({
         date: day.date,
         heading: formatDayHeading(day.date),
@@ -187,6 +202,7 @@ export function createScheduleService(deps: ScheduleDeps) {
         teams: slate.teams,
         teamOptions,
         selectedTeam,
+        selectedOpponent,
         myTeam: mine ? { slug: mine.slug, name: mine.name } : null,
         empty:
           loaded.storedGames === 0

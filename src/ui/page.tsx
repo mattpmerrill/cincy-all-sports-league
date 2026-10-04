@@ -49,16 +49,19 @@ function PageHeader({
 function PageSection({
   title,
   description,
+  id,
   children,
 }: {
   title: string;
   description?: string;
+  /** Names the section as a landmark: the heading gets this id and the section points at it. */
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <div className="flex flex-col gap-1">
-        <h2 className="flex items-center gap-2.5 text-2xl font-bold">
+        <h2 id={id} className="flex items-center gap-2.5 text-2xl font-bold">
           <span aria-hidden="true" className="h-5 w-1 rounded-full bg-brand" />
           {title}
         </h2>

@@ -18,9 +18,10 @@ const stepClass = cn(
  */
 export function WeekHeader({ page }: { page: WeekPage }) {
   const team = page.selectedTeam?.slug;
+  const vs = page.selectedOpponent?.slug;
   // The current week is the default, so its link stays the clean `/week`.
   const hrefFor = (week: string) =>
-    weekHref({ week: week === page.currentWeek ? null : week, team });
+    weekHref({ week: week === page.currentWeek ? null : week, team, vs });
 
   return (
     <nav aria-label="Week" className="flex flex-col gap-3">
@@ -61,7 +62,7 @@ export function WeekHeader({ page }: { page: WeekPage }) {
 
       {page.isCurrentWeek ? null : (
         <Link
-          href={weekHref({ team })}
+          href={weekHref({ team, vs })}
           className="self-center rounded-md py-2 text-sm font-semibold text-brand-bright underline-offset-2 outline-none hover:underline focus-visible:ring-3 focus-visible:ring-ring/60"
         >
           Back to this week

@@ -10,10 +10,18 @@ import { logger, newCorrelationId } from "@/lib/logger";
 import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 import { createMatchupsRolloverService } from "./matchups-rollover.service";
 import { createMatchupsService } from "./matchups.service";
+import { createSafeMatchupReads } from "./safe-reads";
 
 /** The read side: the cached league (teams, totals, season dates) plus the cached matchups. No cookies. */
 export const getMatchupsService = () =>
   createMatchupsService({ league: loadCachedLeagueData, matchups: loadCachedMatchups });
+
+/**
+ * The reads for pages that must survive a matchups failure: each returns a `Result`, and a failure
+ * is logged here. See `createSafeMatchupReads`.
+ */
+export const getSafeMatchupReads = () =>
+  createSafeMatchupReads(getMatchupsService(), logger.child({ scope: "matchups" }));
 
 /**
  * The Monday rollover on the secret-key client, which bypasses RLS by design (only `service_role`

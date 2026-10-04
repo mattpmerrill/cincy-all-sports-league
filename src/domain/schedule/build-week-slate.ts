@@ -155,13 +155,14 @@ export function teamGames(slate: WeekSlate, teamId: string): SlateGame[] {
 }
 
 /**
- * The same week narrowed to one fantasy team's games. The per-team strip keeps every team on
- * purpose: filtering the list should not hide how the other teams' weeks look.
+ * The same week narrowed to the games any of the given fantasy teams has a stake in (one team for
+ * the team filter, two for a matchup). The per-team strip keeps every team on purpose: filtering
+ * the list should not hide how the other teams' weeks look.
  */
-export function filterSlateToTeam(slate: WeekSlate, teamId: string): WeekSlate {
+export function filterSlateToTeams(slate: WeekSlate, teamIds: readonly string[]): WeekSlate {
   const days = slate.days.map((day) => ({
     date: day.date,
-    games: day.games.filter((g) => teamSide(g, teamId) !== null),
+    games: day.games.filter((g) => teamIds.some((id) => teamSide(g, id) !== null)),
   }));
   const games = days.flatMap((day) => day.games);
   return {
