@@ -1,4 +1,4 @@
-export { buildMatchupStandings } from "./matchup-standings";
+export { buildMatchupStandings, formatMatchupRecord } from "./matchup-standings";
 export type { MatchupStandingRow, MatchupStandingTeam, Streak } from "./matchup-standings";
 export { REMATCH_WEEKS, pairByStandings } from "./pair-by-standings";
 export type { Pairing, PairingResult, RecentPair } from "./pair-by-standings";
@@ -8,6 +8,7 @@ export {
   isSeasonWeek,
   rolloverAction,
   rolloverWindow,
+  waitsForMonday,
 } from "./rollover-window";
 export type { RolloverAction, RolloverWindow } from "./rollover-window";
 export { matchupStatus, scoreMatchup } from "./score-matchup";

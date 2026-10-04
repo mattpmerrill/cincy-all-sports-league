@@ -34,6 +34,10 @@ export type MatchupStandingRow = {
   rankLabel: string;
 };
 
+/** "3-1-0": wins, losses, ties, always all three so every row lines up. */
+export const formatMatchupRecord = (wins: number, losses: number, ties: number): string =>
+  `${wins}-${losses}-${ties}`;
+
 const RESULT_LETTER: Record<MatchupResult, string> = { win: "W", loss: "L", tie: "T" };
 
 const NO_TOTALS: ReadonlyMap<string, number> = new Map();

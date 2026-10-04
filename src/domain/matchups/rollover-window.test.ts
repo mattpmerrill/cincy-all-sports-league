@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isSeasonWeek, rolloverAction, rolloverWindow } from "./rollover-window";
+import { isSeasonWeek, rolloverAction, rolloverWindow, waitsForMonday } from "./rollover-window";
 
 describe("rolloverWindow", () => {
   it("finds the Monday of the Eastern week for any weekday", () => {
@@ -121,5 +121,33 @@ describe("isSeasonWeek and rolloverAction", () => {
     const monday = { firstDay: "2026-09-07", lastDay: "2027-05-31" };
     expect(rolloverAction("2027-05-31", monday)).toBe("pair");
     expect(rolloverAction("2027-06-07", monday)).toBe("close_only");
+  });
+});
+
+describe("waitsForMonday", () => {
+  // Mon Oct 5 2026 06:45 EDT is 10:45 UTC.
+  const monday = new Date("2026-10-05T10:45:00Z");
+  const thursday = new Date("2026-10-08T14:00:00Z");
+  const sunday = new Date("2026-10-11T14:00:00Z");
+
+  it("lets an empty season start on a Monday", () => {
+    expect(waitsForMonday(monday, false)).toBe(false);
+  });
+
+  it("holds an empty season on any other weekday, so the first week is never a partial one", () => {
+    expect(waitsForMonday(thursday, false)).toBe(true);
+    expect(waitsForMonday(sunday, false)).toBe(true);
+  });
+
+  it("lets a season that already has matchups catch up on any day", () => {
+    expect(waitsForMonday(thursday, true)).toBe(false);
+    expect(waitsForMonday(sunday, true)).toBe(false);
+  });
+
+  it("reads Monday on the Eastern wall, not in UTC", () => {
+    // Sun Oct 4 22:00 EDT is already Monday in UTC.
+    expect(waitsForMonday(new Date("2026-10-05T02:00:00Z"), false)).toBe(true);
+    // Mon Oct 5 22:00 EDT is already Tuesday in UTC.
+    expect(waitsForMonday(new Date("2026-10-06T02:00:00Z"), false)).toBe(false);
   });
 });

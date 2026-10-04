@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { matchup } from "./fixtures";
-import { buildMatchupStandings, type MatchupStandingTeam } from "./matchup-standings";
+import {
+  buildMatchupStandings,
+  formatMatchupRecord,
+  type MatchupStandingTeam,
+} from "./matchup-standings";
 
 const team = (
   teamId: string,
@@ -210,5 +214,12 @@ describe("buildMatchupStandings, current opponent", () => {
       const rows = buildMatchupStandings(teams, matchups, options);
       expect(rows.every((r) => r.currentOpponentId === null)).toBe(true);
     }
+  });
+});
+
+describe("formatMatchupRecord", () => {
+  it("always shows wins, losses and ties", () => {
+    expect(formatMatchupRecord(3, 1, 0)).toBe("3-1-0");
+    expect(formatMatchupRecord(0, 0, 0)).toBe("0-0-0");
   });
 });

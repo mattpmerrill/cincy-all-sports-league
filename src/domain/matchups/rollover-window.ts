@@ -54,3 +54,14 @@ export function rolloverAction(weekStart: string, season: SeasonDays): RolloverA
   const { first } = seasonWeeks(season.firstDay, season.lastDay);
   return weekStart < first ? "skip" : "close_only";
 }
+
+/**
+ * True when a season with no matchups yet must wait for its first Monday. `rolloverWindow` counts
+ * every day after Monday as due so a missed Monday is caught up, but that catch-up only makes
+ * sense once the season has begun: the first week should open on a Monday (Eastern), with
+ * everyone starting at the same point in the week, never part-way through one. Once any matchup
+ * exists, later days may catch up.
+ */
+export function waitsForMonday(now: Date, seasonHasMatchups: boolean): boolean {
+  return !seasonHasMatchups && easternClock(now).weekday !== 0;
+}
