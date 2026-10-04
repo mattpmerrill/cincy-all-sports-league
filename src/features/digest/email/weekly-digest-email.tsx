@@ -177,17 +177,35 @@ function MatchupsSection({
   section: DigestMatchupsSection;
   siteUrl: string;
 }) {
+  const link = (
+    <Text style={{ ...base, fontSize: "14px", fontWeight: 600, padding: "8px 0 14px" }}>
+      <Link href={`${siteUrl}/week`} style={{ color: palette.brand }}>
+        {section.linkLabel}
+      </Link>
+    </Text>
+  );
+  if (section.state === "settling") {
+    return (
+      <>
+        <SectionTitle>Matchups</SectionTitle>
+        <Text style={{ ...base, fontSize: "14px", lineHeight: "20px", paddingTop: "4px" }}>
+          {section.message}
+        </Text>
+        {link}
+      </>
+    );
+  }
   return (
     <>
       {section.lastWeek ? (
         <>
-          <SectionTitle>Last week&apos;s matchups</SectionTitle>
+          <SectionTitle>{section.lastWeek.title}</SectionTitle>
           <MatchupBlock block={section.lastWeek} />
         </>
       ) : null}
       {section.thisWeek ? (
         <>
-          <SectionTitle>This week&apos;s matchups</SectionTitle>
+          <SectionTitle>{section.thisWeek.title}</SectionTitle>
           <MatchupBlock block={section.thisWeek} />
         </>
       ) : null}
@@ -196,11 +214,7 @@ function MatchupsSection({
           {section.recordText}
         </Text>
       ) : null}
-      <Text style={{ ...base, fontSize: "14px", fontWeight: 600, padding: "8px 0 14px" }}>
-        <Link href={`${siteUrl}/week`} style={{ color: palette.brand }}>
-          {section.linkLabel}
-        </Link>
-      </Text>
+      {link}
     </>
   );
 }

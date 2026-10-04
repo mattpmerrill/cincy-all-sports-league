@@ -28,12 +28,11 @@ export function renderDigestText(props: DigestEmailProps): string {
   ];
 
   const matchups = digest.matchups;
-  if (matchups) {
-    if (matchups.lastWeek) {
-      out.push("", "LAST WEEK'S MATCHUPS", ...blockLines(matchups.lastWeek));
-    }
-    if (matchups.thisWeek) {
-      out.push("", "THIS WEEK'S MATCHUPS", ...blockLines(matchups.thisWeek));
+  if (matchups?.state === "settling") {
+    out.push("", "MATCHUPS", matchups.message, "", `${matchups.linkLabel}: ${props.siteUrl}/week`);
+  } else if (matchups) {
+    for (const block of [matchups.lastWeek, matchups.thisWeek]) {
+      if (block) out.push("", block.title.toUpperCase(), ...blockLines(block));
     }
     if (matchups.recordText) out.push("", matchups.recordText);
     out.push("", `${matchups.linkLabel}: ${props.siteUrl}/week`);

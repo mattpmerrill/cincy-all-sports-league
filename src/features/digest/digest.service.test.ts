@@ -7,6 +7,7 @@ import type { EmailError, OutgoingEmail } from "@/integrations/resend";
 import { createLogger, type Logger } from "@/lib/logger";
 import { err, ok, type Result } from "@/lib/result";
 import { createDigestService } from "./digest.service";
+import type { DigestEmailProps } from "./email/render";
 
 const USER_A = "6f1d2c1e-8a44-4f57-9a3b-0c1d2e3f4a5b";
 const USER_B = "0b9f6a52-1d3e-4c5b-8a7f-123456789abc";
@@ -26,9 +27,20 @@ const data = leagueData({
 // Last week Ann's team (a) beat Bo's (b) 8 to 3 and they meet again this week. Monday Sep 28 is the
 // digest's week, so Sep 21 is "last week".
 const defaultMatchups = (): Matchup[] => [
-  matchup("2026-09-21", "a", "b", { start: [0, 0], end: [8, 3] }),
+  // The rollover closed it at 07:00 EDT on the Monday of the digest.
+  matchup("2026-09-21", "a", "b", {
+    start: [0, 0],
+    end: [8, 3],
+    finalizedAt: "2026-09-28T11:00:00.000Z",
+  }),
   matchup("2026-09-28", "a", "b", { start: [8, 3] }),
 ];
+
+/** What the fake renderer prints for the section, so a test can see which one a recipient got. */
+const matchupsLine = (section: DigestEmailProps["digest"]["matchups"]): string => {
+  if (!section) return "no matchups";
+  return section.state === "settling" ? section.message : (section.lastWeek?.mine?.text ?? "none");
+};
 
 const member = (userId: string, name: string, optedIn = true): DigestMember => ({
   userId,
@@ -87,7 +99,7 @@ function setup(
       },
     },
     renderEmail: async (props) => ({
-      html: `<p>${props.displayName}|${props.digest.recipient?.teamName ?? "no team"}|${props.digest.matchups?.lastWeek?.mine?.text ?? "no matchups"}</p>`,
+      html: `<p>${props.displayName}|${props.digest.recipient?.teamName ?? "no team"}|${matchupsLine(props.digest.matchups)}</p>`,
       text: "text",
     }),
     signToken: opts.signToken === undefined ? (id) => `tok-${id}` : opts.signToken,
@@ -188,7 +200,7 @@ describe("sendWeeklyDigest sending", () => {
     const t = setup({ members: [member(USER_C, "Cy")] });
     await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
     t.restore();
-    expect(t.sent[0]?.html).toContain("Cy|no team|no matchups");
+    expect(t.sent[0]?.html).toContain("Cy|no team|none");
   });
 
   it("records 'sent' with the count once", async () => {
@@ -285,6 +297,50 @@ describe("sendWeeklyDigest matchups section", () => {
     await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
     t.restore();
     expect(t.sent.every((e) => e.html.includes("no matchups"))).toBe(true);
+  });
+
+  it("sends the one-line notice, with no scores, when last week is still live", async () => {
+    // The Monday rollover failed: last week has no end totals and this week has no rows.
+    const t = setup({
+      matchups: [matchup("2026-09-21", "a", "b", { start: [0, 0] })],
+    });
+    await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(t.sent).toHaveLength(2);
+    for (const email of t.sent) {
+      expect(email.html).toContain("Last week's matchups are still being settled.");
+      expect(email.html).not.toContain("You beat");
+    }
+  });
+
+  it("reports what happened to the section, so a failed read shows in the cron response", async () => {
+    const included = setup();
+    const none = setup({ matchups: [] });
+    const failed = setup({
+      listSeason: async () => {
+        throw new Error("down");
+      },
+    });
+    const reports = await Promise.all(
+      [included, none, failed].map((t) => t.service.sendWeeklyDigest({ now: MONDAY_8AM })),
+    );
+    [included, none, failed].forEach((t) => t.restore());
+    expect(
+      reports.map((r) => (r.ok && r.value.outcome === "sent" ? r.value.matchupsSection : null)),
+    ).toEqual(["included", "none", "read_failed"]);
+  });
+
+  it("builds the section for a test send in the middle of the week, from that week's Monday", async () => {
+    // Wednesday Sep 30 still belongs to the week of Sep 28, so last week is Sep 21's results.
+    const t = setup();
+    const result = await t.service.sendWeeklyDigest({
+      now: new Date("2026-09-30T16:00:00Z"),
+      only: "ann@example.com",
+    });
+    t.restore();
+    expect(t.sent).toHaveLength(1);
+    expect(t.sent[0]?.html).toContain("You beat b 8 to 3");
+    expect(result).toMatchObject({ ok: true, value: { matchupsSection: "included" } });
   });
 });
 

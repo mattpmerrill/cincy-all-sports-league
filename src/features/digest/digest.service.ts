@@ -17,6 +17,13 @@ export type DigestErrorCode =
 
 export type SkipReason = "before_send_time" | "already_sent" | "no_season" | "no_recipients";
 
+/**
+ * What happened to the matchups section: `read_failed` is the only state worth an alarm, because
+ * the digest still went out but without it. `none` means the read worked and there was nothing to
+ * say (no matchups yet, or none that can be called final).
+ */
+export type MatchupsSectionStatus = "included" | "none" | "read_failed";
+
 export type DigestReport = {
   correlationId: string;
   weekStart: string;
@@ -29,6 +36,7 @@ export type DigestReport = {
       failed: number;
       /** Failure counts by error code, never by recipient. */
       failures: Record<string, number>;
+      matchupsSection: MatchupsSectionStatus;
     }
 );
 
@@ -126,7 +134,16 @@ export function createDigestService(deps: DigestServiceDeps) {
         ...row,
         ownerName: row.owner?.displayName ?? null,
       }));
-      const shared = buildWeeklyDigest({ current: currentTeams, weekAgo: weekAgo?.rows ?? null });
+      const shared = buildWeeklyDigest({
+        current: currentTeams,
+        weekAgo: weekAgo?.rows ?? null,
+        matchups,
+      });
+      const matchupsSection: MatchupsSectionStatus = !matchups
+        ? "read_failed"
+        : shared.matchups
+          ? "included"
+          : "none";
       const subject = `Week of ${formatMonthDay(weekStart)}: ${digestHeadline(shared)}`;
       const preheader = shared.top5[0]
         ? `${shared.top5[0].teamName} leads at ${shared.top5[0].rankLabel}. See who moved.`
@@ -218,6 +235,7 @@ export function createDigestService(deps: DigestServiceDeps) {
         sent,
         failed,
         test: Boolean(only),
+        matchupsSection,
       });
       return ok({
         correlationId,
@@ -227,6 +245,7 @@ export function createDigestService(deps: DigestServiceDeps) {
         sent,
         failed,
         failures,
+        matchupsSection,
       });
     },
   };
