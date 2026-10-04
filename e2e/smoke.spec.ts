@@ -98,3 +98,48 @@ test("week page renders for a visitor and marks the Week tab current", async ({ 
   await expect(page.getByText(/Scores refresh every 30 minutes/)).toBeVisible();
   await expect(page.locator('a[href="/week"][aria-current="page"]').first()).toBeAttached();
 });
+
+test("week page has a matchups region, whatever state the database is in", async ({ page }) => {
+  await page.goto("/week");
+  const region = page.getByRole("region", { name: "Matchups" });
+  await expect(region).toBeVisible();
+  // A fresh local database has no matchups until the Monday rollover runs, so accept the empty
+  // states as well as the list of matchups.
+  await expect(
+    region
+      .getByText("Matchups start Monday")
+      .or(region.getByText("No matchups this week"))
+      .or(region.getByRole("list", { name: "Matchups" })),
+  ).toBeVisible();
+});
+
+test("standings switch moves between Season and Matchups", async ({ page }) => {
+  await page.goto("/?view=matchups");
+  const switcher = page.getByRole("navigation", { name: "Standings view" });
+  await expect(switcher.getByRole("link", { name: "Matchups" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  // The table once a week has finished, otherwise one of the two empty states.
+  await expect(
+    page
+      .getByRole("list", { name: "Matchup standings" })
+      .or(page.getByText("Matchups start Monday"))
+      .or(page.getByText("No finished weeks yet")),
+  ).toBeVisible();
+
+  await switcher.getByRole("link", { name: "Season" }).click();
+  await expect(page).not.toHaveURL(/view=/);
+  await expect(switcher.getByRole("link", { name: "Season" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  await expect(page.getByRole("list", { name: "Standings" }).getByRole("listitem")).toHaveCount(20);
+
+  await switcher.getByRole("link", { name: "Matchups" }).click();
+  await expect(page).toHaveURL(/\/\?view=matchups$/);
+  await expect(switcher.getByRole("link", { name: "Matchups" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+});
