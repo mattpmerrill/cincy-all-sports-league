@@ -30,6 +30,14 @@ module.exports = {
       to: { dependencyTypes: ["core"] },
     },
     {
+      name: "scoring-never-reads-matchups",
+      comment:
+        "Matchups are bragging rights only and never change season scoring (ADR-001): scoring and standings must not depend on them.",
+      severity: "error",
+      from: { path: "^src/domain/(scoring|standings)/" },
+      to: { path: "^src/domain/matchups/" },
+    },
+    {
       name: "not-to-test-files",
       comment: "Production code does not import tests.",
       severity: "error",
