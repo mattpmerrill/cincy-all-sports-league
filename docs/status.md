@@ -3,18 +3,22 @@
 Where the project stands and how to pick it up. Update this at the end of each working session.
 
 **As of 2026-10-04.** Everything under "Shipped" and "What is live" is live on
-https://www.cincysports.xyz, `main` is clean and deployed (`9d0b5c0`), and production has every
-migration that `main` has applied (42, checked on 2026-10-04). The one thing outside `main` is the
-branch `feat/matchups`: weekly head-to-head matchups
-([issue #1](https://github.com/mattpmerrill/cincy-all-sports-league/issues/1)), built and reviewed
-phase by phase, not merged and not pushed. Nothing from it is in production. There are no other side
-branches, worktrees or open pull requests.
+https://www.cincysports.xyz, `main` is clean and deployed, and production has every migration in
+`supabase/migrations/` applied (46, checked on 2026-10-04). Weekly head-to-head matchups
+([issue #1](https://github.com/mattpmerrill/cincy-all-sports-league/issues/1)) shipped on the evening
+of 2026-10-04 (PR #5): the code is live and the `matchups` table is empty until the first rollover
+on Monday 2026-10-05 at 6:45 am Eastern. There are no side branches, worktrees or open pull
+requests.
 
-## On a branch: weekly matchups (2026-10-04, not shipped)
+## Weekly matchups (shipped 2026-10-04, first week opens 2026-10-05)
 
-Branch `feat/matchups`, built on this machine. No migration has been applied to production, the
-branch is not merged or pushed, and its three pg_cron jobs (`cincy-matchups-edt`,
-`cincy-matchups-est` and `cincy-matchups-retry`) do not exist in production yet.
+Shipped on 2026-10-04 in the order of the checklist below: the four migrations were applied to
+production, then PR #5 was merged to `main`. Checked right after the deploy: the three pg_cron jobs
+(`cincy-matchups-edt`, `cincy-matchups-est` and `cincy-matchups-retry`) are active, `matchups` has
+row level security on and no rows, `/api/cron/matchups` answers 401 without the bearer, and `/week`
+and `/?view=matchups` show "Matchups start Monday". Still to check after the first rollover: steps
+6 and 7 of the checklist (10 rows and a feed post, then `matchupsSection: "included"` in the 8:00 am
+digest run).
 
 - **What it is.** Every Monday each fantasy team gets one opponent, chosen by standings neighbors
   (no repeat inside 3 weeks when it can be avoided). Whoever gains more points over the week wins;
@@ -155,8 +159,8 @@ and push alerts work.
   own: `cincy-score-sync` every 30 minutes, `cincy-games-live` at :10 and :40,
   `cincy-free-agent-refresh` daily at 09:15 UTC, `cincy-games-weeks` daily at 09:25 UTC,
   `cincy-push-sends-cleanup` daily at 09:40 UTC, and the weekly digest at 8am Eastern on Mondays
-  (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC). On the branch only, not
-  in production yet: `cincy-matchups-edt` (10:45 UTC), `cincy-matchups-est` (11:45 UTC) and
+  (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC). Since 2026-10-04:
+  `cincy-matchups-edt` (10:45 UTC), `cincy-matchups-est` (11:45 UTC) and
   `cincy-matchups-retry` (12:15 UTC), which together fire daily to roll the weekly matchups. The
   first two are 6:45 am Eastern in daylight and standard time respectively, and the retry is 7:15
   am EST (8:15 am EDT) so a failed standard-time call still gets a second chance before the digest.
@@ -434,7 +438,7 @@ Feature ideas that are not limits live in the
     every game, so a pro pick shows at once). A game ESPN deletes outright is never removed.
   - Every image is served unoptimized (`images.unoptimized` in `next.config.ts`), so ESPN logos
     and headshots arrive at ESPN's size instead of being resized for the device.
-- Weekly matchups (on a branch, not shipped; full reasoning in
+- Weekly matchups (full reasoning in
   [ADR-007](decisions/ADR-007-weekly-matchups.md)):
   - The record shown on a past week's view is season-to-date, not "as of" that week.
   - The digest section's lists are capped (3 other results and 3 other pairings with a team, 4 and
