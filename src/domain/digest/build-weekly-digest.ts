@@ -1,6 +1,8 @@
 import { fromUnits, toUnits } from "@/domain/scoring";
 import { rankMovement, rankStandings } from "@/domain/standings";
 import type { RankMovement, TeamScore } from "@/domain/standings";
+import { buildMatchupsSection } from "./build-matchups-section";
+import type { DigestMatchupsSection, MatchupsSectionInput } from "./build-matchups-section";
 
 /** A team as the digest sees it: scored (with tiebreaker facts) plus a name for its owner. */
 export type DigestTeamInput = TeamScore & { ownerName: string | null };
@@ -29,6 +31,8 @@ export type WeeklyDigest = {
   /** Present only when the recipient owns a team. */
   recipient: DigestTeamRow | null;
   leagueTotals: { teams: number; totalPoints: number; pointsGained: number | null };
+  /** Null when there is nothing to report: no matchups yet, or none this digest can call final. */
+  matchups: DigestMatchupsSection | null;
 };
 
 const MOVER_LIMIT = 3;
@@ -58,8 +62,10 @@ export function buildWeeklyDigest(input: {
   current: readonly DigestTeamInput[];
   weekAgo: readonly WeekAgoRow[] | null;
   recipientTeamId?: string | null;
+  /** Omit (or pass null) when the matchups could not be read: the digest simply has no section. */
+  matchups?: MatchupsSectionInput | null;
 }): WeeklyDigest {
-  const { current, weekAgo, recipientTeamId } = input;
+  const { current, weekAgo, recipientTeamId, matchups } = input;
   const owners = new Map(current.map((t) => [t.teamId, t.ownerName]));
   const before = new Map((weekAgo ?? []).map((r) => [r.teamId, r]));
   const hasHistory = before.size > 0;
@@ -93,6 +99,13 @@ export function buildWeeklyDigest(input: {
       totalPoints: round2(fromUnits(rows.reduce((sum, r) => sum + toUnits(r.total), 0))),
       pointsGained: hasHistory ? round2(gains.reduce((sum, g) => sum + g, 0)) : null,
     },
+    matchups: matchups
+      ? buildMatchupsSection({
+          ...matchups,
+          teams: rows,
+          recipientTeamId,
+        })
+      : null,
   };
 }
 

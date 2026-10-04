@@ -1,3 +1,4 @@
+export { gainTexts } from "./gain-texts";
 export { displayWeek } from "./display-week";
 export type { DisplayWeek } from "./display-week";
 export { buildMatchupStandings, formatMatchupRecord } from "./matchup-standings";
