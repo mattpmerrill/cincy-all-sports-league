@@ -6,7 +6,16 @@ import { RankBadge } from "@/ui/rank-badge";
 import { UserAvatar } from "@/ui/user-avatar";
 import type { TeamDetail } from "../fantasy-teams.service";
 
-export function TeamHeader({ team, isMine }: { team: TeamDetail; isMine: boolean }) {
+export function TeamHeader({
+  team,
+  isMine,
+  children,
+}: {
+  team: TeamDetail;
+  isMine: boolean;
+  /** Extra lines under the owner, composed by the page (this feature knows nothing of matchups). */
+  children?: React.ReactNode;
+}) {
   return (
     <header className="hero-backdrop relative overflow-hidden rounded-3xl border border-line bg-surface p-5 md:p-7">
       <Link
@@ -50,6 +59,7 @@ export function TeamHeader({ team, isMine }: { team: TeamDetail; isMine: boolean
               </span>
             ) : null}
           </div>
+          {children}
         </div>
 
         <div className="flex shrink-0 flex-col items-end leading-none">
