@@ -161,8 +161,9 @@ record do not sit under twenty lines on a phone: up to 3 other results and 3 oth
 team, 4 and 4 without one, and a "See all {n} matchups" link when anything was cut. When the
 rollover has not run by digest time (an earlier week is still live and this week has no rows), the
 section says the matchups are still being settled and prints no scores. A failed matchups read
-never costs the email: the digest goes out without the section, and `DigestReport.matchupsSection`
-reports `included`, `none` or `read_failed`, so the cron response shows a failed read.
+or section build never costs the email: the digest goes out without the section, and
+`DigestReport.matchupsSection` reports `included`, `none`, `read_failed` or `build_failed`, so the
+cron response shows the failure.
 
 **Reading and caching.** The pages read two caches. The matchups cache (`matchups` tag, one-hour
 expiry as a safety net) holds the season's rows, about ten a week. Live scores come from the league

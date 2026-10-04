@@ -255,8 +255,9 @@ matchups once per run, through `domain/digest`'s `buildMatchupsSection`: the res
 earlier week finalized on or after that Monday, this week's pairings, capped lists with a "See all
 {n} matchups" link, and a "still being settled" note instead of scores if the rollover has not run.
 The result and pairing sentences come from `domain/matchups` (`resultSentence`, `pairingSentence`),
-shared with the feed post. The email goes out without the section if the read fails, and the digest
-report says which of `included`, `none` or `read_failed` happened.
+shared with the feed post. The email goes out without the section if the read or the section build
+fails, and the digest report says which of `included`, `none`, `read_failed` or `build_failed`
+happened.
 
 ## Push flow
 

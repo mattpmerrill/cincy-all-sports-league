@@ -70,26 +70,38 @@ before 6:45 am Eastern anyway: the daylight-time 12:15 firing lands after the 8:
 digest would go out without the section that day, and a deploy still building at the deadline has
 no margin. The next Monday is 2026-10-05.
 
-1. Migrations before code. `supabase db push --linked --dry-run` must list exactly
+1. Read-only check first: the active season must cover the coming Monday.
+   `select name, starts_on, ends_on from seasons where is_active;` returns one row whose
+   `starts_on` is on or before that Monday (2026-10-05 for week one) and whose `ends_on` is on or
+   after it. If not, every run reports `outside_season` or closes only, and no week opens. Fix the
+   season dates before anything else.
+2. Migrations before code. `supabase db push --linked --dry-run` must list exactly
    `20261005120000`, `20261005120100`, `20261005120200` and `20261005120300`. Then
    `supabase db push --linked`. The three jobs reuse the `cron_secret` vault secret the other jobs
    already use.
-2. Read-only check that the jobs exist:
+3. Read-only check that the jobs exist:
    `select jobname, schedule from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est', 'cincy-matchups-retry');`
    returns three rows: `45 10 * * *`, `45 11 * * *` and `15 12 * * *`.
-3. Merge `feat/matchups` into `main` (it auto-deploys). `LeagueData` did not change, so there is no
+4. Merge `feat/matchups` into `main` (it auto-deploys). `LeagueData` did not change, so there is no
    league cache key bump; the new matchups cache has its own key (`v1`). Until the first rollover,
    the Week tab and the Standings switch show "Matchups start Monday".
-4. After the first rollover (any time after 6:45 am Eastern on that Monday):
+5. After the deploy finishes, check the route is guarded:
+   `curl -s -o /dev/null -w "%{http_code}" -X POST https://www.cincysports.xyz/api/cron/matchups`
+   must print `401` (no bearer token, so nothing runs).
+6. After the first rollover (any time after 6:45 am Eastern on that Monday):
    - `select week_start, count(*) from matchups group by 1;` shows one week with 10 rows.
-   - The feed has the "Weekly matchups" post, and the Monday digest (8:00 am) shows the section.
+   - The feed has the "Weekly matchups" post.
    - The Vercel logs have `matchups rollover finished` with `action: "pair"` and `post: "written"`,
      and no `matchups rollover refused`. pg_net ignores the HTTP status, so a refusal is only
      visible in the log.
-5. Season end, when it comes: the Monday after the season's last week closes the last matchups
+7. After the 8:00 am digest: the digest run's log (`digest finished`) or response shows
+   `matchupsSection: "included"`. `none` means there was nothing to show, and `read_failed` or
+   `build_failed` means the email went out without the section (the error line with the same
+   correlation id says why).
+8. Season end, when it comes: the Monday after the season's last week closes the last matchups
    (close-only). Flip the active season to the next one only after that run, or the old season's
    last week stays open.
-6. Rollback: matchups are additive. To stop the rollover, unschedule the three jobs
+9. Rollback: matchups are additive. To stop the rollover, unschedule the three jobs
    (`select cron.unschedule('cincy-matchups-edt'), cron.unschedule('cincy-matchups-est'), cron.unschedule('cincy-matchups-retry');`); the
    pages keep showing what exists. The migrations can stay.
 
@@ -428,7 +440,7 @@ Feature ideas that are not limits live in the
   - The digest section's lists are capped (3 other results and 3 other pairings with a team, 4 and
     4 without), with a "See all {n} matchups" link. If the rollover has not run by digest time, the
     section says the matchups are still being settled and shows no scores. The digest report's
-    `matchupsSection` is `included`, `none` or `read_failed`.
+    `matchupsSection` is `included`, `none`, `read_failed` or `build_failed`.
   - The feed card says "Last week's results" because the payload carries only the new week's date.
   - An odd number of teams gives one team a bye, and there is no bye history.
   - The daily non-Monday firings do a full league load and an idempotent database call (about
