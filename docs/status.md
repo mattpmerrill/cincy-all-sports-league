@@ -2,69 +2,66 @@
 
 Where the project stands and how to pick it up. Update this at the end of each working session.
 
-**As of 2026-09-30.** Everything below is live on https://www.cincysports.xyz, `main` is clean and
-deployed, and production has every migration in `supabase/migrations/` applied. Push alerts went
-out on 2026-09-30 in the staged order: migrations, then the code without keys, then the VAPID keys
-and a rebuild. The site reports push as configured (`configured\":true` on `/rules`) and `/sw.js`
-is served with the intended headers on Vercel. Matt tested it on his own iPhone on 2026-09-30 and reported that it works end to end. Android,
-Firefox and desktop Safari are still unchecked. The launch was announced the same day with a feed
-post and an email to 17 members (`pnpm announce:push-alerts`; the Home Screen email template now
-says alerts are live).
+**As of 2026-10-04.** Everything below is live on https://www.cincysports.xyz, `main` is clean and
+deployed (`9d0b5c0`), and production has every migration in `supabase/migrations/` applied (42,
+checked on 2026-10-04). There are no side branches, worktrees or open pull requests. The next
+feature is weekly head-to-head matchups
+([issue #1](https://github.com/mattpmerrill/cincy-all-sports-league/issues/1)), which is waiting on
+product questions for Matt before a plan is written.
 
-## On a branch: records and the Week tab (2026-10-03, not shipped)
+## Shipped 2026-10-03 and 2026-10-04
 
-Branch `claude/team-athlete-weekly-schedule-wyann2`, built in a cloud session. Nothing here is
-live and no migration has been applied to production.
-
-- **Records:** every pick shows its participant's regular-season record (`W-L`, NFL `W-L-T` when
-  there is a tie, NHL `W-L-OTL`, MLS `W-L-D`), or an athlete's ranking ("No. 4 WTA"), on team
+- **Records** (PR #2): every pick shows its participant's regular-season record (`W-L`, NFL `W-L-T`
+  when there is a tie, NHL `W-L-OTL`, MLS `W-L-D`), or an athlete's ranking ("No. 4 WTA"), on team
   pages, sport pages and the free-agent list. Sync writes `participant_records` from the same ESPN
   fetch as wins (no extra calls); a records failure is logged and never fails a sync. Start at
   `domain/records`, `features/sync/record-plan.ts` and the "Records" section of
   [architecture](architecture.md).
-- **Week tab** (`/week`, public): the games every team's picks play Monday to Sunday, Eastern time,
-  with showdowns (two league teams on opposite sides), a team filter, a "My team" shortcut and
-  per-team game counts; plus a "This week" panel on each team page. Games live in `games`,
-  refreshed by `/api/cron/games` (`range=live` at :10 and :40, `range=weeks` daily at 09:25 UTC).
-  Team sports only. See [ADR-006](decisions/ADR-006-weekly-games-feed.md) and "Games flow" in
-  [architecture](architecture.md). It is the base for weekly head-to-head matchups.
+- **Week tab** (PR #2; `/week`, public): the games every team's picks play Monday to Sunday,
+  Eastern time, with showdowns (two league teams on opposite sides), a team filter, a "My team"
+  shortcut and per-team game counts; plus a "This week" panel on each team page. Games live in
+  `games`, refreshed by `/api/cron/games` (`range=live` at :10 and :40, `range=weeks` daily at
+  09:25 UTC). Team sports only. See [ADR-006](decisions/ADR-006-weekly-games-feed.md) and "Games
+  flow" in [architecture](architecture.md). It is the base for weekly head-to-head matchups.
+- **Slide-out menu** (PR #3): the bottom bar is five tabs (Standings, Week, Feed, Trades, Sports).
+  A menu that slides in from the right replaces the avatar dropdown and holds My team, Profile and
+  settings, Admin (admins only), Free agents, Rules, Sign out, Privacy and Terms. Visitors get
+  Join the league and Sign in. No migrations.
+- **Product update email** (PR #4): one announcement covering Week, records, showdowns and the
+  menu, with a screenshot under each feature (`pnpm announce:product-update`). It has been sent.
+- **ESPN images served directly** (`9d0b5c0`, 2026-10-04): `images.unoptimized` is on in
+  `next.config.ts`, so logos and headshots load straight from ESPN's CDN. The Vercel Hobby team
+  had reached 75% of its image-transformation allowance, which every project on the account
+  shares. Matt confirmed on 2026-10-04 that this is resolved.
 
-What the cloud session could not run, so it must happen on Matt's machine before shipping:
+PR #2 was built in a cloud session that could reach neither ESPN nor a Supabase stack. Its
+description lists checks to run on a local stack before merging (`pnpm test:db` with the new
+`09_records` and `10_games` pgTAP files, `pnpm db:types` with no diff, the live ESPN smoke for
+games and records, a browser look signed out and signed in, `pnpm build` and `pnpm test:e2e`).
+Which of them ran before the merge was not recorded here. What production shows on 2026-10-04:
+all six migrations applied, `cincy-games-live` and `cincy-games-weeks` active, 146 rows in `games`
+refreshed the same day, 329 rows in `participant_records`, and `/week` answering 200.
 
-1. `supabase start`, then `pnpm test:db` (new `09_records` and `10_games` pgTAP files, never run).
-2. `pnpm db:types`, and expect no diff: the `participant_records`, `games` and `game_status`
-   blocks in `database.types.ts` were written by hand in the generator's format.
-3. Live ESPN check of the hand-built fixtures: `pnpm tsx src/integrations/espn/dev/smoke.ts games`
-   (scoreboard and college schedule shapes, and whether a just-after-midnight game sits on the
-   previous scoreboard day), plus the NHL standings `otLosses` stat name, which nothing has
-   confirmed yet.
-4. Look at `/week`, a team page, a sport page and a free-agent list in a browser on the local
-   stack, signed out and signed in (the "My team" shortcut was never seen).
-5. `pnpm build` and `pnpm test:e2e` (new `/week` smoke test).
-6. Ship: `supabase db push --linked --dry-run`, then without `--dry-run` (two tables, an enum and
-   two pg_cron jobs that reuse the `cron_secret` vault secret), then merge to `main`. The league
-   cache key moved to `v4`. To fill the Week page at once instead of waiting for 09:25 UTC:
-   `curl -X POST -H "Authorization: Bearer <CRON_SECRET>" "https://www.cincysports.xyz/api/cron/games?range=weeks"`.
+## State on 2026-10-04
 
-## While it rests (from 2026-09-30)
+The site rested from 2026-09-30 to 2026-10-03 after the trades, free agents, Home Screen how-to
+and push alerts work.
 
-The trades, free agents, Home Screen how-to and push alerts work all shipped in the 48 hours to
-2026-09-30, and the plan is to leave the site alone for about a week. State at the start of the
-rest:
-
-- `main` is deployed and clean, there are no side branches or worktrees, and the local Supabase
-  stack is stopped (`supabase start` brings it back). `.env.local` still points at production, so
-  use the local-stack variables from "Running it locally" for anything you run.
-- Day one of push alerts: 3 members with 3 devices turned alerts on, and one free-agent move was
-  made. Score syncs ran green every hour except one 30-minute run at 08:30 UTC where ESPN answered
-  HTTP 403 for three sports at once; the next run was fine. If 403s repeat, ESPN may be blocking
-  Vercel's addresses.
+- The local Supabase stack is stopped (`supabase start` brings it back). `.env.local` still points
+  at production, so use the local-stack variables from "Running it locally" for anything you run.
+- Push alerts: 8 members with 10 devices have alerts on (3 and 3 on day one). Five free-agent
+  moves have been made.
+- Score syncs: no failed run from 2026-10-01 to 2026-10-04. The only failures in the last week
+  were three on 2026-09-30, in one 30-minute run at 08:30 UTC where ESPN answered HTTP 403 for
+  three sports at once; the next run was fine. If 403s repeat, ESPN may be blocking Vercel's
+  addresses.
 - Nothing is scheduled to email members except the Monday digest. These pg_cron jobs run on their
-  own: `cincy-score-sync` every 30 minutes, `cincy-free-agent-refresh` daily at 09:15 UTC,
+  own: `cincy-score-sync` every 30 minutes, `cincy-games-live` at :10 and :40,
+  `cincy-free-agent-refresh` daily at 09:15 UTC, `cincy-games-weeks` daily at 09:25 UTC,
   `cincy-push-sends-cleanup` daily at 09:40 UTC, and the weekly digest at 8am Eastern on Mondays
   (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC).
 
-Coming back, read-only checks (Supabase SQL editor or the MCP `execute_sql`):
+Read-only health checks (Supabase SQL editor or the MCP `execute_sql`):
 
 ```sql
 -- Sync health: failures in the last week, by hour.
@@ -75,6 +72,8 @@ from sync_runs where started_at > now() - interval '7 days' group by 1 order by 
 select count(distinct user_id) members, count(*) devices from push_subscriptions;
 -- Free agent moves so far.
 select count(*) from free_agent_moves;
+-- Games feed: rows by status and the last refresh.
+select status, count(*), max(updated_at) from games group by 1;
 ```
 
 Then look at the Vercel logs for `push delivery finished` with a non-zero `rejected`, `pruned` or
@@ -92,7 +91,9 @@ Open items, none urgent:
   Prettier ignores.
 - The app-wide focus ring contrast and the shared emoji-safe text clipper (both under "Known
   limits").
-- The Home Screen how-to email and the three launch emails are done. Nothing else is queued.
+- Run the PR #2 local checks listed under "Shipped" if they were never run, starting with
+  `pnpm test:db` and `pnpm db:types`.
+- Every announcement email is sent. Nothing else is queued.
 
 ## What is live
 
@@ -106,7 +107,9 @@ Open items, none urgent:
 | Free agents      | Drop a pick and add a free agent in any sport, instantly; daily pool load from ESPN; earned points stay                                                                                                     | [ADR-004](decisions/ADR-004-free-agent-moves.md), `features/free-agents`, "Free-agent flow" in [architecture](architecture.md) |
 | Push alerts      | Web Push to a phone or computer for trade offers, replies and reactions, and your team's new points; per-topic switches on /me; test alert; in-app prompt. **Live since 2026-09-30; checked on an iPhone.** | [ADR-005](decisions/ADR-005-web-push-alerts.md), `features/push`, "Push flow" in [architecture](architecture.md)               |
 | Profile          | Name, email preferences, profile photo upload (Storage bucket `avatars`)                                                                                                                                    | `src/app/me`, `features/profile`                                                                                               |
-| Navigation       | Tabs: Standings, Feed, Trades (with a Trades or Free agents switch), Sports, Rules; account menu (avatar) in the header                                                                                     | `ui/nav-links.tsx`, `features/auth/components/header-account.tsx`                                                              |
+| Records          | Each pick's regular-season record, or an athlete's ranking, on team pages, sport pages and the free-agent list                                                                                              | `domain/records`, `features/sync/record-plan.ts`, "Records" in [architecture](architecture.md)                                 |
+| Week             | `/week`: the games every team's picks play Monday to Sunday, showdowns, team filter; a "This week" panel on team pages                                                                                      | [ADR-006](decisions/ADR-006-weekly-games-feed.md), "Games flow" in [architecture](architecture.md)                             |
+| Navigation       | Bottom tabs: Standings, Week, Feed, Trades (with a Trades or Free agents switch), Sports; slide-out menu from the right for My team, Profile, Admin, Free agents, Rules and Sign out                        | `ui/nav-links.tsx`, `features/auth/components/header-account.tsx`                                                              |
 
 ## How work is done here
 
@@ -186,7 +189,7 @@ Open items, none urgent:
 - Admins: `pnpm make-admin <email>` after the person signs up.
 - One-off announcement email: a short script per announcement (`scripts/send-*-announcement.ts`,
   run as `pnpm announce:trades`, `announce:free-agents`, `announce:home-screen`,
-  `announce:push-alerts`) names its
+  `announce:push-alerts`, `announce:product-update`) names its
   campaign, subject and renderer, and `scripts/announcement-runner.ts` does the sending: dry run
   by default, `--only you@x` for a test, `--send [--except a@x]`, per-member idempotency keys. It
   skips members who turned off league email. Templates live in
@@ -320,7 +323,7 @@ none of it happens without a yes from Matt at the time. Run the commands from th
 Feature ideas that are not limits live in the
 [GitHub project](https://github.com/users/mattpmerrill/projects/2) (see [backlog.md](backlog.md)).
 
-- Records and the Week tab (on the branch above):
+- Records and the Week tab:
   - `LeagueData.records` carries every record of the season, free agents included (about 1,450
     small rows, roughly 150 kB as JSON), because the free-agent board scores from the same data.
     Re-check the cached item size with the results bullet below.
@@ -328,7 +331,8 @@ Feature ideas that are not limits live in the
   - Golf and tennis tournaments are not on the Week page (team sports only, ADR-006).
   - A newly picked college team shows its games after the next live refresh (pro leagues store
     every game, so a pro pick shows at once). A game ESPN deletes outright is never removed.
-  - Six nav tabs fit a 360px phone; at 320px "Standings" overflows its slot by about 1.5px.
+  - Every image is served unoptimized (`images.unoptimized` in `next.config.ts`), so ESPN logos
+    and headshots arrive at ESPN's size instead of being resized for the device.
 - Trades: offers voided because a player moved in another trade get no email. A team whose offer
   was accepted cannot be deleted on its own mid-season (by design, see ADR-003). The concurrent
   accept path is designed for (lock order, typed `busy` error) but not load tested.
@@ -427,4 +431,4 @@ Feature ideas that are not limits live in the
   photo uploads), so a member could point it at any URL. It only ever renders as an `<img>`, but
   tightening it (a check or a trigger that allows only our bucket or the Google photo) is cheap.
 - e2e coverage is a smoke suite; the trade flows were verified by hand and by service tests.
-- README screenshots predate the feed, trades and the new header.
+- README screenshots predate the feed, trades, the Week tab and the slide-out menu.
