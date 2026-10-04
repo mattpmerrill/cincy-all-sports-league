@@ -1,6 +1,9 @@
-import type { DigestTeamRow } from "@/domain/digest";
+import type { DigestMatchupBlock, DigestTeamRow } from "@/domain/digest";
 import type { DigestEmailProps } from "./weekly-digest-email";
 import { formatPoints, movementShort, movementText, signedPoints } from "./format";
+
+const blockLines = (block: DigestMatchupBlock) =>
+  [block.mine, ...block.others].flatMap((l) => (l ? [l.text] : []));
 
 const line = (row: DigestTeamRow) => {
   const move = movementShort(row.movement);
@@ -23,6 +26,17 @@ export function renderDigestText(props: DigestEmailProps): string {
       ? `Here is how the ${props.seasonName} standings look after the weekend.`
       : `Here is where the ${props.seasonName} standings stand right now.`,
   ];
+
+  const matchups = digest.matchups;
+  if (matchups?.state === "settling") {
+    out.push("", "MATCHUPS", matchups.message, "", `${matchups.linkLabel}: ${props.siteUrl}/week`);
+  } else if (matchups) {
+    for (const block of [matchups.lastWeek, matchups.thisWeek]) {
+      if (block) out.push("", block.title.toUpperCase(), ...blockLines(block));
+    }
+    if (matchups.recordText) out.push("", matchups.recordText);
+    out.push("", `${matchups.linkLabel}: ${props.siteUrl}/week`);
+  }
 
   if (digest.recipient) {
     const r = digest.recipient;

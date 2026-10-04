@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { weekHref } from "./links";
+import { pairGamesHref, weekHref } from "./links";
 import { gamesRangeSchema, weekSearchSchema } from "./schemas";
 
 describe("weekSearchSchema", () => {
@@ -11,7 +11,11 @@ describe("weekSearchSchema", () => {
   });
 
   it("treats missing parameters as unset", () => {
-    expect(weekSearchSchema.parse({})).toEqual({ week: undefined, team: undefined });
+    expect(weekSearchSchema.parse({})).toEqual({
+      week: undefined,
+      team: undefined,
+      vs: undefined,
+    });
   });
 
   it("ignores a week that is not a Monday or not a date, instead of failing the page", () => {
@@ -33,6 +37,30 @@ describe("weekSearchSchema", () => {
     for (const team of ["Coop Doggies", "../admin", "a--b", "-a", "x".repeat(81), ""]) {
       expect(weekSearchSchema.parse({ team }).team, team).toBeUndefined();
     }
+  });
+
+  it("accepts a second team next to the first", () => {
+    expect(weekSearchSchema.parse({ team: "coop", vs: "dirks" })).toEqual({
+      week: undefined,
+      team: "coop",
+      vs: "dirks",
+    });
+  });
+
+  it("ignores vs without a team, vs equal to the team, and a vs that is not a slug", () => {
+    expect(weekSearchSchema.parse({ vs: "dirks" }).vs).toBeUndefined();
+    expect(weekSearchSchema.parse({ team: "coop", vs: "coop" })).toMatchObject({
+      team: "coop",
+      vs: undefined,
+    });
+    for (const vs of ["Dirks", "a--b", "x".repeat(81), "", ["a", "b"]]) {
+      expect(weekSearchSchema.parse({ team: "coop", vs }).vs, String(vs)).toBeUndefined();
+    }
+    // A bad team takes the pair with it: there is nothing for vs to be a second of.
+    expect(weekSearchSchema.parse({ team: "A B", vs: "dirks" })).toMatchObject({
+      team: undefined,
+      vs: undefined,
+    });
   });
 
   it("keeps one parameter when the other is bad", () => {
@@ -63,5 +91,27 @@ describe("weekHref", () => {
     expect(weekHref({ week: "2026-10-12" })).toBe("/week?week=2026-10-12");
     expect(weekHref({ team: "coop" })).toBe("/week?team=coop");
     expect(weekHref({ week: "2026-10-12", team: "coop" })).toBe("/week?week=2026-10-12&team=coop");
+  });
+
+  it("adds the second team only next to a first", () => {
+    expect(weekHref({ team: "coop", vs: "dirks" })).toBe("/week?team=coop&vs=dirks");
+    expect(weekHref({ week: "2026-10-12", team: "coop", vs: "dirks" })).toBe(
+      "/week?week=2026-10-12&team=coop&vs=dirks",
+    );
+    expect(weekHref({ vs: "dirks" })).toBe("/week");
+  });
+});
+
+describe("pairGamesHref", () => {
+  it("links to the pair's games and the list, leaving the current week out", () => {
+    expect(
+      pairGamesHref({ weekStart: "2026-10-05", currentWeek: "2026-10-05", teams: ["a", "b"] }),
+    ).toBe("/week?team=a&vs=b#games");
+  });
+
+  it("keeps any other week", () => {
+    expect(
+      pairGamesHref({ weekStart: "2026-09-28", currentWeek: "2026-10-05", teams: ["a", "b"] }),
+    ).toBe("/week?week=2026-09-28&team=a&vs=b#games");
   });
 });

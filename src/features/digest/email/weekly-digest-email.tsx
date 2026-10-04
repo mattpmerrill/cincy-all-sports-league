@@ -10,7 +10,13 @@ import {
   Text,
 } from "@react-email/components";
 import type { CSSProperties, ReactNode } from "react";
-import type { DigestTeamRow, WeeklyDigest } from "@/domain/digest";
+import type {
+  DigestMatchupBlock,
+  DigestMatchupLine,
+  DigestMatchupsSection,
+  DigestTeamRow,
+  WeeklyDigest,
+} from "@/domain/digest";
 import { fonts, palette } from "@/ui/email/palette";
 import { formatPoints, movementShort, movementText, signedPoints } from "./format";
 
@@ -110,6 +116,106 @@ function TeamBlock({ row }: { row: DigestTeamRow }) {
         </Text>
       )}
     </Section>
+  );
+}
+
+const outcomeColor = (line: DigestMatchupLine) =>
+  line.outcome === "win" ? palette.up : line.outcome === "loss" ? palette.down : palette.ink;
+
+/** The recipient's own matchup: the same tinted card as "Your team", so it reads as theirs. */
+function MyMatchup({ line }: { line: DigestMatchupLine }) {
+  return (
+    <Section
+      style={{
+        backgroundColor: palette.brandTint,
+        borderLeft: `4px solid ${palette.brand}`,
+        borderRadius: "8px",
+        padding: "12px 16px",
+        marginTop: "6px",
+      }}
+    >
+      <Text
+        style={{
+          ...base,
+          fontSize: "16px",
+          fontWeight: 700,
+          lineHeight: "22px",
+          color: outcomeColor(line),
+        }}
+      >
+        {line.text}
+      </Text>
+    </Section>
+  );
+}
+
+function MatchupBlock({ block }: { block: DigestMatchupBlock }) {
+  return (
+    <>
+      {block.mine ? <MyMatchup line={block.mine} /> : null}
+      {block.others.length > 0 ? (
+        <table role="presentation" width="100%" cellPadding={0} cellSpacing={0}>
+          <tbody>
+            {block.others.map((line) => (
+              <tr key={line.text}>
+                <td style={cell}>
+                  <Text style={{ ...base, fontSize: "14px", lineHeight: "20px" }}>{line.text}</Text>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : null}
+    </>
+  );
+}
+
+function MatchupsSection({
+  section,
+  siteUrl,
+}: {
+  section: DigestMatchupsSection;
+  siteUrl: string;
+}) {
+  const link = (
+    <Text style={{ ...base, fontSize: "14px", fontWeight: 600, padding: "8px 0 14px" }}>
+      <Link href={`${siteUrl}/week`} style={{ color: palette.brand }}>
+        {section.linkLabel}
+      </Link>
+    </Text>
+  );
+  if (section.state === "settling") {
+    return (
+      <>
+        <SectionTitle>Matchups</SectionTitle>
+        <Text style={{ ...base, fontSize: "14px", lineHeight: "20px", paddingTop: "4px" }}>
+          {section.message}
+        </Text>
+        {link}
+      </>
+    );
+  }
+  return (
+    <>
+      {section.lastWeek ? (
+        <>
+          <SectionTitle>{section.lastWeek.title}</SectionTitle>
+          <MatchupBlock block={section.lastWeek} />
+        </>
+      ) : null}
+      {section.thisWeek ? (
+        <>
+          <SectionTitle>{section.thisWeek.title}</SectionTitle>
+          <MatchupBlock block={section.thisWeek} />
+        </>
+      ) : null}
+      {section.recordText ? (
+        <Text style={{ ...base, fontSize: "12px", color: palette.muted, paddingTop: "10px" }}>
+          {section.recordText}
+        </Text>
+      ) : null}
+      {link}
+    </>
   );
 }
 
@@ -232,6 +338,10 @@ export function WeeklyDigestEmail(props: DigestEmailProps) {
                 ? `Here is how the ${props.seasonName} standings look after the weekend.`
                 : `Here is where the ${props.seasonName} standings stand right now.`}
             </Text>
+
+            {digest.matchups ? (
+              <MatchupsSection section={digest.matchups} siteUrl={props.siteUrl} />
+            ) : null}
 
             {digest.recipient ? <TeamBlock row={digest.recipient} /> : null}
 

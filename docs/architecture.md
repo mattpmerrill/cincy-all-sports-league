@@ -194,6 +194,71 @@ page reads two caches, `league` and `games`, so a pick change shows after the le
 over and a new score after the next refresh. `?week=` outside the season is pulled back into it,
 which also bounds the cache keys.
 
+## Matchup flow
+
+Every Monday each fantasy team gets one opponent, and whoever gains more season points over the week
+wins. It is bragging rights only: matchups read season totals and never feed back into scoring or
+standings, and dependency-cruiser fails the build if `domain/scoring` or `domain/standings` imports
+`domain/matchups`. See [ADR-007](decisions/ADR-007-weekly-matchups.md).
+
+```
+pg_cron 10:45, 11:45 and 12:15 UTC daily (6:45 am Eastern in EDT and EST, then a retry) -> POST /api/cron/matchups
+  bearer CRON_SECRET, constant-time check; the route takes the clock itself, never a parameter
+  -> rollWeek({ now })
+     rolloverWindow ........ before Monday 06:30 Eastern: not_due; any later day counts as due
+     league read fresh ..... admin client, never the cache; no active season: no_season
+     rolloverAction ........ pair | close_only (after the season's last week) | skip (before it)
+     waitsForMonday ........ no matchups yet and today is not Monday: waiting_for_monday
+     buildLeagueModel ...... the same totals the Standings page shows, read once
+     pairByStandings ....... standings neighbors, 3-week rematch guard, search with greedy fallback
+     rpc roll_matchup_week . one transaction, season row lock:
+                               week already has rows .... no-op, rolled false
+                               finalize every open earlier week at these totals
+                               insert this week with these totals as start points
+                               (empty pairings = close only)
+     revalidateMatchups() .. after any successful rpc
+     if rolled:
+       revalidateLeague() ..... so live gains never use totals older than the frozen starts
+       League feed post ....... matchups_week payload, written after the commit, at most once
+```
+
+The week closes at the rollover, not at Sunday midnight, because scores arrive by the 30-minute sync
+and a Sunday-night game can finish after midnight. `:45` sits between the `:00` and `:30` score
+syncs and before the 8:00 am digest. The first two jobs are each an hour off for half the year, so
+the route's own 06:30 Eastern guard and the week check decide, and the rest of the daily firings
+are idempotent no-ops. The third job (12:15 UTC, 7:15 am EST) exists because in standard time only
+one firing is due before the 8:00 am digest, so a single failed call would cost that Monday's
+digest section; in daylight time it lands at 8:15 am and is a repeat. A Monday the job missed is
+caught up on a later day; the week then carries the calendar week's label but its start totals are
+from the catch-up day. The first week only opens on a Monday. After the season's last week the run
+is close-only, so the active season must be flipped after that run.
+
+`roll_matchup_week` is the single writer (`service_role` only, `security definer`, typed error
+tokens). The table is public read with no write path for anyone else. The Monday feed post is lost
+if the process dies between the commit and the post, and can never be duplicated.
+
+```
+page -> getSafeMatchupReads (Week, Standings, team page; a failure leaves the section out)
+     -> cached league (teams, ranks, current totals)  [tag league]
+     -> cached matchups of the season, ~10 rows a week [tag matchups, 1 hour expiry]
+     -> domain scoreMatchup: live = current total - frozen start; final = frozen end - start
+        displayWeek: which week "this week" means (keeps last week's on screen until the rollover)
+        buildMatchupStandings: W-L-T, streak, points gained, ordered and ranked
+     -> view models: names, ranks, gains, who is ahead (components only format)
+```
+
+Results are derived, never stored, so a scoring correction moves a live week at once and cannot
+change a final one. Live scores come from the league cache, so a sync never has to drop the
+matchups cache. The Week page, the Standings page's `?view=matchups`, the record on season rows and
+the team page's matchups section all share this read side. The Monday digest reads the season's
+matchups once per run, through `domain/digest`'s `buildMatchupsSection`: the results of the latest
+earlier week finalized on or after that Monday, this week's pairings, capped lists with a "See all
+{n} matchups" link, and a "still being settled" note instead of scores if the rollover has not run.
+The result and pairing sentences come from `domain/matchups` (`resultSentence`, `pairingSentence`),
+shared with the feed post. The email goes out without the section if the read or the section build
+fails, and the digest report says which of `included`, `none`, `read_failed` or `build_failed`
+happened.
+
 ## Push flow
 
 Push alerts tell a member about a trade, a reply or reaction, or new points, on a device where they

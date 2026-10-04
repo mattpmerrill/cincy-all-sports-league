@@ -44,6 +44,11 @@ export function TeamFilter({ page }: { page: WeekPage }) {
           All teams
         </Link>
       ) : null}
+      {page.selectedTeam && page.selectedOpponent ? (
+        <p className="basis-full text-sm text-text-muted">
+          Showing games for {page.selectedTeam.name} and {page.selectedOpponent.name}.
+        </p>
+      ) : null}
     </form>
   );
 }

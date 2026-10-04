@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createLeagueModelSource } from "@/data/league-model";
 import { leagueData } from "@/domain/league/fixtures";
+import { REMATCH_WEEKS } from "@/domain/matchups";
 import { TRADE_WINDOW_HOURS } from "@/domain/trades";
 import { createRulesService } from "./rules.service";
 
@@ -48,5 +49,17 @@ describe("free-agent rules", () => {
     const notes = (await rules("cumulative", null))?.notes.freeAgents ?? [];
     expect(notes.length).toBeGreaterThan(0);
     expect(JSON.stringify(notes)).not.toMatch(/waiver/i);
+  });
+});
+
+describe("matchup rules", () => {
+  it("take the rematch window from the domain constant and never claim to move the standings", async () => {
+    const notes = (await rules("cumulative", null))?.notes.matchups ?? [];
+    const fresh = notes.find((n) => n.title === "Fresh faces");
+    expect(fresh?.body).toContain(`${REMATCH_WEEKS} weeks`);
+    expect(notes.find((n) => n.title === "Bragging rights only")?.body).toMatch(
+      /never change the season standings/,
+    );
+    expect(JSON.stringify(notes)).not.toMatch(/\u2014/);
   });
 });

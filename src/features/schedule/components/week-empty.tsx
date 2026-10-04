@@ -17,7 +17,20 @@ const COPY: Record<NonNullable<WeekPage["empty"]>, { title: string; description:
 };
 
 /** What to say when a week has nothing to list, depending on why. */
-export function WeekEmpty({ reason }: { reason: NonNullable<WeekPage["empty"]> }) {
-  const { title, description } = COPY[reason];
+export function WeekEmpty({
+  reason,
+  pair = false,
+}: {
+  reason: NonNullable<WeekPage["empty"]>;
+  /** The filter covers two teams (a matchup), so "this team" would be wrong. */
+  pair?: boolean;
+}) {
+  const { title, description } =
+    reason === "team_idle" && pair
+      ? {
+          title: "No games for these teams this week",
+          description: "Pick another team, or step to another week.",
+        }
+      : COPY[reason];
   return <EmptyState title={title} description={description} />;
 }

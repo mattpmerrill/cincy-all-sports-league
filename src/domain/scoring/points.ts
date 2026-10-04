@@ -1,5 +1,5 @@
 /**
- * Exact point math. Points are stored as numeric(7,4), so we compute in integer ten-thousandths
+ * Exact point math. Points are stored as numeric(9,4), so we compute in integer ten-thousandths
  * ("units") and only convert back to a number at the edge. Doubles cannot add 4.1 four times
  * cleanly; integers can, and 4 decimal places is the storage precision anyway.
  */

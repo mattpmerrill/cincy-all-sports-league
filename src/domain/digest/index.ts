@@ -1,3 +1,16 @@
+export {
+  OTHER_MATCHUPS_WITHOUT_TEAM,
+  OTHER_MATCHUPS_WITH_TEAM,
+  SETTLING_MESSAGE,
+  buildMatchupsSection,
+} from "./build-matchups-section";
+export type {
+  DigestMatchupBlock,
+  DigestMatchupLine,
+  DigestMatchupsSection,
+  MatchupsSectionInput,
+  MatchupsSectionTeam,
+} from "./build-matchups-section";
 export { buildWeeklyDigest, digestHeadline } from "./build-weekly-digest";
 export type {
   DigestTeamInput,

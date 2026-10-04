@@ -32,3 +32,46 @@ describe("parseLeaguePayload", () => {
     expect(parseLeaguePayload(null)).toBeNull();
   });
 });
+
+describe("parseLeaguePayload, matchups_week", () => {
+  const valid = {
+    type: "matchups_week",
+    weekStart: "2026-10-12",
+    results: [
+      {
+        home: { name: "Sher Bear", slug: "sher-bear" },
+        away: { name: "Papie", slug: "papie" },
+        homeGain: 12.4,
+        awayGain: 8,
+        outcome: "home",
+      },
+    ],
+    pairings: [
+      {
+        home: { name: "Sher Bear", slug: "sher-bear" },
+        away: { name: "Coop Doggies", slug: "coop-doggies" },
+      },
+    ],
+  };
+
+  it("round-trips a post with results and pairings, and one with either list empty", () => {
+    expect(parseLeaguePayload(valid)).toEqual(valid);
+    expect(parseLeaguePayload({ ...valid, results: [] })).toEqual({ ...valid, results: [] });
+    expect(parseLeaguePayload({ ...valid, pairings: [] })).toEqual({ ...valid, pairings: [] });
+  });
+
+  it("returns null for an unknown outcome or a result that lost a field", () => {
+    const [first] = valid.results;
+    expect(parseLeaguePayload({ ...valid, results: [{ ...first, outcome: "draw" }] })).toBeNull();
+    expect(
+      parseLeaguePayload({ ...valid, results: [{ ...first, awayGain: undefined }] }),
+    ).toBeNull();
+    expect(parseLeaguePayload({ ...valid, weekStart: undefined })).toBeNull();
+  });
+
+  it("returns null when the week start is not a real Monday", () => {
+    expect(parseLeaguePayload({ ...valid, weekStart: "2026-10-13" })).toBeNull(); // a Tuesday
+    expect(parseLeaguePayload({ ...valid, weekStart: "2026-02-31" })).toBeNull();
+    expect(parseLeaguePayload({ ...valid, weekStart: "next week" })).toBeNull();
+  });
+});

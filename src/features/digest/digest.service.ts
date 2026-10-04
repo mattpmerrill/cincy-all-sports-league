@@ -1,7 +1,9 @@
 import { buildWeeklyDigest, digestHeadline, subtractDays, weekWindow } from "@/domain/digest";
 import { buildLeagueModel, formatMonthDay } from "@/domain/league";
 import type { LeagueData } from "@/domain/league";
+import type { Matchup } from "@/domain/matchups";
 import type { DigestRepository } from "@/data/digest.repository";
+import type { MatchupsRepository } from "@/data/matchups.repository";
 import type { StandingsSnapshotsRepository } from "@/data/standings-snapshots.repository";
 import type { EmailSender } from "@/integrations/resend";
 import type { Logger } from "@/lib/logger";
@@ -15,6 +17,13 @@ export type DigestErrorCode =
 
 export type SkipReason = "before_send_time" | "already_sent" | "no_season" | "no_recipients";
 
+/**
+ * What happened to the matchups section: `read_failed` and `build_failed` are the states worth an
+ * alarm, because the digest still went out but without it. `none` means the read worked and there
+ * was nothing to say (no matchups yet, or none that can be called final).
+ */
+export type MatchupsSectionStatus = "included" | "none" | "read_failed" | "build_failed";
+
 export type DigestReport = {
   correlationId: string;
   weekStart: string;
@@ -27,6 +36,7 @@ export type DigestReport = {
       failed: number;
       /** Failure counts by error code, never by recipient. */
       failures: Record<string, number>;
+      matchupsSection: MatchupsSectionStatus;
     }
 );
 
@@ -34,6 +44,8 @@ export type DigestServiceDeps = {
   league: { load: () => Promise<LeagueData | null> };
   snapshots: Pick<StandingsSnapshotsRepository, "latestOnOrBefore">;
   digests: Pick<DigestRepository, "listConfirmedMembers" | "getSend" | "recordSend">;
+  /** Public-read table, so any client works; the digest passes the one it already reads with. */
+  matchups: Pick<MatchupsRepository, "listSeason">;
   sender: EmailSender;
   renderEmail: (props: DigestEmailProps) => Promise<{ html: string; text: string }>;
   /** Null when DIGEST_SIGNING_SECRET is unset: without it no unsubscribe link can be made. */
@@ -108,11 +120,46 @@ export function createDigestService(deps: DigestServiceDeps) {
       }
       if (recipients.length === 0) return skipped("no_recipients");
 
+      // Read once for the whole run. The section is a bonus: a failed read must never cost the
+      // league its Monday email, so it is logged and the digest goes out without the section.
+      let seasonMatchups: Matchup[] | null = null;
+      try {
+        seasonMatchups = await deps.matchups.listSeason(data.season.id);
+      } catch (error) {
+        log.error("digest matchups read failed", { error });
+      }
+      let matchups = seasonMatchups ? { matchups: seasonMatchups, weekStart } : null;
+
       const currentTeams = model.standings.map((row) => ({
         ...row,
         ownerName: row.owner?.displayName ?? null,
       }));
-      const shared = buildWeeklyDigest({ current: currentTeams, weekAgo: weekAgo?.rows ?? null });
+      let matchupsSection: MatchupsSectionStatus = matchups ? "none" : "read_failed";
+      /**
+       * The digest with its matchups section. If building THAT throws, the digest is built again
+       * without it, so the section can never take the email down; if the second build throws too,
+       * the failure is not about matchups and propagates exactly as it always did.
+       */
+      const digestFor = (recipientTeamId?: string | null) => {
+        const build = (withMatchups: typeof matchups) =>
+          buildWeeklyDigest({
+            current: currentTeams,
+            weekAgo: weekAgo?.rows ?? null,
+            recipientTeamId,
+            matchups: withMatchups,
+          });
+        try {
+          return build(matchups);
+        } catch (error) {
+          const plain = build(null);
+          log.error("digest matchups section failed to build", { error });
+          matchups = null;
+          matchupsSection = "build_failed";
+          return plain;
+        }
+      };
+      const shared = digestFor();
+      if (matchupsSection === "none" && shared.matchups) matchupsSection = "included";
       const subject = `Week of ${formatMonthDay(weekStart)}: ${digestHeadline(shared)}`;
       const preheader = shared.top5[0]
         ? `${shared.top5[0].teamName} leads at ${shared.top5[0].rankLabel}. See who moved.`
@@ -139,11 +186,7 @@ export function createDigestService(deps: DigestServiceDeps) {
               displayName: member.displayName,
               weekLabel: formatMonthDay(weekStart),
               seasonName: model.seasonName,
-              digest: buildWeeklyDigest({
-                current: currentTeams,
-                weekAgo: weekAgo?.rows ?? null,
-                recipientTeamId,
-              }),
+              digest: digestFor(recipientTeamId),
               siteUrl,
               unsubscribeUrl,
               preheader,
@@ -203,6 +246,7 @@ export function createDigestService(deps: DigestServiceDeps) {
         sent,
         failed,
         test: Boolean(only),
+        matchupsSection,
       });
       return ok({
         correlationId,
@@ -212,6 +256,7 @@ export function createDigestService(deps: DigestServiceDeps) {
         sent,
         failed,
         failures,
+        matchupsSection,
       });
     },
   };

@@ -1,8 +1,14 @@
 import { ArrowLeftRight, ArrowRight, Radio } from "lucide-react";
 import Link from "next/link";
-import { groupScoreUpdateItems, type Message, type TradeTeamLink } from "@/domain/feed";
-import { formatPoints } from "@/domain/league/format";
+import {
+  groupScoreUpdateItems,
+  type MatchupsWeekOutcome,
+  type Message,
+  type TradeTeamLink,
+} from "@/domain/feed";
+import { formatGain, formatMonthDay, formatPoints } from "@/domain/league/format";
 import { SPORTS, type SportCode } from "@/domain/sports/sports";
+import { MatchupSideRow, toneOfTag, type SideTagKind } from "@/ui/matchup-row";
 import { SportIcon } from "@/ui/sport-icon";
 
 const MAX_ROWS = 5;
@@ -41,6 +47,13 @@ function TradeLegRow({ sport, left, right }: { sport: SportCode; left: string; r
     </li>
   );
 }
+
+/** Which tag each side wears for a result, read from the home side's point of view. */
+const OUTCOME_TAGS: Record<MatchupsWeekOutcome, { home: SideTagKind; away: SideTagKind }> = {
+  home: { home: "win", away: "loss" },
+  away: { home: "loss", away: "win" },
+  tie: { home: "tie", away: "tie" },
+};
 
 function ViewTradeLink({ listingId }: { listingId: string }) {
   return (
@@ -235,6 +248,61 @@ export function LeaguePostContent({ message }: { message: Message }) {
         <Link href="/free-agents" className={`${teamLink} w-fit text-sm underline`}>
           See moves
         </Link>
+      </div>
+    );
+  }
+
+  if (payload?.type === "matchups_week") {
+    return (
+      <div className="flex flex-col gap-3">
+        <p className={cardTitle}>Weekly matchups</p>
+        {payload.results.length > 0 ? (
+          <section className="flex flex-col gap-1">
+            <p className="text-xs font-semibold text-text-muted">Last week&apos;s results</p>
+            <ul className="flex flex-col divide-y divide-line/70">
+              {payload.results.map((r) => {
+                const tags = OUTCOME_TAGS[r.outcome];
+                return (
+                  <li key={`${r.home.slug}:${r.away.slug}`} className="flex flex-col gap-1 py-2">
+                    <MatchupSideRow
+                      name={r.home.name}
+                      href={`/teams/${r.home.slug}`}
+                      score={formatGain(r.homeGain)}
+                      tone={toneOfTag(tags.home)}
+                      tag={tags.home}
+                    />
+                    <MatchupSideRow
+                      name={r.away.name}
+                      href={`/teams/${r.away.slug}`}
+                      score={formatGain(r.awayGain)}
+                      tone={toneOfTag(tags.away)}
+                      tag={tags.away}
+                    />
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : null}
+        {payload.pairings.length > 0 ? (
+          <section className="flex flex-col gap-1">
+            <p className="text-xs font-semibold text-text-muted">
+              Matchups for the week of {formatMonthDay(payload.weekStart)}
+            </p>
+            <ul className="flex flex-col divide-y divide-line/70">
+              {payload.pairings.map((p) => (
+                <li
+                  key={`${p.home.slug}:${p.away.slug}`}
+                  className="flex flex-wrap items-center gap-x-2 py-1.5 text-sm"
+                >
+                  <TeamLink team={p.home} />
+                  <span className="text-text-muted">vs</span>
+                  <TeamLink team={p.away} />
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
       </div>
     );
   }

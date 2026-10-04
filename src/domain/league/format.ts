@@ -3,6 +3,12 @@ export function formatPoints(points: number): string {
   return String(Math.round(points * 100) / 100);
 }
 
+/** Points gained over a stretch, signed: "+12.5", "0", "-3". Sign follows the rounded value. */
+export function formatGain(points: number): string {
+  const text = formatPoints(points);
+  return Number(text) > 0 ? `+${text}` : text;
+}
+
 const MONTHS = [
   "Jan",
   "Feb",

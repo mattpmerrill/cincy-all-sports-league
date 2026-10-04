@@ -2,69 +2,166 @@
 
 Where the project stands and how to pick it up. Update this at the end of each working session.
 
-**As of 2026-09-30.** Everything below is live on https://www.cincysports.xyz, `main` is clean and
-deployed, and production has every migration in `supabase/migrations/` applied. Push alerts went
-out on 2026-09-30 in the staged order: migrations, then the code without keys, then the VAPID keys
-and a rebuild. The site reports push as configured (`configured\":true` on `/rules`) and `/sw.js`
-is served with the intended headers on Vercel. Matt tested it on his own iPhone on 2026-09-30 and reported that it works end to end. Android,
-Firefox and desktop Safari are still unchecked. The launch was announced the same day with a feed
-post and an email to 17 members (`pnpm announce:push-alerts`; the Home Screen email template now
-says alerts are live).
+**As of 2026-10-04.** Everything under "Shipped" and "What is live" is live on
+https://www.cincysports.xyz, `main` is clean and deployed (`9d0b5c0`), and production has every
+migration that `main` has applied (42, checked on 2026-10-04). The one thing outside `main` is the
+branch `feat/matchups`: weekly head-to-head matchups
+([issue #1](https://github.com/mattpmerrill/cincy-all-sports-league/issues/1)), built and reviewed
+phase by phase, not merged and not pushed. Nothing from it is in production. There are no other side
+branches, worktrees or open pull requests.
 
-## On a branch: records and the Week tab (2026-10-03, not shipped)
+## On a branch: weekly matchups (2026-10-04, not shipped)
 
-Branch `claude/team-athlete-weekly-schedule-wyann2`, built in a cloud session. Nothing here is
-live and no migration has been applied to production.
+Branch `feat/matchups`, built on this machine. No migration has been applied to production, the
+branch is not merged or pushed, and its three pg_cron jobs (`cincy-matchups-edt`,
+`cincy-matchups-est` and `cincy-matchups-retry`) do not exist in production yet.
 
-- **Records:** every pick shows its participant's regular-season record (`W-L`, NFL `W-L-T` when
-  there is a tie, NHL `W-L-OTL`, MLS `W-L-D`), or an athlete's ranking ("No. 4 WTA"), on team
+- **What it is.** Every Monday each fantasy team gets one opponent, chosen by standings neighbors
+  (no repeat inside 3 weeks when it can be avoided). Whoever gains more points over the week wins;
+  equal gains, 0 to 0 included, are a tie. Bragging rights only: a W-L-T record, with season scoring
+  and standings untouched ([ADR-001](decisions/ADR-001-scoring-in-domain-db-stores-facts.md) is
+  unchanged). It shows as a matchup card and list on the Week tab, a Season | Matchups switch on
+  Standings (`/?view=matchups`), the record on season rows and the team page, a Monday feed post,
+  and a Monday digest section.
+- **Where to start reading.** [ADR-007](decisions/ADR-007-weekly-matchups.md) for the decisions and
+  "Matchup flow" in [architecture](architecture.md) for the two flows. Code: `domain/matchups`
+  (pairing, scoring, the table, rollover rules), `features/matchups` (rollover service, read
+  models, components), `src/app/api/cron/matchups/route.ts`, `data/matchups.repository.ts`, and the
+  four migrations `20261005120000` to `20261005120300` (table, `roll_matchup_week`, RLS, the
+  pg_cron jobs). The digest section is `domain/digest/build-matchups-section.ts`.
+- **Deferred by decision.** Push alerts for lead changes and wins, a "Rivalry" tag, and lead-change
+  feed posts.
+- **Verified.**
+  - pgTAP on a freshly reset local stack: `supabase/tests/11_matchups.test.sql` (100 assertions:
+    constraints, public read, deny tests for every client write and for a client calling the
+    function, every `roll_matchup_week` path and error token, the cascade and all three cron jobs)
+    passes, and so does the whole suite (11 files, 728 tests; `pnpm test:db`, run 2026-10-04).
+  - Vitest: 133 files and 1581 tests passing (`pnpm check`, run 2026-10-04). The pairing search is
+    covered by a 30-week, 20-team simulation (zero rematches).
+  - Two e2e smoke tests (the Week matchups region and the Standings switch) ran during the build.
+    They are written to pass on an empty database, so they prove the pages render and not that
+    matchups display. They were not re-run for this update, so no count is given.
+  - The UI was looked at in a real browser on the local stack, by the builder and independently by
+    the reviewer (Playwright at 320, 390 and 1280 px, signed in and signed out, with seeded weeks).
+  - The digest was rendered locally to HTML and text with a stub sender, and the screenshots were
+    looked at in Chromium.
+  - Opus reviewer runs during the build.
+- **Not verified.**
+  - The real pg_cron jobs have not fired against the app, and nothing has run against production
+    data.
+  - Real phones, and real mail clients (Gmail, Outlook, Apple Mail) for the digest section.
+  - Keyboard and screen-reader passes.
+  - The two-team games filter (`?team=a&vs=b`) in a browser: it is covered by unit tests only,
+    because the local database has no games.
+  - A forced matchups read failure in a browser. The "section left out" behavior is covered by
+    unit tests.
+
+### Ship checklist for weekly matchups (needs Matt's explicit go-ahead)
+
+Every step touches production (the database, the live site or its schedule), so each needs a yes
+from Matt at the time. Run the commands from the repo root. Timing matters: week one opens on the first firing of the rollover that is due on a Monday, and the
+first week never opens part-way through a week. The migration (which creates the jobs) and the
+deploy must both be live before the last firing on the Monday you want it to open, or week one waits
+until the following Monday. The Monday firings are 10:45, 11:45 and 12:15 UTC, and the route counts
+a firing as due from 06:30 Eastern. So the last firing that can open week one is 12:15 UTC, which
+is **8:15 am Eastern while daylight time lasts (through Monday 2026-10-26; the clocks change on
+2026-11-01) and 7:15 am Eastern in standard time (Mondays 2026-11-02 to 2027-03-08)**. Aim for
+before 6:45 am Eastern anyway: the daylight-time 12:15 firing lands after the 8:00 am digest, so the
+digest would go out without the section that day, and a deploy still building at the deadline has
+no margin. The next Monday is 2026-10-05.
+
+1. Read-only check first: the active season must cover the coming Monday.
+   `select name, starts_on, ends_on from seasons where is_active;` returns one row whose
+   `starts_on` is on or before that Monday (2026-10-05 for week one) and whose `ends_on` is on or
+   after it. If not, every run reports `outside_season` or closes only, and no week opens. Fix the
+   season dates before anything else.
+2. Migrations before code. `supabase db push --linked --dry-run` must list exactly
+   `20261005120000`, `20261005120100`, `20261005120200` and `20261005120300`. Then
+   `supabase db push --linked`. The three jobs reuse the `cron_secret` vault secret the other jobs
+   already use.
+3. Read-only check that the jobs exist:
+   `select jobname, schedule from cron.job where jobname in ('cincy-matchups-edt', 'cincy-matchups-est', 'cincy-matchups-retry');`
+   returns three rows: `45 10 * * *`, `45 11 * * *` and `15 12 * * *`.
+4. Merge `feat/matchups` into `main` (it auto-deploys). `LeagueData` did not change, so there is no
+   league cache key bump; the new matchups cache has its own key (`v1`). Until the first rollover,
+   the Week tab and the Standings switch show "Matchups start Monday".
+5. After the deploy finishes, check the route is guarded:
+   `curl -s -o /dev/null -w "%{http_code}" -X POST https://www.cincysports.xyz/api/cron/matchups`
+   must print `401` (no bearer token, so nothing runs).
+6. After the first rollover (any time after 6:45 am Eastern on that Monday):
+   - `select week_start, count(*) from matchups group by 1;` shows one week with 10 rows.
+   - The feed has the "Weekly matchups" post.
+   - The Vercel logs have `matchups rollover finished` with `action: "pair"` and `post: "written"`,
+     and no `matchups rollover refused`. pg_net ignores the HTTP status, so a refusal is only
+     visible in the log.
+7. After the 8:00 am digest: the digest run's log (`digest finished`) or response shows
+   `matchupsSection: "included"`. `none` means there was nothing to show, and `read_failed` or
+   `build_failed` means the email went out without the section (the error line with the same
+   correlation id says why).
+8. Season end, when it comes: the Monday after the season's last week closes the last matchups
+   (close-only). Flip the active season to the next one only after that run, or the old season's
+   last week stays open.
+9. Rollback: matchups are additive. To stop the rollover, unschedule the three jobs
+   (`select cron.unschedule('cincy-matchups-edt'), cron.unschedule('cincy-matchups-est'), cron.unschedule('cincy-matchups-retry');`); the
+   pages keep showing what exists. The migrations can stay.
+
+## Shipped 2026-10-03 and 2026-10-04
+
+- **Records** (PR #2): every pick shows its participant's regular-season record (`W-L`, NFL `W-L-T`
+  when there is a tie, NHL `W-L-OTL`, MLS `W-L-D`), or an athlete's ranking ("No. 4 WTA"), on team
   pages, sport pages and the free-agent list. Sync writes `participant_records` from the same ESPN
   fetch as wins (no extra calls); a records failure is logged and never fails a sync. Start at
   `domain/records`, `features/sync/record-plan.ts` and the "Records" section of
   [architecture](architecture.md).
-- **Week tab** (`/week`, public): the games every team's picks play Monday to Sunday, Eastern time,
-  with showdowns (two league teams on opposite sides), a team filter, a "My team" shortcut and
-  per-team game counts; plus a "This week" panel on each team page. Games live in `games`,
-  refreshed by `/api/cron/games` (`range=live` at :10 and :40, `range=weeks` daily at 09:25 UTC).
-  Team sports only. See [ADR-006](decisions/ADR-006-weekly-games-feed.md) and "Games flow" in
-  [architecture](architecture.md). It is the base for weekly head-to-head matchups.
+- **Week tab** (PR #2; `/week`, public): the games every team's picks play Monday to Sunday,
+  Eastern time, with showdowns (two league teams on opposite sides), a team filter, a "My team"
+  shortcut and per-team game counts; plus a "This week" panel on each team page. Games live in
+  `games`, refreshed by `/api/cron/games` (`range=live` at :10 and :40, `range=weeks` daily at
+  09:25 UTC). Team sports only. See [ADR-006](decisions/ADR-006-weekly-games-feed.md) and "Games
+  flow" in [architecture](architecture.md). It is the base for weekly head-to-head matchups.
+- **Slide-out menu** (PR #3): the bottom bar is five tabs (Standings, Week, Feed, Trades, Sports).
+  A menu that slides in from the right replaces the avatar dropdown and holds My team, Profile and
+  settings, Admin (admins only), Free agents, Rules, Sign out, Privacy and Terms. Visitors get
+  Join the league and Sign in. No migrations.
+- **Product update email** (PR #4): one announcement covering Week, records, showdowns and the
+  menu, with a screenshot under each feature (`pnpm announce:product-update`). It has been sent.
+- **ESPN images served directly** (`9d0b5c0`, 2026-10-04): `images.unoptimized` is on in
+  `next.config.ts`, so logos and headshots load straight from ESPN's CDN. The Vercel Hobby team
+  had reached 75% of its image-transformation allowance, which every project on the account
+  shares. Matt confirmed on 2026-10-04 that this is resolved.
 
-What the cloud session could not run, so it must happen on Matt's machine before shipping:
+PR #2 was built in a cloud session that could reach neither ESPN nor a Supabase stack. Its
+description lists checks to run on a local stack before merging (`pnpm test:db` with the new
+`09_records` and `10_games` pgTAP files, `pnpm db:types` with no diff, the live ESPN smoke for
+games and records, a browser look signed out and signed in, `pnpm build` and `pnpm test:e2e`).
+Which of them ran before the merge was not recorded here. What production shows on 2026-10-04:
+all six migrations applied, `cincy-games-live` and `cincy-games-weeks` active, 146 rows in `games`
+refreshed the same day, 329 rows in `participant_records`, and `/week` answering 200.
 
-1. `supabase start`, then `pnpm test:db` (new `09_records` and `10_games` pgTAP files, never run).
-2. `pnpm db:types`, and expect no diff: the `participant_records`, `games` and `game_status`
-   blocks in `database.types.ts` were written by hand in the generator's format.
-3. Live ESPN check of the hand-built fixtures: `pnpm tsx src/integrations/espn/dev/smoke.ts games`
-   (scoreboard and college schedule shapes, and whether a just-after-midnight game sits on the
-   previous scoreboard day), plus the NHL standings `otLosses` stat name, which nothing has
-   confirmed yet.
-4. Look at `/week`, a team page, a sport page and a free-agent list in a browser on the local
-   stack, signed out and signed in (the "My team" shortcut was never seen).
-5. `pnpm build` and `pnpm test:e2e` (new `/week` smoke test).
-6. Ship: `supabase db push --linked --dry-run`, then without `--dry-run` (two tables, an enum and
-   two pg_cron jobs that reuse the `cron_secret` vault secret), then merge to `main`. The league
-   cache key moved to `v4`. To fill the Week page at once instead of waiting for 09:25 UTC:
-   `curl -X POST -H "Authorization: Bearer <CRON_SECRET>" "https://www.cincysports.xyz/api/cron/games?range=weeks"`.
+## State on 2026-10-04
 
-## While it rests (from 2026-09-30)
+The site rested from 2026-09-30 to 2026-10-03 after the trades, free agents, Home Screen how-to
+and push alerts work.
 
-The trades, free agents, Home Screen how-to and push alerts work all shipped in the 48 hours to
-2026-09-30, and the plan is to leave the site alone for about a week. State at the start of the
-rest:
-
-- `main` is deployed and clean, there are no side branches or worktrees, and the local Supabase
-  stack is stopped (`supabase start` brings it back). `.env.local` still points at production, so
-  use the local-stack variables from "Running it locally" for anything you run.
-- Day one of push alerts: 3 members with 3 devices turned alerts on, and one free-agent move was
-  made. Score syncs ran green every hour except one 30-minute run at 08:30 UTC where ESPN answered
-  HTTP 403 for three sports at once; the next run was fine. If 403s repeat, ESPN may be blocking
-  Vercel's addresses.
+- The local Supabase stack is stopped (`supabase start` brings it back). `.env.local` still points
+  at production, so use the local-stack variables from "Running it locally" for anything you run.
+- Push alerts: 8 members with 10 devices have alerts on (3 and 3 on day one). Five free-agent
+  moves have been made.
+- Score syncs: no failed run from 2026-10-01 to 2026-10-04. The only failures in the last week
+  were three on 2026-09-30, in one 30-minute run at 08:30 UTC where ESPN answered HTTP 403 for
+  three sports at once; the next run was fine. If 403s repeat, ESPN may be blocking Vercel's
+  addresses.
 - Nothing is scheduled to email members except the Monday digest. These pg_cron jobs run on their
-  own: `cincy-score-sync` every 30 minutes, `cincy-free-agent-refresh` daily at 09:15 UTC,
+  own: `cincy-score-sync` every 30 minutes, `cincy-games-live` at :10 and :40,
+  `cincy-free-agent-refresh` daily at 09:15 UTC, `cincy-games-weeks` daily at 09:25 UTC,
   `cincy-push-sends-cleanup` daily at 09:40 UTC, and the weekly digest at 8am Eastern on Mondays
-  (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC).
+  (`weekly-digest-edt` at 12:00 UTC and `weekly-digest-est` at 13:00 UTC). On the branch only, not
+  in production yet: `cincy-matchups-edt` (10:45 UTC), `cincy-matchups-est` (11:45 UTC) and
+  `cincy-matchups-retry` (12:15 UTC), which together fire daily to roll the weekly matchups. The
+  first two are 6:45 am Eastern in daylight and standard time respectively, and the retry is 7:15
+  am EST (8:15 am EDT) so a failed standard-time call still gets a second chance before the digest.
 
-Coming back, read-only checks (Supabase SQL editor or the MCP `execute_sql`):
+Read-only health checks (Supabase SQL editor or the MCP `execute_sql`):
 
 ```sql
 -- Sync health: failures in the last week, by hour.
@@ -75,6 +172,8 @@ from sync_runs where started_at > now() - interval '7 days' group by 1 order by 
 select count(distinct user_id) members, count(*) devices from push_subscriptions;
 -- Free agent moves so far.
 select count(*) from free_agent_moves;
+-- Games feed: rows by status and the last refresh.
+select status, count(*), max(updated_at) from games group by 1;
 ```
 
 Then look at the Vercel logs for `push delivery finished` with a non-zero `rejected`, `pruned` or
@@ -92,7 +191,10 @@ Open items, none urgent:
   Prettier ignores.
 - The app-wide focus ring contrast and the shared emoji-safe text clipper (both under "Known
   limits").
-- The Home Screen how-to email and the three launch emails are done. Nothing else is queued.
+- Run the PR #2 local checks listed under "Shipped" if they were never run, starting with
+  `pnpm test:db` and `pnpm db:types`.
+- Every announcement email is sent. Nothing else is queued.
+- Ship weekly matchups, or decide not to (checklist above). It is built and reviewed on `feat/matchups`.
 
 ## What is live
 
@@ -106,7 +208,9 @@ Open items, none urgent:
 | Free agents      | Drop a pick and add a free agent in any sport, instantly; daily pool load from ESPN; earned points stay                                                                                                     | [ADR-004](decisions/ADR-004-free-agent-moves.md), `features/free-agents`, "Free-agent flow" in [architecture](architecture.md) |
 | Push alerts      | Web Push to a phone or computer for trade offers, replies and reactions, and your team's new points; per-topic switches on /me; test alert; in-app prompt. **Live since 2026-09-30; checked on an iPhone.** | [ADR-005](decisions/ADR-005-web-push-alerts.md), `features/push`, "Push flow" in [architecture](architecture.md)               |
 | Profile          | Name, email preferences, profile photo upload (Storage bucket `avatars`)                                                                                                                                    | `src/app/me`, `features/profile`                                                                                               |
-| Navigation       | Tabs: Standings, Feed, Trades (with a Trades or Free agents switch), Sports, Rules; account menu (avatar) in the header                                                                                     | `ui/nav-links.tsx`, `features/auth/components/header-account.tsx`                                                              |
+| Records          | Each pick's regular-season record, or an athlete's ranking, on team pages, sport pages and the free-agent list                                                                                              | `domain/records`, `features/sync/record-plan.ts`, "Records" in [architecture](architecture.md)                                 |
+| Week             | `/week`: the games every team's picks play Monday to Sunday, showdowns, team filter; a "This week" panel on team pages                                                                                      | [ADR-006](decisions/ADR-006-weekly-games-feed.md), "Games flow" in [architecture](architecture.md)                             |
+| Navigation       | Bottom tabs: Standings, Week, Feed, Trades (with a Trades or Free agents switch), Sports; slide-out menu from the right for My team, Profile, Admin, Free agents, Rules and Sign out                        | `ui/nav-links.tsx`, `features/auth/components/header-account.tsx`                                                              |
 
 ## How work is done here
 
@@ -186,7 +290,7 @@ Open items, none urgent:
 - Admins: `pnpm make-admin <email>` after the person signs up.
 - One-off announcement email: a short script per announcement (`scripts/send-*-announcement.ts`,
   run as `pnpm announce:trades`, `announce:free-agents`, `announce:home-screen`,
-  `announce:push-alerts`) names its
+  `announce:push-alerts`, `announce:product-update`) names its
   campaign, subject and renderer, and `scripts/announcement-runner.ts` does the sending: dry run
   by default, `--only you@x` for a test, `--send [--except a@x]`, per-member idempotency keys. It
   skips members who turned off league email. Templates live in
@@ -320,7 +424,7 @@ none of it happens without a yes from Matt at the time. Run the commands from th
 Feature ideas that are not limits live in the
 [GitHub project](https://github.com/users/mattpmerrill/projects/2) (see [backlog.md](backlog.md)).
 
-- Records and the Week tab (on the branch above):
+- Records and the Week tab:
   - `LeagueData.records` carries every record of the season, free agents included (about 1,450
     small rows, roughly 150 kB as JSON), because the free-agent board scores from the same data.
     Re-check the cached item size with the results bullet below.
@@ -328,7 +432,26 @@ Feature ideas that are not limits live in the
   - Golf and tennis tournaments are not on the Week page (team sports only, ADR-006).
   - A newly picked college team shows its games after the next live refresh (pro leagues store
     every game, so a pro pick shows at once). A game ESPN deletes outright is never removed.
-  - Six nav tabs fit a 360px phone; at 320px "Standings" overflows its slot by about 1.5px.
+  - Every image is served unoptimized (`images.unoptimized` in `next.config.ts`), so ESPN logos
+    and headshots arrive at ESPN's size instead of being resized for the device.
+- Weekly matchups (on a branch, not shipped; full reasoning in
+  [ADR-007](decisions/ADR-007-weekly-matchups.md)):
+  - The record shown on a past week's view is season-to-date, not "as of" that week.
+  - The digest section's lists are capped (3 other results and 3 other pairings with a team, 4 and
+    4 without), with a "See all {n} matchups" link. If the rollover has not run by digest time, the
+    section says the matchups are still being settled and shows no scores. The digest report's
+    `matchupsSection` is `included`, `none`, `read_failed` or `build_failed`.
+  - The feed card says "Last week's results" because the payload carries only the new week's date.
+  - An odd number of teams gives one team a bye, and there is no bye history.
+  - The daily non-Monday firings do a full league load and an idempotent database call (about
+    20 ms locally) to find out nothing is due.
+  - The Monday feed post is written after the rollover commits and is never repeated, so a crash
+    in between loses that week's post and nothing recreates it.
+  - A missed Monday is caught up on a later day. The new week keeps the calendar week's label but
+    its start totals are from the catch-up day, so the previous week absorbs the extra days.
+  - Deleting a fantasy team deletes its matchups, which removes those results from the opponents'
+    records.
+  - The checks listed under "Not verified" in the branch section above.
 - Trades: offers voided because a player moved in another trade get no email. A team whose offer
   was accepted cannot be deleted on its own mid-season (by design, see ADR-003). The concurrent
   accept path is designed for (lock order, typed `busy` error) but not load tested.
@@ -427,4 +550,4 @@ Feature ideas that are not limits live in the
   photo uploads), so a member could point it at any URL. It only ever renders as an `<img>`, but
   tightening it (a check or a trigger that allows only our bucket or the Google photo) is cheap.
 - e2e coverage is a smoke suite; the trade flows were verified by hand and by service tests.
-- README screenshots predate the feed, trades and the new header.
+- README screenshots predate the feed, trades, the Week tab and the slide-out menu.
