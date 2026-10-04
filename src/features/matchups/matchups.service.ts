@@ -106,8 +106,12 @@ export type WeekMatchups = {
    * opened the current week yet. The page can say "Final scores post Monday morning".
    */
   awaitingRollover: boolean;
-  /** Viewer's matchup first, then by the better season rank of the two teams. */
-  matchups: MatchupView[];
+  /** The viewer's own matchup (they own either team); null when signed out or without a team. */
+  mine: MatchupView | null;
+  /** Every other matchup, the better season rank of its two teams first. */
+  others: MatchupView[];
+  /** True when the sides carry a matchup record, so a page can say what "W-L-T" means. */
+  hasRecords: boolean;
   /** Teams with no matchup this week (an odd field leaves one). Empty when there are no matchups. */
   byeTeams: TeamLink[];
   empty: MatchupsEmpty | null;
@@ -131,14 +135,28 @@ export type MatchupStandingsRowView = TeamLink & {
   isMine: boolean;
 };
 
-export type MatchupStandings = {
-  seasonName: string;
-  /** The Monday of the live week the opponents belong to; null when no matchup is live. */
-  liveWeekStart: string | null;
-  /** False until a week has closed: show an empty state, not twenty teams tied at 0-0-0. */
-  hasFinishedWeek: boolean;
-  rows: MatchupStandingsRowView[];
-};
+/**
+ * What the matchup table has to show, decided from one read:
+ * - `not_started`: no week is live or finished (a season before its first Monday).
+ * - `first_week_live`: no week has finished yet, but one is live. A table would be twenty teams
+ *   at 0-0-0, so show this week's pairings instead. `awaitingRollover` is true when that week is
+ *   an earlier one still being scored because the next has not opened.
+ * - `table`: at least one week has finished; `rows` is the ranked table. `liveWeekStart` is the
+ *   Monday the `opponent` column belongs to, null when no matchup is live.
+ * Null (the return value, not a state) means no season exists.
+ */
+export type MatchupStandings = { seasonName: string } & (
+  | { state: "not_started" }
+  | {
+      state: "first_week_live";
+      weekStart: string;
+      rangeLabel: string;
+      awaitingRollover: boolean;
+      mine: MatchupView | null;
+      others: MatchupView[];
+    }
+  | { state: "table"; liveWeekStart: string | null; rows: MatchupStandingsRowView[] }
+);
 
 export type TeamMatchupEntry = {
   id: string;
@@ -167,6 +185,8 @@ export type TeamMatchups = TeamLink & {
 export type MatchupRecords = {
   /** Null for an unknown team, and for every team while no week has finished. */
   recordFor(teamId: string): MatchupRecord | null;
+  /** The record as a "3-1-0" label, or null in the same cases as `recordFor`. */
+  labelFor(teamId: string): string | null;
 };
 
 const recordOf = (row: Pick<MatchupStandingRow, "wins" | "losses" | "ties">): MatchupRecord => ({
@@ -286,6 +306,49 @@ export function createMatchupsService(deps: MatchupsDeps) {
     };
   };
 
+  /**
+   * One week's matchups as the pages draw them, split into the viewer's own and everyone else's.
+   * The rest are ordered by the better season rank of their two teams, so a component never needs
+   * to know an order to find the viewer's matchup.
+   */
+  function weekViews(
+    loaded: Loaded,
+    weekStart: string,
+    viewerTeam: string | null,
+  ): { mine: MatchupView | null; others: MatchupView[] } {
+    const views = loaded.matchups
+      .filter((m) => m.weekStart === weekStart)
+      .flatMap((m): MatchupView[] => {
+        const home = loaded.teams.get(m.home.teamId);
+        const away = loaded.teams.get(m.away.teamId);
+        // A team the cached league no longer lists (deleted since): nothing honest to show.
+        if (!home || !away) return [];
+        const scored = scoreMatchup(m, loaded.totals);
+        const side = viewerTeam ? MATCHUP_SIDES.find((k) => m[k].teamId === viewerTeam) : undefined;
+        return [
+          {
+            id: m.id,
+            weekStart: m.weekStart,
+            state: scored.state,
+            home: sideView(loaded, home, scoreOf(scored, "home"), viewerTeam),
+            away: sideView(loaded, away, scoreOf(scored, "away"), viewerTeam),
+            leader: scored.leader,
+            isMine: side !== undefined,
+            viewerOutcome: side ? outcomeOf(scored, side) : null,
+          },
+        ];
+      });
+
+    const bestRank = (v: MatchupView) => Math.min(v.home.seasonRank, v.away.seasonRank);
+    const byRank = (a: MatchupView, b: MatchupView) =>
+      bestRank(a) - bestRank(b) ||
+      a.home.name.localeCompare(b.home.name, "en", { sensitivity: "base" });
+    return {
+      mine: views.find((v) => v.isMine) ?? null,
+      others: views.filter((v) => !v.isMine).sort(byRank),
+    };
+  }
+
   return {
     /**
      * One league week's matchups, scored against the current season totals (final weeks use their
@@ -311,38 +374,8 @@ export function createMatchupsService(deps: MatchupsDeps) {
         : { weekStart: requested, awaitingRollover: false };
       const viewerTeam = loaded.viewerTeamId(input.viewerId);
 
-      const views = loaded.matchups
-        .filter((m) => m.weekStart === weekStart)
-        .flatMap((m): MatchupView[] => {
-          const home = loaded.teams.get(m.home.teamId);
-          const away = loaded.teams.get(m.away.teamId);
-          // A team the cached league no longer lists (deleted since): nothing honest to show.
-          if (!home || !away) return [];
-          const scored = scoreMatchup(m, loaded.totals);
-          const mine = viewerTeam
-            ? MATCHUP_SIDES.find((k) => m[k].teamId === viewerTeam)
-            : undefined;
-          return [
-            {
-              id: m.id,
-              weekStart: m.weekStart,
-              state: scored.state,
-              home: sideView(loaded, home, scoreOf(scored, "home"), viewerTeam),
-              away: sideView(loaded, away, scoreOf(scored, "away"), viewerTeam),
-              leader: scored.leader,
-              isMine: mine !== undefined,
-              viewerOutcome: mine ? outcomeOf(scored, mine) : null,
-            },
-          ];
-        });
-
-      const bestRank = (v: MatchupView) => Math.min(v.home.seasonRank, v.away.seasonRank);
-      const matchups = views.sort(
-        (a, b) =>
-          Number(b.isMine) - Number(a.isMine) ||
-          bestRank(a) - bestRank(b) ||
-          a.home.name.localeCompare(b.home.name, "en", { sensitivity: "base" }),
-      );
+      const { mine, others } = weekViews(loaded, weekStart, viewerTeam);
+      const matchups = mine ? [mine, ...others] : others;
 
       const playing = new Set(matchups.flatMap((v) => [v.home.teamId, v.away.teamId]));
       const byeTeams =
@@ -356,7 +389,9 @@ export function createMatchupsService(deps: MatchupsDeps) {
         rangeLabel: formatWeekRange(weekStart),
         isCurrentWeek: asksForCurrent,
         awaitingRollover,
-        matchups,
+        mine,
+        others,
+        hasRecords: matchups.some((m) => m.home.record !== null),
         byeTeams,
         empty:
           matchups.length > 0
@@ -369,7 +404,8 @@ export function createMatchupsService(deps: MatchupsDeps) {
 
     /**
      * The matchup table: record, streak and points gained for every team, plus the live
-     * opponent. Null before a season exists. Show an empty state while `hasFinishedWeek` is false.
+     * opponent, or what to show instead before a week has finished (see `MatchupStandings`). Null
+     * before a season exists.
      */
     async getMatchupStandings(
       input: { viewerId?: string | null } = {},
@@ -377,6 +413,22 @@ export function createMatchupsService(deps: MatchupsDeps) {
       const loaded = await load();
       if (!loaded) return null;
       const viewerTeam = loaded.viewerTeamId(input.viewerId);
+
+      const seasonName = loaded.data.season.name;
+
+      if (!loaded.hasFinishedWeek) {
+        // No finished week: a table would be twenty teams at 0-0-0. Say what is on instead.
+        if (loaded.liveWeekStart === null) return { seasonName, state: "not_started" };
+        const weekStart = loaded.liveWeekStart;
+        return {
+          seasonName,
+          state: "first_week_live",
+          weekStart,
+          rangeLabel: formatWeekRange(weekStart),
+          awaitingRollover: loaded.display.awaitingRollover,
+          ...weekViews(loaded, weekStart, viewerTeam),
+        };
+      }
 
       const rows = loaded.table.flatMap((row): MatchupStandingsRowView[] => {
         const team = loaded.teams.get(row.teamId);
@@ -402,12 +454,7 @@ export function createMatchupsService(deps: MatchupsDeps) {
         ];
       });
 
-      return {
-        seasonName: loaded.data.season.name,
-        liveWeekStart: loaded.liveWeekStart,
-        hasFinishedWeek: loaded.hasFinishedWeek,
-        rows,
-      };
+      return { seasonName, state: "table", liveWeekStart: loaded.liveWeekStart, rows };
     },
 
     /**
@@ -463,7 +510,11 @@ export function createMatchupsService(deps: MatchupsDeps) {
      */
     async getMatchupRecords(): Promise<MatchupRecords> {
       const loaded = await load();
-      return { recordFor: (teamId) => (loaded ? recordFor(loaded, teamId) : null) };
+      const recordOfTeam = (teamId: string) => (loaded ? recordFor(loaded, teamId) : null);
+      return {
+        recordFor: recordOfTeam,
+        labelFor: (teamId) => recordOfTeam(teamId)?.label ?? null,
+      };
     },
   };
 }

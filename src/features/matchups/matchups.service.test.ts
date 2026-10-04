@@ -4,6 +4,7 @@ import { leagueData, wins } from "@/domain/league/fixtures";
 import type { Matchup } from "@/domain/matchups";
 import { matchup } from "@/domain/matchups/fixtures";
 import { createMatchupsService } from "./matchups.service";
+import type { MatchupView, WeekMatchups } from "./matchups.service";
 
 const owner = (id: string) => ({ id, displayName: `Owner ${id}`, avatarUrl: null });
 
@@ -21,6 +22,10 @@ const four = (): LeagueData =>
     ],
     results: [wins("a-nfl", 3), wins("b-nfl", 2), wins("c-nfl", 1)],
   });
+
+/** Every matchup of a week, the viewer's first (the pages ask for `mine` and `others`, not this). */
+const everyone = (week: WeekMatchups | null | undefined): MatchupView[] =>
+  week ? [...(week.mine ? [week.mine] : []), ...week.others] : [];
 
 function setup(matchups: Matchup[], data: LeagueData | null = four(), at: Date = now) {
   const source = vi.fn<(seasonId: string) => Promise<Matchup[]>>(async () => matchups);
@@ -59,14 +64,14 @@ describe("getWeekMatchups", () => {
       byeTeams: [],
       empty: null,
     });
-    expect(week?.matchups).toHaveLength(2);
-    expect(week?.matchups[0]).toMatchObject({
+    expect(everyone(week)).toHaveLength(2);
+    expect(everyone(week)[0]).toMatchObject({
       state: "live",
       leader: "home",
       home: { slug: "a", name: "a", ownerName: "Owner u1", seasonRank: 1, gain: 6, result: null },
       away: { slug: "b", seasonRank: 2, seasonRankLabel: "2", gain: 1 },
     });
-    expect(week?.matchups[1]).toMatchObject({
+    expect(everyone(week)[1]).toMatchObject({
       leader: "home",
       home: { slug: "c", gain: 0 },
       away: { slug: "d", ownerName: null, gain: -1 },
@@ -74,34 +79,39 @@ describe("getWeekMatchups", () => {
   });
 
   it("gives each side its lead while live and its result once final, never both", async () => {
-    const live1 = (await setup(live).service.getWeekMatchups({}))?.matchups[0];
+    const live1 = everyone(await setup(live).service.getWeekMatchups({}))[0];
     expect([live1?.home.lead, live1?.away.lead]).toEqual(["ahead", "behind"]);
     expect([live1?.home.result, live1?.away.result]).toEqual([null, null]);
     const closed = [matchup("2026-09-28", "a", "b", { start: [0, 0], end: [2, 5] })];
-    const done = (await setup(closed).service.getWeekMatchups({ weekStart: "2026-09-28" }))
-      ?.matchups[0];
+    const done = everyone(
+      await setup(closed).service.getWeekMatchups({ weekStart: "2026-09-28" }),
+    )[0];
     expect([done?.home.lead, done?.away.lead]).toEqual([null, null]);
+    // b gained 5 to a's 2, so the away side won.
+    expect([done?.home.result, done?.away.result]).toEqual(["loss", "win"]);
   });
 
-  it("puts the viewer's matchup first, and flags their side", async () => {
+  it("returns the viewer's matchup as `mine` and everyone else's as `others`", async () => {
     const week = await setup(live).service.getWeekMatchups({ viewerId: "u3" });
-    expect(week?.matchups.map((m) => [m.home.slug, m.isMine])).toEqual([
-      ["c", true],
-      ["a", false],
-    ]);
-    expect(week?.matchups[0]?.home.isMine).toBe(true);
-    expect(week?.matchups[0]?.away.isMine).toBe(false);
+    expect(week?.mine).toMatchObject({ home: { slug: "c", isMine: true }, isMine: true });
+    expect(week?.mine?.away.isMine).toBe(false);
+    expect(week?.others.map((m) => [m.home.slug, m.isMine])).toEqual([["a", false]]);
+    // The viewer on the away side finds the same matchup.
+    const away = await setup(live).service.getWeekMatchups({ viewerId: "u2" });
+    expect(away?.mine).toMatchObject({ home: { slug: "a" }, away: { slug: "b", isMine: true } });
+    expect(away?.others.map((m) => m.home.slug)).toEqual(["c"]);
   });
 
   it("tells the viewer how their own team is doing, and nobody else", async () => {
     // c (viewer) is level with d at 0 vs -1, so ahead; a is the home side of the other matchup.
     const week = await setup(live).service.getWeekMatchups({ viewerId: "u3" });
-    expect(week?.matchups[0]?.viewerOutcome).toEqual({ state: "live", lead: "ahead" });
-    expect(week?.matchups[1]?.viewerOutcome).toBeNull();
+    expect(week?.mine?.viewerOutcome).toEqual({ state: "live", lead: "ahead" });
+    expect(week?.others.map((m) => m.viewerOutcome)).toEqual([null]);
     const away = await setup(live).service.getWeekMatchups({ viewerId: "u2" });
-    expect(away?.matchups[0]?.viewerOutcome).toEqual({ state: "live", lead: "behind" });
+    expect(away?.mine?.viewerOutcome).toEqual({ state: "live", lead: "behind" });
     const none = await setup(live).service.getWeekMatchups({});
-    expect(none?.matchups.every((m) => m.viewerOutcome === null)).toBe(true);
+    expect(none?.mine).toBeNull();
+    expect(none?.others.every((m) => m.viewerOutcome === null)).toBe(true);
   });
 
   it("gives a finished matchup's result from the viewer's side", async () => {
@@ -110,14 +120,15 @@ describe("getWeekMatchups", () => {
       weekStart: "2026-09-28",
       viewerId: "u1",
     });
-    expect(week?.matchups[0]?.viewerOutcome).toEqual({ state: "final", result: "loss" });
+    expect(week?.mine?.viewerOutcome).toEqual({ state: "final", result: "loss" });
   });
 
-  it("orders everyone equally by season rank when signed out or the viewer has no team", async () => {
+  it("has no `mine` and orders everyone by season rank when signed out or the viewer has no team", async () => {
     for (const viewerId of [undefined, null, "someone-else"]) {
       const week = await setup(live).service.getWeekMatchups({ viewerId });
-      expect(week?.matchups.map((m) => m.home.slug)).toEqual(["a", "c"]);
-      expect(week?.matchups.some((m) => m.isMine)).toBe(false);
+      expect(week?.mine).toBeNull();
+      expect(week?.others.map((m) => m.home.slug)).toEqual(["a", "c"]);
+      expect(week?.others.some((m) => m.isMine)).toBe(false);
     }
   });
 
@@ -126,7 +137,7 @@ describe("getWeekMatchups", () => {
     const closed = [matchup("2026-09-28", "a", "b", { start: [0, 0], end: [2, 5] })];
     const week = await setup(closed).service.getWeekMatchups({ weekStart: "2026-09-28" });
     expect(week?.isCurrentWeek).toBe(false);
-    expect(week?.matchups[0]).toMatchObject({
+    expect(everyone(week)[0]).toMatchObject({
       state: "final",
       leader: "away",
       home: { gain: 2, result: "loss" },
@@ -136,17 +147,26 @@ describe("getWeekMatchups", () => {
 
   it("carries each team's matchup record, null until a week has finished", async () => {
     const before = await setup(live).service.getWeekMatchups({});
-    expect(before?.matchups[0]?.home.record).toBeNull();
+    expect(everyone(before)[0]?.home.record).toBeNull();
 
     const after = await setup([
       matchup("2026-09-28", "a", "b", { start: [0, 0], end: [2, 5] }),
       matchup("2026-09-28", "c", "d", { start: [0, 0], end: [1, 1] }),
       ...live,
     ]).service.getWeekMatchups({});
-    const [ab, cd] = after?.matchups ?? [];
+    const [ab, cd] = everyone(after) ?? [];
     expect(ab?.home.record).toEqual({ wins: 0, losses: 1, ties: 0, label: "0-1-0" });
     expect(ab?.away.record).toEqual({ wins: 1, losses: 0, ties: 0, label: "1-0-0" });
     expect(cd?.home.record?.label).toBe("0-0-1");
+  });
+
+  it("says whether the sides carry a record, so a page can explain W-L-T", async () => {
+    expect((await setup(live).service.getWeekMatchups({}))?.hasRecords).toBe(false);
+    const after = await setup([
+      matchup("2026-09-28", "a", "b", { start: [0, 0], end: [2, 5] }),
+      ...live,
+    ]).service.getWeekMatchups({});
+    expect(after?.hasRecords).toBe(true);
   });
 
   it("lists the team left without a matchup", async () => {
@@ -157,7 +177,12 @@ describe("getWeekMatchups", () => {
   describe("empty states", () => {
     it("says matchups start Monday when the season has none yet", async () => {
       const week = await setup([]).service.getWeekMatchups({});
-      expect(week).toMatchObject({ matchups: [], byeTeams: [], empty: "starts_monday" });
+      expect(week).toMatchObject({
+        mine: null,
+        others: [],
+        byeTeams: [],
+        empty: "starts_monday",
+      });
     });
 
     it("says none this week when the season has matchups for other weeks only", async () => {
@@ -166,7 +191,8 @@ describe("getWeekMatchups", () => {
       ]).service.getWeekMatchups({});
       expect(week).toMatchObject({
         weekStart: "2026-10-05",
-        matchups: [],
+        mine: null,
+        others: [],
         empty: "none_this_week",
       });
     });
@@ -184,7 +210,7 @@ describe("getWeekMatchups", () => {
 
   it("skips a matchup whose team is no longer in the league", async () => {
     const week = await setup([matchup("2026-10-05", "a", "gone")]).service.getWeekMatchups({});
-    expect(week?.matchups).toEqual([]);
+    expect(everyone(week)).toEqual([]);
   });
 });
 
@@ -209,8 +235,8 @@ describe("the week shown while the Monday rollover is pending", () => {
       awaitingRollover: true,
       empty: null,
     });
-    expect(week?.matchups).toHaveLength(2);
-    expect(week?.matchups[0]?.state).toBe("live");
+    expect(everyone(week)).toHaveLength(2);
+    expect(everyone(week)[0]?.state).toBe("live");
   });
 
   it("shows the current week as itself once it has rows, whatever else is open", async () => {
@@ -220,7 +246,7 @@ describe("the week shown while the Monday rollover is pending", () => {
       missedMonday,
     ).service.getWeekMatchups({});
     expect(week).toMatchObject({ weekStart: "2026-10-12", awaitingRollover: false });
-    expect(week?.matchups).toHaveLength(1);
+    expect(everyone(week)).toHaveLength(1);
   });
 
   it("is a plain current week on a normal day", async () => {
@@ -251,7 +277,7 @@ describe("the week shown while the Monday rollover is pending", () => {
       isCurrentWeek: false,
       awaitingRollover: false,
     });
-    expect(named?.matchups).toHaveLength(2);
+    expect(everyone(named)).toHaveLength(2);
   });
 
   it("is genuinely empty when the earlier weeks are all final", async () => {
@@ -273,19 +299,59 @@ describe("the week shown while the Monday rollover is pending", () => {
   });
 
   it("gives the matchup table the same live week, so opponents are shown", async () => {
-    const standings = await setup(lastWeek, four(), earlyMonday).service.getMatchupStandings();
-    expect(standings?.liveWeekStart).toBe("2026-10-05");
-    expect(standings?.rows.find((r) => r.slug === "a")?.opponent?.slug).toBe("b");
+    // Give the table a finished week so it is drawn; the live week is still Oct 5.
+    const standings = await setup(
+      [matchup("2026-09-28", "a", "b", { start: [0, 0], end: [1, 0] }), ...lastWeek],
+      four(),
+      earlyMonday,
+    ).service.getMatchupStandings();
+    expect(standings).toMatchObject({ state: "table", liveWeekStart: "2026-10-05" });
+    const rows = standings?.state === "table" ? standings.rows : [];
+    expect(rows.find((r) => r.slug === "a")?.opponent?.slug).toBe("b");
   });
 });
 
 describe("getMatchupStandings", () => {
-  it("flags that no week has finished, so the page shows an empty state", async () => {
+  it("is not_started with no matchups at all", async () => {
+    const standings = await setup([]).service.getMatchupStandings();
+    expect(standings).toEqual({ seasonName: "2026-27", state: "not_started" });
+  });
+
+  it("is not_started when matchups exist but none is live or final", async () => {
+    // Only a week in the future of the clock: nothing is being played yet.
+    const standings = await setup([matchup("2026-10-19", "a", "b")]).service.getMatchupStandings();
+    expect(standings?.state).toBe("not_started");
+  });
+
+  it("is first_week_live with the pairings (viewer's split out) before any week has finished", async () => {
     const standings = await setup([
-      matchup("2026-10-05", "a", "b", { start: [0, 0] }),
-    ]).service.getMatchupStandings();
-    expect(standings).toMatchObject({ hasFinishedWeek: false, liveWeekStart: "2026-10-05" });
-    expect(standings?.rows).toHaveLength(4);
+      matchup("2026-10-05", "a", "b", { start: [0, 3] }),
+      matchup("2026-10-05", "c", "d", { start: [2, 1] }),
+    ]).service.getMatchupStandings({ viewerId: "u3" });
+    expect(standings).toMatchObject({
+      state: "first_week_live",
+      weekStart: "2026-10-05",
+      rangeLabel: "Oct 5 – 11, 2026",
+      awaitingRollover: false,
+      mine: { home: { slug: "c" } },
+    });
+    if (standings?.state !== "first_week_live") throw new Error("wrong state");
+    expect(standings.others.map((m) => m.home.slug)).toEqual(["a"]);
+    // No record is shown yet: nobody has one.
+    expect(standings.mine?.home.record).toBeNull();
+  });
+
+  it("is first_week_live and awaiting the rollover when the live week is an earlier one", async () => {
+    const standings = await setup(
+      [matchup("2026-10-05", "a", "b", { start: [0, 3] })],
+      four(),
+      new Date("2026-10-12T09:00:00Z"), // 5 am EDT Monday, before the rollover opens Oct 12
+    ).service.getMatchupStandings();
+    expect(standings).toMatchObject({
+      state: "first_week_live",
+      weekStart: "2026-10-05",
+      awaitingRollover: true,
+    });
   });
 
   it("ranks by record and names this week's opponent", async () => {
@@ -296,16 +362,15 @@ describe("getMatchupStandings", () => {
       matchup("2026-10-05", "b", "d", { start: [5, 2] }),
     ]).service.getMatchupStandings({ viewerId: "u3" });
 
-    expect(standings?.hasFinishedWeek).toBe(true);
-    expect(
-      standings?.rows.map((r) => [r.slug, r.record.label, r.rankLabel, r.pointsGained]),
-    ).toEqual([
+    expect(standings?.state).toBe("table");
+    const rows = standings?.state === "table" ? standings.rows : [];
+    expect(rows.map((r) => [r.slug, r.record.label, r.rankLabel, r.pointsGained])).toEqual([
       ["b", "1-0-0", "1", 5],
       ["c", "1-0-0", "2", 4],
       ["d", "0-1-0", "3", 2],
       ["a", "0-1-0", "4", 1],
     ]);
-    const b = standings?.rows.find((r) => r.slug === "b");
+    const b = rows.find((r) => r.slug === "b");
     expect(b).toMatchObject({
       streak: { label: "W1", length: 1 },
       opponent: { slug: "d", name: "d" },
@@ -313,13 +378,17 @@ describe("getMatchupStandings", () => {
       ownerName: "Owner u2",
       isMine: false,
     });
-    expect(standings?.rows.find((r) => r.slug === "c")?.isMine).toBe(true);
+    expect(rows.find((r) => r.slug === "c")?.isMine).toBe(true);
   });
 
   it("has no opponent for a team on a bye", async () => {
-    const standings = await setup([matchup("2026-10-05", "a", "b")]).service.getMatchupStandings();
-    expect(standings?.rows.find((r) => r.slug === "d")?.opponent).toBeNull();
-    expect(standings?.rows.find((r) => r.slug === "a")?.opponent?.slug).toBe("b");
+    const standings = await setup([
+      matchup("2026-09-28", "a", "b", { start: [0, 0], end: [1, 0] }),
+      matchup("2026-10-05", "a", "b"),
+    ]).service.getMatchupStandings();
+    const rows = standings?.state === "table" ? standings.rows : [];
+    expect(rows.find((r) => r.slug === "d")?.opponent).toBeNull();
+    expect(rows.find((r) => r.slug === "a")?.opponent?.slug).toBe("b");
   });
 });
 
@@ -402,11 +471,14 @@ describe("getMatchupRecords", () => {
     expect(records.recordFor("b")?.label).toBe("0-1-0");
     expect(records.recordFor("c")?.label).toBe("0-0-0");
     expect(records.recordFor("unknown")).toBeNull();
+    expect(records.labelFor("a")).toBe("1-0-0");
+    expect(records.labelFor("unknown")).toBeNull();
     expect(source).toHaveBeenCalledOnce();
   });
 
   it("draws nothing before a week has finished", async () => {
     const records = await setup([matchup("2026-10-05", "a", "b")]).service.getMatchupRecords();
     expect(records.recordFor("a")).toBeNull();
+    expect(records.labelFor("a")).toBeNull();
   });
 });

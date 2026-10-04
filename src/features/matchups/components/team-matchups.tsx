@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatGain } from "@/domain/league";
-import { SideTag, toneOfTag } from "@/ui/matchup-row";
+import { SideTag, toneOfTag, UnknownScore } from "@/ui/matchup-row";
 import { cn } from "cn";
 import type { TeamMatchupEntry, TeamMatchups } from "../matchups.service";
 
@@ -39,12 +39,6 @@ function Entry({ entry }: { entry: TeamMatchupEntry }) {
   const tone = toneOfTag(kind);
   const mine = entry.gain === null ? null : formatGain(entry.gain);
   const theirs = entry.opponentGain === null ? null : formatGain(entry.opponentGain);
-  const unknown = (
-    <>
-      <span aria-hidden="true">?</span>
-      <span className="sr-only">Score not available</span>
-    </>
-  );
   return (
     <li className="flex items-center gap-3 py-2.5 first:pt-0 last:pb-0">
       <div className="flex min-w-0 flex-1 flex-col">
@@ -68,10 +62,12 @@ function Entry({ entry }: { entry: TeamMatchupEntry }) {
       <div className="flex shrink-0 flex-col items-end gap-1.5">
         <span className="tabular flex items-baseline gap-1 font-display text-xl leading-none font-extrabold">
           <span className={tone === "trail" ? "text-text-muted" : undefined}>
-            {mine ?? unknown}
+            {mine ?? <UnknownScore />}
           </span>
           <span className="font-sans text-xs font-medium text-text-muted">to</span>
-          <span className="text-text-muted">{theirs ?? unknown}</span>
+          <span className={tone === "lead" ? "text-text-muted" : undefined}>
+            {theirs ?? <UnknownScore />}
+          </span>
         </span>
         {kind ? <SideTag kind={kind} /> : null}
       </div>

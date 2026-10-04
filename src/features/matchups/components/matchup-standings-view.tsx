@@ -16,16 +16,12 @@ export function MatchupStandingsFallback() {
 }
 
 /**
- * The Matchups side of the Standings switch: the ranked table of all 20 teams, or, until a first
- * week has finished, an empty state that still shows this week's pairings when a week is live.
- * A failed read says so in place of the table: the Season tab beside it still works.
+ * The Matchups side of the Standings switch. The service decides which of three states applies
+ * (see `MatchupStandings`) from one read; this only maps each to markup. A failed read says so in
+ * place of the table: the Season tab beside it still works.
  */
 export async function MatchupStandingsView({ viewerId }: { viewerId: string | undefined }) {
-  const reads = getSafeMatchupReads();
-  const [standings, week] = await Promise.all([
-    reads.standings({ viewerId }),
-    reads.weekMatchups({ viewerId }),
-  ]);
+  const standings = await getSafeMatchupReads().standings({ viewerId });
 
   if (!standings.ok) {
     return (
@@ -44,31 +40,34 @@ export async function MatchupStandingsView({ viewerId }: { viewerId: string | un
     );
   }
 
-  if (!table.hasFinishedWeek) {
-    // Pairings come from the week read, which the table has no use for once there are results.
-    const live = week.ok && week.value && table.liveWeekStart ? week.value : null;
-    return (
-      <div className="flex flex-col gap-4">
+  switch (table.state) {
+    case "not_started":
+      return (
         <EmptyState
-          title={live ? "No finished weeks yet" : "Matchups start Monday"}
-          description={
-            live
-              ? "Records start counting when the first week ends, Monday morning. Here is who plays this week."
-              : "Every Monday morning each team gets one opponent near it in the standings. The first pairings go up then."
-          }
+          title="Matchups start Monday"
+          description="Every Monday morning each team gets one opponent near it in the standings. The first pairings go up then."
         />
-        {live && live.matchups.length > 0 ? (
-          <MatchupList matchups={live.matchups} label="This week's matchups" />
-        ) : null}
-      </div>
-    );
+      );
+    case "first_week_live":
+      return (
+        <div className="flex flex-col gap-4">
+          <EmptyState
+            title="No finished weeks yet"
+            description="Records start counting when the first week ends, Monday morning. Here is who plays this week."
+          />
+          <MatchupList
+            matchups={table.mine ? [table.mine, ...table.others] : table.others}
+            label="This week's matchups"
+          />
+        </div>
+      );
+    case "table":
+      return (
+        <ol aria-label="Matchup standings" className="flex flex-col gap-2.5">
+          {table.rows.map((row, index) => (
+            <MatchupStandingsRow key={row.teamId} row={row} index={index} />
+          ))}
+        </ol>
+      );
   }
-
-  return (
-    <ol aria-label="Matchup standings" className="flex flex-col gap-2.5">
-      {table.rows.map((row, index) => (
-        <MatchupStandingsRow key={row.teamId} row={row} index={index} />
-      ))}
-    </ol>
-  );
 }

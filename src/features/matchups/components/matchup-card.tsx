@@ -1,29 +1,10 @@
 import Link from "next/link";
 import { cn } from "cn";
-import type { MatchupOutcome, MatchupSideView, MatchupView } from "../matchups.service";
+import { UnknownScore } from "@/ui/matchup-row";
+import type { MatchupSideView, MatchupView } from "../matchups.service";
 import { gamesLinkClass, MatchupState } from "./matchup-list";
 import { SideDetail, sideDisplay } from "./side-display";
-
-const LIVE_LINE = {
-  ahead: { text: "Winning", className: "text-success" },
-  behind: { text: "Trailing", className: "text-danger" },
-  tied: { text: "Tied", className: "text-text-muted" },
-} as const;
-
-const FINAL_LINE = {
-  win: { text: "Final: won", className: "text-success" },
-  loss: { text: "Final: lost", className: "text-danger" },
-  tie: { text: "Final: tied", className: "text-text-muted" },
-} as const;
-
-/** The viewer's status line. A live matchup whose totals are unknown stays neutral. */
-function statusLine(outcome: MatchupOutcome | null): { text: string; className: string } {
-  if (!outcome) return { text: "Matchup", className: "text-text-muted" };
-  if (outcome.state === "final") return FINAL_LINE[outcome.result];
-  return outcome.lead
-    ? LIVE_LINE[outcome.lead]
-    : { text: "Waiting for scores", className: "text-text-muted" };
-}
+import { statusLine } from "./status-line";
 
 /** One side of the scoreboard: the weekly points first so both scores sit on one line. */
 function Side({ side, align }: { side: MatchupSideView; align: "start" | "end" }) {
@@ -41,12 +22,7 @@ function Side({ side, align }: { side: MatchupSideView; align: "start" | "end" }
           tone === "trail" && "text-text-muted",
         )}
       >
-        {score ?? (
-          <>
-            <span aria-hidden="true">?</span>
-            <span className="sr-only">Score not available</span>
-          </>
-        )}
+        {score ?? <UnknownScore />}
       </span>
       <span className="text-[0.7rem] font-medium text-text-muted">pts</span>
       <span
@@ -84,7 +60,7 @@ export function MatchupCard({ matchup, gamesHref }: { matchup: MatchupView; game
   return (
     <section
       aria-labelledby="my-matchup"
-      className="flex flex-col gap-4 rounded-3xl border border-brand/70 bg-linear-to-br from-brand/10 to-surface p-4 shadow-glow-brand md:p-6"
+      className="flex w-full flex-col gap-4 rounded-3xl border border-brand/70 bg-linear-to-br from-brand/10 to-surface p-4 shadow-glow-brand md:mx-auto md:max-w-2xl md:p-6"
     >
       <div className="flex items-center justify-between gap-3">
         <h3 id="my-matchup" className="text-lg font-bold">

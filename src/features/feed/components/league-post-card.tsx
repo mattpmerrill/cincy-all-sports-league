@@ -258,7 +258,7 @@ export function LeaguePostContent({ message }: { message: Message }) {
         <p className={cardTitle}>Weekly matchups</p>
         {payload.results.length > 0 ? (
           <section className="flex flex-col gap-1">
-            <p className="text-xs font-semibold text-text-muted">Final results</p>
+            <p className="text-xs font-semibold text-text-muted">Last week&apos;s results</p>
             <ul className="flex flex-col divide-y divide-line/70">
               {payload.results.map((r) => {
                 const tags = OUTCOME_TAGS[r.outcome];

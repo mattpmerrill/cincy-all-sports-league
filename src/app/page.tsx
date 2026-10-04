@@ -64,9 +64,7 @@ export default async function LeaderboardPage({ searchParams }: PageProps<"/">) 
                 maxSportPoints={board.maxSportPoints}
                 isMine={user !== null && row.owner?.id === user.id}
                 claimHref={canClaim && !row.owner ? claimTeamHref(row.slug, user !== null) : null}
-                matchupRecord={
-                  records?.ok ? (records.value.recordFor(row.teamId)?.label ?? null) : null
-                }
+                matchupRecord={records?.ok ? records.value.labelFor(row.teamId) : null}
               />
             ))}
           </ol>

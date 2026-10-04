@@ -12,7 +12,7 @@ const TAG: Record<SideTagKind, { text: string; spoken: string; className: string
   win: { text: "W", spoken: "Won", className: "bg-success/15 text-success" },
   loss: { text: "L", spoken: "Lost", className: "bg-danger/10 text-danger" },
   tie: { text: "T", spoken: "Tied", className: "bg-surface-high text-text-muted" },
-  ahead: { text: "Ahead", spoken: "Ahead", className: "bg-brand/15 text-brand-bright" },
+  ahead: { text: "Ahead", spoken: "Ahead", className: "bg-success/15 text-success" },
   behind: { text: "Behind", spoken: "Behind", className: "bg-surface-high text-text-muted" },
   tied: { text: "Tied", spoken: "Tied", className: "bg-surface-high text-text-muted" },
 };
@@ -30,6 +30,18 @@ export function SideTag({ kind, className }: { kind: SideTagKind; className?: st
       <span aria-hidden="true">{tag.text}</span>
       <span className="sr-only">{tag.spoken}</span>
     </span>
+  );
+}
+
+/** What to print where a live total is unknown. The words carry it; there is no number to fake. */
+export function UnknownScore() {
+  return (
+    <>
+      <span aria-hidden="true" className="text-base font-semibold text-text-muted">
+        n/a
+      </span>
+      <span className="sr-only">Score not available</span>
+    </>
   );
 }
 
@@ -89,12 +101,7 @@ export function MatchupSideRow({
           tone === "trail" && "text-text-muted",
         )}
       >
-        {score ?? (
-          <>
-            <span aria-hidden="true">?</span>
-            <span className="sr-only">Score not available</span>
-          </>
-        )}
+        {score ?? <UnknownScore />}
       </span>
     </div>
   );

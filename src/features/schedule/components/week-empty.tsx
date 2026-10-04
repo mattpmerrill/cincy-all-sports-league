@@ -29,7 +29,7 @@ export function WeekEmpty({
     reason === "team_idle" && pair
       ? {
           title: "No games for these teams this week",
-          description: "Pick other teams, or step to another week.",
+          description: "Pick another team, or step to another week.",
         }
       : COPY[reason];
   return <EmptyState title={title} description={description} />;

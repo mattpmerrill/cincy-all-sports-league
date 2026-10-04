@@ -5,7 +5,7 @@ import { Skeleton } from "@/ui/skeleton";
 import { getSafeMatchupReads } from "../matchups.server";
 import type { MatchupView, WeekMatchups as WeekMatchupsData } from "../matchups.service";
 import { MatchupCard } from "./matchup-card";
-import { MatchupList } from "./matchup-list";
+import { gamesLinkClass, MatchupList } from "./matchup-list";
 
 const EMPTY: Record<
   NonNullable<WeekMatchupsData["empty"]>,
@@ -51,17 +51,27 @@ export async function WeekMatchups({
   const result = await getSafeMatchupReads().weekMatchups({ weekStart: week, viewerId });
   if (!result.ok || !result.value) return null;
   const data = result.value;
-
-  const [first, ...others] = data.matchups;
-  const mine = first?.isMine ? first : null;
-  const rest = mine ? others : data.matchups;
+  // The list is everyone's when the viewer has no matchup of their own to show above it.
+  const listLabel = data.mine ? "Other matchups" : "All matchups";
 
   return (
-    <PageSection id="week-matchups" title="Matchups" description={data.rangeLabel}>
+    <PageSection
+      id="week-matchups"
+      title="Matchups"
+      description={
+        data.hasRecords
+          ? `${data.rangeLabel} · Records are W-L-T (wins, losses, ties)`
+          : data.rangeLabel
+      }
+    >
+      <Link href="#games" className={`${gamesLinkClass} -mt-2 w-fit`}>
+        Jump to games
+      </Link>
+
       {data.awaitingRollover ? (
         <Alert variant="info">
-          Showing last week&apos;s matchups. Scores are still counting, and the final results post
-          Monday morning.
+          Showing last week&apos;s matchups. Scores are still counting, and final results post when
+          the new week opens.
         </Alert>
       ) : null}
 
@@ -69,15 +79,11 @@ export async function WeekMatchups({
         <EmptyState title={EMPTY[data.empty].title} description={EMPTY[data.empty].description} />
       ) : (
         <>
-          {mine ? <MatchupCard matchup={mine} gamesHref={gamesHref(mine)} /> : null}
-          {rest.length > 0 ? (
+          {data.mine ? <MatchupCard matchup={data.mine} gamesHref={gamesHref(data.mine)} /> : null}
+          {data.others.length > 0 ? (
             <div className="flex flex-col gap-2.5">
-              {mine ? <h3 className="text-lg font-bold">All matchups</h3> : null}
-              <MatchupList
-                matchups={rest}
-                gamesHref={gamesHref}
-                label={mine ? "Other matchups" : "Matchups"}
-              />
+              <h3 className="text-lg font-bold">{listLabel}</h3>
+              <MatchupList matchups={data.others} gamesHref={gamesHref} label={listLabel} />
             </div>
           ) : null}
           {data.byeTeams.length > 0 ? (

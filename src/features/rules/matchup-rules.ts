@@ -17,6 +17,6 @@ export const MATCHUP_NOTES: RuleNote[] = [
   },
   {
     title: "Fresh faces",
-    body: `You will not face the same team twice within ${REMATCH_WEEKS} weeks when it can be avoided.`,
+    body: `You will not play a team you faced in the last ${REMATCH_WEEKS} weeks when it can be avoided.`,
   },
 ];
