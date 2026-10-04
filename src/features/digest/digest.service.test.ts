@@ -62,6 +62,7 @@ function setup(
     snapshotRows?: { teamId: string; rank: number; totalPoints: number }[];
     matchups?: Matchup[];
     listSeason?: () => Promise<Matchup[]>;
+    failRenderFor?: string;
   } = {},
 ) {
   const sent: OutgoingEmail[] = [];
@@ -98,10 +99,13 @@ function setup(
         return opts.send ? opts.send(email) : ok({ id: "msg" });
       },
     },
-    renderEmail: async (props) => ({
-      html: `<p>${props.displayName}|${props.digest.recipient?.teamName ?? "no team"}|${matchupsLine(props.digest.matchups)}</p>`,
-      text: "text",
-    }),
+    renderEmail: async (props) => {
+      if (props.displayName === opts.failRenderFor) throw new Error("template exploded");
+      return {
+        html: `<p>${props.displayName}|${props.digest.recipient?.teamName ?? "no team"}|${matchupsLine(props.digest.matchups)}</p>`,
+        text: "text",
+      };
+    },
     signToken: opts.signToken === undefined ? (id) => `tok-${id}` : opts.signToken,
     siteUrl: "https://www.cincysports.xyz/",
     logger,
@@ -311,6 +315,44 @@ describe("sendWeeklyDigest matchups section", () => {
       expect(email.html).toContain("Last week's matchups are still being settled.");
       expect(email.html).not.toContain("You beat");
     }
+  });
+
+  it("still sends every email, without the section, when building the section throws", async () => {
+    // A final matchup whose close time is not a date makes the section builder throw.
+    const t = setup({
+      matchups: [
+        matchup("2026-09-21", "a", "b", {
+          start: [0, 0],
+          end: [8, 3],
+          finalizedAt: "not-a-date",
+        }),
+      ],
+    });
+    const result = await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(result).toMatchObject({
+      ok: true,
+      value: { outcome: "sent", sent: 2, failed: 0, matchupsSection: "build_failed" },
+    });
+    expect(t.sent.every((e) => e.html.includes("no matchups"))).toBe(true);
+    const failure = t.lines.find((l) => l.includes("digest matchups section failed to build"));
+    expect(failure).toContain("corr-1");
+  });
+
+  it("leaves other failures alone: a render error still fails only that recipient", async () => {
+    const t = setup({ failRenderFor: "Bo" });
+    const result = await t.service.sendWeeklyDigest({ now: MONDAY_8AM });
+    t.restore();
+    expect(result).toMatchObject({
+      ok: true,
+      value: {
+        outcome: "partial",
+        sent: 1,
+        failed: 1,
+        failures: { render_failed: 1 },
+        matchupsSection: "included",
+      },
+    });
   });
 
   it("reports what happened to the section, so a failed read shows in the cron response", async () => {
