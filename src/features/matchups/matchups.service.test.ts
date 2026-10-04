@@ -22,12 +22,12 @@ const four = (): LeagueData =>
     results: [wins("a-nfl", 3), wins("b-nfl", 2), wins("c-nfl", 1)],
   });
 
-function setup(matchups: Matchup[], data: LeagueData | null = four()) {
+function setup(matchups: Matchup[], data: LeagueData | null = four(), at: Date = now) {
   const source = vi.fn<(seasonId: string) => Promise<Matchup[]>>(async () => matchups);
   const service = createMatchupsService({
     league: async () => data,
     matchups: source,
-    now: () => now,
+    now: () => at,
   });
   return { service, source };
 }
@@ -155,6 +155,97 @@ describe("getWeekMatchups", () => {
   it("skips a matchup whose team is no longer in the league", async () => {
     const week = await setup([matchup("2026-10-05", "a", "gone")]).service.getWeekMatchups({});
     expect(week?.matchups).toEqual([]);
+  });
+});
+
+describe("the week shown while the Monday rollover is pending", () => {
+  // Last week (Oct 5) is still live; the current calendar week is Oct 12.
+  const lastWeek = [
+    matchup("2026-10-05", "a", "b", { start: [0, 3] }),
+    matchup("2026-10-05", "c", "d", { start: [2, 1] }),
+  ];
+  const earlyMonday = new Date("2026-10-12T09:00:00Z"); // 05:00 EDT, before the 06:45 rollover
+  const missedMonday = new Date("2026-10-13T16:00:00Z"); // Tuesday noon, the job never ran
+
+  it.each([
+    ["early Monday", earlyMonday],
+    ["a missed Monday (Tuesday)", missedMonday],
+  ])("keeps showing last week's live matchups on %s", async (_label, at) => {
+    const week = await setup(lastWeek, four(), at).service.getWeekMatchups({});
+    expect(week).toMatchObject({
+      weekStart: "2026-10-05",
+      rangeLabel: "Oct 5 – 11, 2026",
+      isCurrentWeek: true,
+      awaitingRollover: true,
+      empty: null,
+    });
+    expect(week?.matchups).toHaveLength(2);
+    expect(week?.matchups[0]?.state).toBe("live");
+  });
+
+  it("shows the current week as itself once it has rows, whatever else is open", async () => {
+    const week = await setup(
+      [...lastWeek, matchup("2026-10-12", "a", "c")],
+      four(),
+      missedMonday,
+    ).service.getWeekMatchups({});
+    expect(week).toMatchObject({ weekStart: "2026-10-12", awaitingRollover: false });
+    expect(week?.matchups).toHaveLength(1);
+  });
+
+  it("is a plain current week on a normal day", async () => {
+    const week = await setup([matchup("2026-10-05", "a", "b")]).service.getWeekMatchups({});
+    expect(week).toMatchObject({
+      weekStart: "2026-10-05",
+      isCurrentWeek: true,
+      awaitingRollover: false,
+    });
+  });
+
+  it("honours an explicitly requested past week as asked", async () => {
+    const week = await setup(lastWeek, four(), earlyMonday).service.getWeekMatchups({
+      weekStart: "2026-09-28",
+    });
+    expect(week).toMatchObject({
+      weekStart: "2026-09-28",
+      isCurrentWeek: false,
+      awaitingRollover: false,
+      empty: "none_this_week",
+    });
+    // Asking for last week by name is not the stand-in: it is just that week.
+    const named = await setup(lastWeek, four(), earlyMonday).service.getWeekMatchups({
+      weekStart: "2026-10-05",
+    });
+    expect(named).toMatchObject({
+      weekStart: "2026-10-05",
+      isCurrentWeek: false,
+      awaitingRollover: false,
+    });
+    expect(named?.matchups).toHaveLength(2);
+  });
+
+  it("is genuinely empty when the earlier weeks are all final", async () => {
+    const week = await setup(
+      [matchup("2026-10-05", "a", "b", { end: [1, 0] })],
+      four(),
+      missedMonday,
+    ).service.getWeekMatchups({});
+    expect(week).toMatchObject({
+      weekStart: "2026-10-12",
+      awaitingRollover: false,
+      empty: "none_this_week",
+    });
+  });
+
+  it("still says matchups start Monday for a season with none", async () => {
+    const week = await setup([], four(), earlyMonday).service.getWeekMatchups({});
+    expect(week).toMatchObject({ awaitingRollover: false, empty: "starts_monday" });
+  });
+
+  it("gives the matchup table the same live week, so opponents are shown", async () => {
+    const standings = await setup(lastWeek, four(), earlyMonday).service.getMatchupStandings();
+    expect(standings?.liveWeekStart).toBe("2026-10-05");
+    expect(standings?.rows.find((r) => r.slug === "a")?.opponent?.slug).toBe("b");
   });
 });
 

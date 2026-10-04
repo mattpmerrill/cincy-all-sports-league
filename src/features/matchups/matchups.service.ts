@@ -1,7 +1,12 @@
 import { clampWeekStart, easternWeekStart, formatWeekRange } from "@/domain/calendar";
 import { buildLeagueModel } from "@/domain/league";
 import type { LeagueData, StandingRow } from "@/domain/league";
-import { buildMatchupStandings, formatMatchupRecord, scoreMatchup } from "@/domain/matchups";
+import {
+  buildMatchupStandings,
+  displayWeek,
+  formatMatchupRecord,
+  scoreMatchup,
+} from "@/domain/matchups";
 import type {
   Matchup,
   MatchupLeader,
@@ -68,16 +73,28 @@ export type MatchupView = {
 /**
  * Why a week has no matchups:
  * - `starts_monday`: the season has none yet, so the first week opens on the next rollover.
- * - `none_this_week`: the season has matchups, just not for this week (before the first, after
- *   the season's last, or a week the rollover missed).
+ * - `none_this_week`: the season has matchups, just not for the shown week (before the first, or
+ *   a week the rollover has not opened and no earlier week is still live).
  */
 export type MatchupsEmpty = "starts_monday" | "none_this_week";
 
 export type WeekMatchups = {
   seasonName: string;
+  /** The Monday of the week actually shown. It is an earlier week when `awaitingRollover`. */
   weekStart: string;
+  /** The label of the week actually shown ("Oct 5 – 11, 2026"), never of the one asked for. */
   rangeLabel: string;
+  /**
+   * True when this view is the current week's: either the calendar's current week, or (when
+   * `awaitingRollover`) the earlier live week standing in for it. False when a specific other
+   * week was asked for.
+   */
   isCurrentWeek: boolean;
+  /**
+   * True when `weekStart` is last week (or older), still live because the Monday rollover has not
+   * opened the current week yet. The page can say "Final scores post Monday morning".
+   */
+  awaitingRollover: boolean;
   /** Viewer's matchup first, then by the better season rank of the two teams. */
   matchups: MatchupView[];
   /** Teams with no matchup this week (an odd field leaves one). Empty when there are no matchups. */
@@ -178,14 +195,17 @@ export function createMatchupsService(deps: MatchupsDeps) {
     const teams = new Map(model.standings.map((row) => [row.teamId, row]));
     const totals = new Map(model.standings.map((row) => [row.teamId, row.total]));
 
-    // The live week the table's "opponent" column reads: a week stays live until the next Monday
-    // rollover, so the latest live week is "this week" even early Monday before the rollover.
-    const liveWeekStart = matchups
-      .filter((m) => matchupStatus(m) === "live")
-      .reduce<string | null>(
-        (max, m) => (max === null || m.weekStart > max ? m.weekStart : max),
-        null,
-      );
+    // The calendar's current week, pulled into the season like the Week page does, and the week
+    // the pages should show for it (`displayWeek` owns the early-Monday and missed-Monday cases).
+    const { startsOn, endsOn } = data.season;
+    const currentWeek = clampWeekStart(easternWeekStart(now()), startsOn, endsOn);
+    const display = displayWeek(currentWeek, matchups);
+    // The table's "opponent" column reads the displayed week, when it is still being played.
+    const liveWeekStart = matchups.some(
+      (m) => m.weekStart === display.weekStart && matchupStatus(m) === "live",
+    )
+      ? display.weekStart
+      : null;
 
     const table = buildMatchupStandings(
       model.standings.map((row) => ({
@@ -205,6 +225,8 @@ export function createMatchupsService(deps: MatchupsDeps) {
       data,
       model,
       matchups,
+      currentWeek,
+      display,
       teams,
       totals,
       table,
@@ -256,12 +278,17 @@ export function createMatchupsService(deps: MatchupsDeps) {
       const loaded = await load();
       if (!loaded) return null;
       const { season } = loaded.data;
-      const currentWeek = clampWeekStart(easternWeekStart(now()), season.startsOn, season.endsOn);
-      const weekStart = clampWeekStart(
+      const { currentWeek } = loaded;
+      const requested = clampWeekStart(
         input.weekStart ?? currentWeek,
         season.startsOn,
         season.endsOn,
       );
+      // Only the current week is ever swapped for a live earlier one; any other week is honoured.
+      const asksForCurrent = requested === currentWeek;
+      const { weekStart, awaitingRollover } = asksForCurrent
+        ? loaded.display
+        : { weekStart: requested, awaitingRollover: false };
       const viewerTeam = loaded.viewerTeamId(input.viewerId);
 
       const views = loaded.matchups
@@ -303,7 +330,8 @@ export function createMatchupsService(deps: MatchupsDeps) {
         seasonName: season.name,
         weekStart,
         rangeLabel: formatWeekRange(weekStart),
-        isCurrentWeek: weekStart === currentWeek,
+        isCurrentWeek: asksForCurrent,
+        awaitingRollover,
         matchups,
         byeTeams,
         empty:

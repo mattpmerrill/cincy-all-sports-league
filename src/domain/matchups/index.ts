@@ -1,3 +1,5 @@
+export { displayWeek } from "./display-week";
+export type { DisplayWeek } from "./display-week";
 export { buildMatchupStandings, formatMatchupRecord } from "./matchup-standings";
 export type { MatchupStandingRow, MatchupStandingTeam, Streak } from "./matchup-standings";
 export { REMATCH_WEEKS, pairByStandings } from "./pair-by-standings";
