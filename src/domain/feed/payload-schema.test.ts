@@ -68,4 +68,10 @@ describe("parseLeaguePayload, matchups_week", () => {
     ).toBeNull();
     expect(parseLeaguePayload({ ...valid, weekStart: undefined })).toBeNull();
   });
+
+  it("returns null when the week start is not a real Monday", () => {
+    expect(parseLeaguePayload({ ...valid, weekStart: "2026-10-13" })).toBeNull(); // a Tuesday
+    expect(parseLeaguePayload({ ...valid, weekStart: "2026-02-31" })).toBeNull();
+    expect(parseLeaguePayload({ ...valid, weekStart: "next week" })).toBeNull();
+  });
 });

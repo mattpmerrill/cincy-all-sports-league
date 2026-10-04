@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isWeekStart } from "@/domain/calendar";
 import { SPORT_CODES } from "@/domain/sports/sports";
 import { MATCHUPS_WEEK_OUTCOMES, OFFER_KINDS } from "./types";
 import type { LeaguePayload } from "./types";
@@ -57,7 +58,7 @@ const leaguePayloadSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("matchups_week"),
-    weekStart: z.string(),
+    weekStart: z.string().refine(isWeekStart, "A week starts on a Monday."),
     results: z.array(
       z.object({
         home: teamLink,

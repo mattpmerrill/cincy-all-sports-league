@@ -148,15 +148,41 @@ export function groupScoreUpdateItems(items: readonly ScoreUpdateItem[]): ScoreU
 
 export type MatchupsWeekInput = Omit<MatchupsWeekPayload, "type">;
 
+/**
+ * Gains to show for a decided matchup. Two decimals read best, but a close finish can round to the
+ * same text ("1.23 to 1.23") for a matchup somebody won; then it shows up to four decimals, the
+ * precision points are stored at, until the two differ.
+ */
+function gainTexts(winnerGain: number, loserGain: number): [string, string] {
+  for (const decimals of [2, 3, 4]) {
+    const scale = 10 ** decimals;
+    const [w, l] = [winnerGain, loserGain].map((g) => String(Math.round(g * scale) / scale));
+    if (w !== l || winnerGain === loserGain) return [w as string, l as string];
+  }
+  return [formatPoints(winnerGain), formatPoints(loserGain)];
+}
+
 const resultPiece = (r: MatchupsWeekResult): string => {
-  if (r.outcome === "tie")
+  if (r.outcome === "tie") {
     return `${r.home.name} and ${r.away.name} tied at ${formatPoints(r.homeGain)}`;
+  }
   const [winner, loser, winnerGain, loserGain] =
     r.outcome === "home"
       ? [r.home, r.away, r.homeGain, r.awayGain]
       : [r.away, r.home, r.awayGain, r.homeGain];
-  return `${winner.name} beat ${loser.name} ${formatPoints(winnerGain)} to ${formatPoints(loserGain)}`;
+  const [winnerText, loserText] = gainTexts(winnerGain, loserGain);
+  return `${winner.name} beat ${loser.name} ${winnerText} to ${loserText}`;
 };
+
+/** Cuts to `max` UTF-16 units (the unit the message limit counts) without splitting a surrogate pair. */
+function cutAtCodePoints(text: string, max: number): string {
+  let out = "";
+  for (const char of text) {
+    if (out.length + char.length > max) break;
+    out += char;
+  }
+  return out;
+}
 
 /**
  * Splits a character budget between two parts that each want their full length: both fit when they
@@ -213,7 +239,8 @@ export function buildMatchupsWeekPost(
   const body = `${parts.map((p) => `${p}.`).join(" ")}`;
   return {
     // Team names are free text, so even with the tail reserve a body of absurd names is cut to fit.
-    body: body.length > MESSAGE_MAX_LENGTH ? `${body.slice(0, MESSAGE_MAX_LENGTH - 1)}…` : body,
+    body:
+      body.length > MESSAGE_MAX_LENGTH ? `${cutAtCodePoints(body, MESSAGE_MAX_LENGTH - 1)}…` : body,
     payload: { type: "matchups_week", weekStart: input.weekStart, results, pairings },
   };
 }

@@ -244,6 +244,35 @@ describe("buildMatchupsWeekPost", () => {
     expect(post?.body).not.toMatch(/Last week: .* and \d+ more\. This/);
   });
 
+  it("never prints the same number twice for a matchup somebody won", () => {
+    const body = (home: number, away: number) =>
+      buildMatchupsWeekPost({
+        weekStart: "2026-10-12",
+        results: [result("Sher Bear", "Papie", home, away)],
+        pairings: [],
+      })?.body;
+    // Equal at two decimals (1.23), already different at three.
+    expect(body(1.2349, 1.2301)).toBe("Last week: Sher Bear beat Papie 1.235 to 1.23.");
+    // Equal at two and three decimals, different only at four.
+    expect(body(1.2344, 1.2341)).toBe("Last week: Sher Bear beat Papie 1.2344 to 1.2341.");
+    // Different at two decimals: the usual short form.
+    expect(body(1.5, 1.23)).toBe("Last week: Sher Bear beat Papie 1.5 to 1.23.");
+  });
+
+  it("does not split an emoji when it has to cut an absurdly long body", () => {
+    const long = "😀".repeat(400);
+    const post = buildMatchupsWeekPost({
+      weekStart: "2026-10-12",
+      results: [result(long, "Papie", 2, 1)],
+      pairings: [],
+    });
+    const body = post?.body ?? "";
+    expect(body.length).toBeLessThanOrEqual(500);
+    expect(body.endsWith("…")).toBe(true);
+    // A lone surrogate would not survive a round trip through UTF-8.
+    expect(new TextDecoder().decode(new TextEncoder().encode(body))).toBe(body);
+  });
+
   it("still fits when a single team name is absurdly long", () => {
     const long = "x".repeat(600);
     const post = buildMatchupsWeekPost({
